@@ -1,7 +1,11 @@
+'use client';
+
 import { Course } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCart } from '@/contexts/CartContext';
+import { Button } from './Button';
 
 interface CourseCardProps {
   course: Course;
@@ -9,9 +13,17 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course, showProgress = false }: CourseCardProps) {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(course);
+  };
+
   return (
-    <Link href={`/courses/${course.id}`}>
-      <div className="group bg-black rounded-xl overflow-hidden border border-white/10 hover:border-red hover:shadow-card-hover transition-all duration-300">
+    <div className="group bg-black rounded-xl overflow-hidden border border-white/10 hover:border-red hover:shadow-card-hover transition-all duration-300">
+      <Link href={`/courses/${course.id}`}>
         {/* Thumbnail */}
         <div className="relative aspect-video overflow-hidden">
           <Image
@@ -115,8 +127,25 @@ export function CourseCard({ course, showProgress = false }: CourseCardProps) {
               </div>
             )}
           </div>
+
+          {/* Add to Cart Button */}
+          {!showProgress && (
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={handleAddToCart}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Thêm vào giỏ
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
+import { BannerCarousel } from '@/components/ui/BannerCarousel';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { mockCourses } from '@/lib/mockData';
@@ -10,6 +11,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black">
       <Header />
+
+      {/* Banner Carousel */}
+      <section className="container mx-auto px-4 py-8">
+        <BannerCarousel />
+      </section>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
