@@ -130,11 +130,11 @@ export default function Courses() {
         )}
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-primary-600 to-accent-400 rounded-2xl p-8 md:p-12 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">
+        <div className="bg-gradient-to-r from-primary-600 to-accent-400 rounded-2xl p-6 md:p-8 text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-black mb-3">
             Không tìm thấy khóa học phù hợp?
           </h2>
-          <p className="text-black/80 mb-6 max-w-2xl mx-auto">
+          <p className="text-black/80 mb-5 max-w-2xl mx-auto">
             Đề xuất khóa học mà bạn muốn học. Chúng tôi sẽ làm việc với các chuyên gia để tạo nội dung chất lượng cao.
           </p>
           <Button variant="secondary" size="lg" className="bg-black text-white hover:bg-gray-900">

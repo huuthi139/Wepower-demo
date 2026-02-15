@@ -107,7 +107,7 @@ export default function CartPage() {
 
                       {/* Price */}
                       <div className="flex-1 text-right">
-                        <div className="text-xl font-bold text-red">
+                        <div className="text-xl font-bold text-yellow">
                           {formatPrice(item.price * item.quantity)}
                         </div>
                         {item.quantity > 1 && (
@@ -160,7 +160,7 @@ export default function CartPage() {
                 <div className="border-t border-white/10 pt-3">
                   <div className="flex justify-between">
                     <span className="text-white font-bold">Tổng cộng</span>
-                    <span className="text-2xl font-bold text-red">{formatPrice(totalPrice)}</span>
+                    <span className="text-2xl font-bold text-yellow">{formatPrice(totalPrice)}</span>
                   </div>
                 </div>
               </div>

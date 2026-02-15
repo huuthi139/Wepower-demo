@@ -101,6 +101,8 @@ export default function Dashboard() {
               {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, index) => {
                 const hours = [2.5, 3.0, 1.5, 4.0, 2.0, 3.5, 1.0][index];
                 const percentage = (hours / 4) * 100;
+                // Alternate colors: red, yellow, white for variety
+                const barColors = ['bg-red', 'bg-yellow', 'bg-white', 'bg-red', 'bg-yellow', 'bg-white', 'bg-red'];
                 return (
                   <div key={day}>
                     <div className="flex items-center justify-between mb-2">
@@ -109,7 +111,7 @@ export default function Dashboard() {
                     </div>
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-red"
+                        className={`h-full ${barColors[index]}`}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

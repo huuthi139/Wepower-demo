@@ -74,9 +74,9 @@ export default function Home() {
       </section>
 
       {/* Featured Courses */}
-      <section className="py-20 bg-gradient-to-b from-black to-gray-950">
+      <section className="py-12 bg-gradient-to-b from-black to-gray-950">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
                 Khóa học nổi bật
@@ -99,9 +99,9 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-black">
+      <section className="py-12 bg-black">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <div className="max-w-4xl mx-auto text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Tại sao chọn <span className="text-red">WEPOWER</span>?
             </h2>
@@ -154,12 +154,12 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary-600 to-accent-400">
+      <section className="py-12 bg-gradient-to-r from-primary-600 to-accent-400">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
             Sẵn sàng bắt đầu học?
           </h2>
-          <p className="text-black/80 text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-black/80 text-lg mb-6 max-w-2xl mx-auto">
             Tham gia cùng hàng ngàn học viên đã thay đổi sự nghiệp của họ
           </p>
           <Button variant="secondary" size="xl" className="bg-black text-white hover:bg-gray-900">

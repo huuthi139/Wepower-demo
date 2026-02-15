@@ -118,7 +118,7 @@ export function CourseCard({ course, showProgress = false }: CourseCardProps) {
               <span className="text-xl font-bold text-yellow">Miễn phí</span>
             ) : (
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-red">{formatPrice(course.price)}</span>
+                <span className="text-xl font-bold text-yellow">{formatPrice(course.price)}</span>
                 {course.originalPrice && (
                   <span className="text-sm text-white/40 line-through">
                     {formatPrice(course.originalPrice)}
