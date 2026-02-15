@@ -92,53 +92,53 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-gray-950">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Tại sao chọn WePower?
+              Tại sao chọn <span className="text-red">WEPOWER</span>?
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className="text-white/60 text-lg">
               Nền tảng học tập trực tuyến hàng đầu với công nghệ tiên tiến
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-primary-600 transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-400 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Feature 1 - Red theme */}
+            <div className="bg-black border-2 border-red/30 rounded-xl p-8 hover:border-red hover:shadow-glow-red transition-all group">
+              <div className="w-16 h-16 bg-red rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Video chất lượng cao</h3>
-              <p className="text-gray-400">
+              <h3 className="text-xl font-bold text-white mb-3">Video chất lượng cao</h3>
+              <p className="text-white/60 leading-relaxed">
                 Trải nghiệm học tập tối ưu với video 4K, tốc độ tải nhanh
               </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-primary-600 transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-400 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Feature 2 - Yellow theme */}
+            <div className="bg-black border-2 border-yellow/30 rounded-xl p-8 hover:border-yellow hover:shadow-glow-yellow transition-all group">
+              <div className="w-16 h-16 bg-yellow rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Chứng chỉ uy tín</h3>
-              <p className="text-gray-400">
+              <h3 className="text-xl font-bold text-white mb-3">Chứng chỉ uy tín</h3>
+              <p className="text-white/60 leading-relaxed">
                 Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học
               </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-primary-600 transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-400 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Feature 3 - Red theme */}
+            <div className="bg-black border-2 border-red/30 rounded-xl p-8 hover:border-red hover:shadow-glow-red transition-all group">
+              <div className="w-16 h-16 bg-red rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Học mọi lúc mọi nơi</h3>
-              <p className="text-gray-400">
+              <h3 className="text-xl font-bold text-white mb-3">Học mọi lúc mọi nơi</h3>
+              <p className="text-white/60 leading-relaxed">
                 Truy cập khóa học 24/7 trên mọi thiết bị
               </p>
             </div>
