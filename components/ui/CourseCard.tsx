@@ -4,10 +4,7 @@ import { Course } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/providers/ToastProvider';
 import { Button } from './Button';
-import { useState } from 'react';
 
 interface CourseCardProps {
   course: Course;
@@ -15,22 +12,8 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course, showProgress = false }: CourseCardProps) {
-  const { addToCart } = useCart();
-  const { showToast } = useToast();
-  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (isAdding) return;
-
-    setIsAdding(true);
-    addToCart(course, () => {
-      showToast(`Đã thêm "${course.title}" vào giỏ hàng!`, 'success');
-      setTimeout(() => setIsAdding(false), 500);
-    });
-  };
+  // No longer needed - button now navigates to course detail via Link
 
   return (
     <div className="group bg-black rounded-xl overflow-hidden border border-white/10 hover:border-red hover:shadow-card-hover transition-all duration-300">
@@ -139,32 +122,18 @@ export function CourseCard({ course, showProgress = false }: CourseCardProps) {
             )}
           </div>
 
-          {/* Add to Cart Button */}
+          {/* Register Button */}
           {!showProgress && (
             <div className="mt-4">
               <Button
                 variant="primary"
                 size="md"
                 className="w-full"
-                onClick={handleAddToCart}
-                disabled={isAdding}
               >
-                {isAdding ? (
-                  <>
-                    <svg className="w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Đang thêm...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Thêm vào giỏ
-                  </>
-                )}
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Đăng ký
               </Button>
             </div>
           )}
