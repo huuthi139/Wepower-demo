@@ -11,8 +11,8 @@ interface CartContextType {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
-  addToCart: (course: Course) => void;
-  removeFromCart: (courseId: string) => void;
+  addToCart: (course: Course, onSuccess?: () => void) => void;
+  removeFromCart: (courseId: string, onSuccess?: () => void) => void;
   updateQuantity: (courseId: string, quantity: number) => void;
   clearCart: () => void;
 }
@@ -35,26 +35,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('wepower-cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (course: Course) => {
+  const addToCart = (course: Course, onSuccess?: () => void) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === course.id);
 
       if (existingItem) {
         // Increase quantity if already in cart
-        return prevItems.map((item) =>
+        const newItems = prevItems.map((item) =>
           item.id === course.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
+        onSuccess?.();
+        return newItems;
       } else {
         // Add new item to cart
+        onSuccess?.();
         return [...prevItems, { ...course, quantity: 1 }];
       }
     });
   };
 
-  const removeFromCart = (courseId: string) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== courseId));
+  const removeFromCart = (courseId: string, onSuccess?: () => void) => {
+    setItems((prevItems) => {
+      const newItems = prevItems.filter((item) => item.id !== courseId);
+      onSuccess?.();
+      return newItems;
+    });
   };
 
   const updateQuantity = (courseId: string, quantity: number) => {

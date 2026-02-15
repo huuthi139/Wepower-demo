@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
+import { SkeletonCard } from '@/components/ui/SkeletonCard';
+import { AdvancedFilters, FilterState } from '@/components/ui/AdvancedFilters';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { mockCourses, categories } from '@/lib/mockData';
@@ -10,13 +12,60 @@ import { mockCourses, categories } from '@/lib/mockData';
 export default function Courses() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
+    priceRange: [0, 10000000],
+    minRating: 0,
+    duration: 'all',
+  });
+
+  // Simulate loading for better UX
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [selectedCategory, searchQuery, advancedFilters]);
 
   const filteredCourses = mockCourses.filter((course) => {
     const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+
+    // Price filter
+    const matchesPrice = course.price >= advancedFilters.priceRange[0] &&
+                        course.price <= advancedFilters.priceRange[1];
+
+    // Rating filter
+    const matchesRating = course.rating >= advancedFilters.minRating;
+
+    // Duration filter
+    let matchesDuration = true;
+    if (advancedFilters.duration === 'short') {
+      matchesDuration = course.duration < 18000; // < 5 hours (in seconds)
+    } else if (advancedFilters.duration === 'medium') {
+      matchesDuration = course.duration >= 18000 && course.duration <= 72000; // 5-20 hours
+    } else if (advancedFilters.duration === 'long') {
+      matchesDuration = course.duration > 72000; // > 20 hours
+    }
+
+    return matchesCategory && matchesSearch && matchesPrice && matchesRating && matchesDuration;
   });
+
+  const handleApplyFilters = (filters: FilterState) => {
+    setAdvancedFilters(filters);
+  };
+
+  const handleResetFilters = () => {
+    setAdvancedFilters({
+      priceRange: [0, 10000000],
+      minRating: 0,
+      duration: 'all',
+    });
+    setSelectedCategory('all');
+    setSearchQuery('');
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -41,7 +90,7 @@ export default function Courses() {
               placeholder="Tìm kiếm khóa học, giảng viên..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 px-4 pl-12 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-600 transition-colors"
+              className="w-full h-12 px-4 pl-12 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
             />
             <svg
               className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500"
@@ -70,7 +119,7 @@ export default function Courses() {
                 onClick={() => setSelectedCategory(category.slug)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   selectedCategory === category.slug
-                    ? 'bg-primary-600 text-white shadow-glow-red'
+                    ? 'bg-red text-white shadow-glow-red'
                     : 'bg-gray-900 text-gray-400 border border-gray-800 hover:border-gray-700'
                 }`}
               >
@@ -81,15 +130,21 @@ export default function Courses() {
           </div>
         </div>
 
-        {/* Results Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-gray-400">
-            Hiển thị <span className="text-white font-semibold">{filteredCourses.length}</span> khóa học
+        {/* Results Header with Advanced Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="text-gray-400">
+              Hiển thị <span className="text-white font-semibold">{filteredCourses.length}</span> khóa học
+            </div>
+            <AdvancedFilters
+              onApply={handleApplyFilters}
+              onReset={handleResetFilters}
+            />
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-400">Sắp xếp:</span>
-            <select className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-600">
+            <select className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red">
               <option>Phổ biến nhất</option>
               <option>Mới nhất</option>
               <option>Giá thấp đến cao</option>
@@ -100,7 +155,13 @@ export default function Courses() {
         </div>
 
         {/* Course Grid */}
-        {filteredCourses.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {[...Array(6)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
@@ -119,10 +180,7 @@ export default function Courses() {
             </p>
             <Button
               variant="ghost"
-              onClick={() => {
-                setSelectedCategory('all');
-                setSearchQuery('');
-              }}
+              onClick={handleResetFilters}
             >
               Xóa bộ lọc
             </Button>
@@ -130,7 +188,7 @@ export default function Courses() {
         )}
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-primary-600 to-accent-400 rounded-2xl p-6 md:p-8 text-center mb-8">
+        <div className="bg-gradient-to-r from-red to-yellow rounded-2xl p-6 md:p-8 text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-black mb-3">
             Không tìm thấy khóa học phù hợp?
           </h2>
