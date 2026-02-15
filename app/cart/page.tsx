@@ -5,11 +5,19 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function CartPage() {
+  const router = useRouter();
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+
+  const handleCheckout = () => {
+    // Navigate to checkout with all cart items
+    const courseIds = items.map(item => item.id).join(',');
+    router.push(`/checkout?courses=${courseIds}`);
+  };
 
   if (items.length === 0) {
     return (
@@ -166,7 +174,10 @@ export default function CartPage() {
               </div>
 
               {/* Checkout Button */}
-              <Button variant="primary" size="lg" className="w-full mb-3">
+              <Button variant="primary" size="lg" className="w-full mb-3" onClick={handleCheckout}>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
                 Thanh toán
               </Button>
 

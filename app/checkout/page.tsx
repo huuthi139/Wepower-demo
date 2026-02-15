@@ -5,16 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
-import { mockCourses } from '@/lib/mockData';
+import { mockCourses, Course } from '@/lib/mockData';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
+import { useCart } from '@/contexts/CartContext';
 import Image from 'next/image';
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const courseId = searchParams.get('course');
+  const { clearCart } = useCart();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -25,15 +26,27 @@ function CheckoutContent() {
   const [errors, setErrors] = useState<{name?: string; email?: string; phone?: string}>({});
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const course = courseId ? mockCourses.find(c => c.id === courseId) : null;
+  // Get courses from URL params
+  const singleCourseId = searchParams.get('course');
+  const multipleCoursesIds = searchParams.get('courses');
+  
+  let orderCourses: Course[] = [];
+  
+  if (singleCourseId) {
+    const course = mockCourses.find(c => c.id === singleCourseId);
+    if (course) orderCourses = [course];
+  } else if (multipleCoursesIds) {
+    const ids = multipleCoursesIds.split(',');
+    orderCourses = mockCourses.filter(c => ids.includes(c.id));
+  }
 
   useEffect(() => {
-    if (!course) {
+    if (orderCourses.length === 0) {
       router.push('/courses');
     }
-  }, [course, router]);
+  }, [orderCourses, router]);
 
-  if (!course) return null;
+  if (orderCourses.length === 0) return null;
 
   const validate = () => {
     const newErrors: any = {};
@@ -65,16 +78,35 @@ function CheckoutContent() {
     
     setIsProcessing(true);
     
+    // TODO: Send to Google Sheets / Lark
+    const orderData = {
+      ...formData,
+      courses: orderCourses.map(c => ({ id: c.id, title: c.title, price: c.price })),
+      total: totalPrice,
+      timestamp: new Date().toISOString(),
+    };
+    
+    console.log('Order Data:', orderData);
+    
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
       showToast('Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
+      
+      // Clear cart if checkout from cart
+      if (multipleCoursesIds) {
+        clearCart();
+      }
+      
       router.push('/dashboard');
     }, 2000);
   };
 
-  const discount = course.originalPrice ? course.originalPrice - course.price : 0;
-  const total = course.price;
+  const subtotal = orderCourses.reduce((sum, course) => sum + course.price, 0);
+  const totalDiscount = orderCourses.reduce((sum, course) => {
+    return sum + (course.originalPrice ? course.originalPrice - course.price : 0);
+  }, 0);
+  const totalPrice = subtotal;
 
   return (
     <div className="min-h-screen bg-black">
@@ -87,7 +119,7 @@ function CheckoutContent() {
             Thanh toán
           </h1>
           <p className="text-gray-400">
-            Hoàn tất thông tin để đăng ký khóa học
+            Hoàn tất thông tin để đăng ký {orderCourses.length} khóa học
           </p>
         </div>
 
@@ -200,7 +232,7 @@ function CheckoutContent() {
                     <p className="text-white"><strong>Ngân hàng:</strong> Vietcombank</p>
                     <p className="text-white"><strong>Số tài khoản:</strong> 0123456789</p>
                     <p className="text-white"><strong>Chủ tài khoản:</strong> WEPOWER ACADEMY</p>
-                    <p className="text-white"><strong>Nội dung:</strong> {formData.phone} {course.title}</p>
+                    <p className="text-white"><strong>Nội dung:</strong> {formData.phone} WEPOWER</p>
                   </div>
                 </div>
               )}
@@ -237,32 +269,39 @@ function CheckoutContent() {
           {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 sticky top-20">
-              <h2 className="text-xl font-bold text-white mb-6">Đơn hàng</h2>
+              <h2 className="text-xl font-bold text-white mb-6">Đơn hàng ({orderCourses.length} khóa học)</h2>
 
-              {/* Course Info */}
-              <div className="mb-6">
-                <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
-                  <Image
-                    src={course.thumbnail}
-                    alt={course.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <h3 className="font-semibold text-white mb-2">{course.title}</h3>
-                <p className="text-sm text-gray-400">Giảng viên: {course.instructor}</p>
+              {/* Course List */}
+              <div className="mb-6 space-y-4 max-h-64 overflow-y-auto">
+                {orderCourses.map((course) => (
+                  <div key={course.id} className="flex gap-3">
+                    <div className="relative w-20 h-12 rounded overflow-hidden flex-shrink-0">
+                      <Image
+                        src={course.thumbnail}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-white line-clamp-1">{course.title}</h3>
+                      <p className="text-xs text-gray-400">{course.instructor}</p>
+                      <p className="text-sm font-bold text-yellow mt-1">{formatPrice(course.price)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6 pb-6 border-b border-gray-800">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Giá gốc</span>
-                  <span className="text-white">{formatPrice(course.originalPrice || course.price)}</span>
+                  <span className="text-gray-400">Tạm tính</span>
+                  <span className="text-white">{formatPrice(subtotal)}</span>
                 </div>
-                {discount > 0 && (
+                {totalDiscount > 0 && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Giảm giá</span>
-                    <span className="text-red">-{formatPrice(discount)}</span>
+                    <span className="text-red">-{formatPrice(totalDiscount)}</span>
                   </div>
                 )}
               </div>
@@ -270,7 +309,7 @@ function CheckoutContent() {
               {/* Total */}
               <div className="flex items-center justify-between mb-6">
                 <span className="text-xl font-bold text-white">Tổng cộng</span>
-                <span className="text-3xl font-bold text-yellow">{formatPrice(total)}</span>
+                <span className="text-3xl font-bold text-yellow">{formatPrice(totalPrice)}</span>
               </div>
 
               {/* Guarantee */}
@@ -279,7 +318,7 @@ function CheckoutContent() {
                   <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <p className="text-sm text-gray-300">Hoàn tiền 100% trong 7 ngày nếu không hài lòng</p>
+                  <p className="text-sm text-gray-300">Hoàn tiền 100% trong 7 ngày</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
