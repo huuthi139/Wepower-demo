@@ -211,6 +211,36 @@ export const mockCourses: Course[] = [
     badge: 'NEW',
     category: 'Personal',
   },
+  {
+    id: '14',
+    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=450&fit=crop',
+    title: 'Design With AI',
+    instructor: 'WePower Academy',
+    price: 1868000,
+    rating: 4.9,
+    reviewsCount: 312,
+    enrollmentsCount: 1876,
+    duration: 19800,
+    lessonsCount: 48,
+    isFree: false,
+    badge: 'NEW',
+    category: 'Design',
+  },
+  {
+    id: '15',
+    thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&h=450&fit=crop',
+    title: 'Master Video AI',
+    instructor: 'WePower Academy',
+    price: 18868000,
+    rating: 5.0,
+    reviewsCount: 178,
+    enrollmentsCount: 823,
+    duration: 39600,
+    lessonsCount: 89,
+    isFree: false,
+    badge: 'PREMIUM',
+    category: 'Video',
+  },
 ];
 
 export const enrolledCourses: Course[] = [
@@ -229,7 +259,7 @@ export const enrolledCourses: Course[] = [
 ];
 
 export const categories = [
-  { id: '1', name: 'Tất cả', slug: 'all', count: 13 },
+  { id: '1', name: 'Tất cả', slug: 'all', count: 15 },
   { id: '2', name: 'AI', slug: 'ai', count: 3 },
   { id: '3', name: 'Business', slug: 'business', count: 3 },
   { id: '4', name: 'Automation', slug: 'automation', count: 2 },
@@ -238,4 +268,6 @@ export const categories = [
   { id: '7', name: 'Youtube', slug: 'youtube', count: 1 },
   { id: '8', name: 'Wellness', slug: 'wellness', count: 1 },
   { id: '9', name: 'Personal', slug: 'personal', count: 1 },
+  { id: '10', name: 'Design', slug: 'design', count: 1 },
+  { id: '11', name: 'Video', slug: 'video', count: 1 },
 ];
