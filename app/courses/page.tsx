@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { mockCourses, categories } from '@/lib/mockData';
 
 export default function Courses() {
@@ -141,6 +142,8 @@ export default function Courses() {
           </Button>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

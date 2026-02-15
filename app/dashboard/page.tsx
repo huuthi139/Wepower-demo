@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { enrolledCourses } from '@/lib/mockData';
 
 export default function Dashboard() {
@@ -168,6 +169,8 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
