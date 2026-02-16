@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from '@/contexts/CartContext';
 import { ToastProvider } from '@/providers/ToastProvider';
-
-const inter = Inter({ subsets: ["latin", "vietnamese"] });
 
 export const metadata: Metadata = {
   title: "WePower LMS - Sổ tay hướng dẫn làm kinh doanh chuyên nghiệp",
@@ -18,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={inter.className}>
+      <body className="font-sans">
         <ToastProvider>
           <CartProvider>
             {children}

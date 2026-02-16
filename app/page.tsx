@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { BannerCarousel } from '@/components/ui/BannerCarousel';
@@ -42,12 +43,16 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="primary" size="xl">
-                Bắt đầu học ngay
-              </Button>
-              <Button variant="secondary" size="xl">
-                Xem demo miễn phí
-              </Button>
+              <Link href="/courses">
+                <Button variant="primary" size="xl">
+                  Bắt đầu học ngay
+                </Button>
+              </Link>
+              <Link href="/courses">
+                <Button variant="secondary" size="xl">
+                  Xem demo miễn phí
+                </Button>
+              </Link>
             </div>
 
             {/* Stats */}
@@ -85,9 +90,11 @@ export default function Home() {
                 Những khóa học được yêu thích nhất tháng này
               </p>
             </div>
-            <Button variant="ghost">
-              Xem tất cả →
-            </Button>
+            <Link href="/courses">
+              <Button variant="ghost">
+                Xem tất cả →
+              </Button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -154,7 +161,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 bg-gradient-to-r from-primary-600 to-accent-400">
+      <section className="py-12 bg-gradient-to-r from-red to-yellow">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
             Sẵn sàng bắt đầu học?
@@ -162,9 +169,11 @@ export default function Home() {
           <p className="text-black/80 text-lg mb-6 max-w-2xl mx-auto">
             Tham gia cùng hàng ngàn học viên đã thay đổi sự nghiệp của họ
           </p>
-          <Button variant="secondary" size="xl" className="bg-black text-white hover:bg-gray-900">
-            Đăng ký miễn phí ngay
-          </Button>
+          <Link href="/register">
+            <Button variant="secondary" size="xl" className="bg-black text-white hover:bg-gray-900">
+              Đăng ký miễn phí ngay
+            </Button>
+          </Link>
         </div>
       </section>
 

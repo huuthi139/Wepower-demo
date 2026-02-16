@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
@@ -166,9 +167,11 @@ export default function Dashboard() {
           <p className="text-white/60 mb-6 max-w-2xl mx-auto">
             Mở rộng kiến thức của bạn với 15+ khóa học chất lượng cao
           </p>
-          <Button variant="primary" size="lg">
-            Xem khóa học →
-          </Button>
+          <Link href="/courses">
+            <Button variant="primary" size="lg">
+              Xem khóa học →
+            </Button>
+          </Link>
         </div>
       </div>
 

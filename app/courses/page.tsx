@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
@@ -9,15 +10,40 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { mockCourses, categories } from '@/lib/mockData';
 
-export default function Courses() {
+export default function CoursesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <Courses />
+    </Suspense>
+  );
+}
+
+function Courses() {
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [isLoading, setIsLoading] = useState(true);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     priceRange: [0, 10000000],
     minRating: 0,
     duration: 'all',
   });
+
+  // Sync search query from URL
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
 
   // Simulate loading for better UX
   useEffect(() => {

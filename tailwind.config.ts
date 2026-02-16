@@ -16,7 +16,7 @@ const config: Config = {
         white: '#FFFFFF',      // Trắng
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
       boxShadow: {
         'card': '0 4px 20px rgba(0, 0, 0, 0.3)',
