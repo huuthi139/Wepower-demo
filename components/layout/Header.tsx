@@ -34,14 +34,11 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
+            <Link href="/" className="text-white/70 hover:text-white transition-colors font-medium">
+              Trang Chủ
+            </Link>
             <Link href="/courses" className="text-white/70 hover:text-white transition-colors font-medium">
-              Khóa học
-            </Link>
-            <Link href="/my-courses" className="text-white/70 hover:text-white transition-colors font-medium">
-              Khóa học của tôi
-            </Link>
-            <Link href="/dashboard" className="text-white/70 hover:text-white transition-colors font-medium">
-              Dashboard
+              Khóa Học
             </Link>
             <Link href="/community" className="text-white/70 hover:text-white transition-colors font-medium">
               Cộng Đồng
@@ -91,12 +88,12 @@ export function Header() {
             </Link>
 
             <Link href="/login">
-              <Button variant="ghost" size="md">
+              <Button variant="ghost" size="sm">
                 Đăng nhập
               </Button>
             </Link>
             <Link href="/register">
-              <Button variant="primary" size="md">
+              <Button variant="primary" size="sm">
                 Đăng ký
               </Button>
             </Link>
@@ -156,25 +153,18 @@ export function Header() {
                 </div>
               </form>
               <Link
+                href="/"
+                className="text-white/70 hover:text-white transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Trang Chủ
+              </Link>
+              <Link
                 href="/courses"
                 className="text-white/70 hover:text-white transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Khóa học
-              </Link>
-              <Link
-                href="/my-courses"
-                className="text-white/70 hover:text-white transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Khóa học của tôi
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-white/70 hover:text-white transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
+                Khóa Học
               </Link>
               <Link
                 href="/community"

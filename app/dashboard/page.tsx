@@ -12,13 +12,30 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Chào mừng trở lại, Kevin! 👋
-          </h1>
-          <p className="text-gray-400">
-            Tiếp tục hành trình học tập của bạn
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              Chào mừng trở lại, Kevin!
+            </h1>
+            <p className="text-gray-400">
+              Tiếp tục hành trình học tập của bạn
+            </p>
+          </div>
+          {/* Level Badge */}
+          <div className="flex items-center gap-3 bg-gradient-to-r from-yellow/10 to-red/10 border border-yellow/20 rounded-xl px-5 py-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow to-red rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">Level</p>
+              <p className="text-lg font-bold text-yellow">Intermediate</p>
+              <div className="w-24 h-1.5 bg-white/10 rounded-full mt-1">
+                <div className="w-3/5 h-full bg-gradient-to-r from-yellow to-red rounded-full" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}

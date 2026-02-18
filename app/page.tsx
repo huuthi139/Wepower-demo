@@ -123,7 +123,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto text-center mb-12">
             <p className="text-yellow text-sm font-bold uppercase tracking-wider mb-2">Ưu điểm</p>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Tại sao chọn <span className="text-red">WEPOWER</span>?
+              Tại sao chọn <span className="text-red">WEPOWER</span>
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Nền tảng học tập trực tuyến hàng đầu với công nghệ tiên tiến
