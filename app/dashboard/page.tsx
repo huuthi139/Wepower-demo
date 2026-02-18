@@ -21,19 +21,19 @@ export default function Dashboard() {
               Tiếp tục hành trình học tập của bạn
             </p>
           </div>
-          {/* Level Badge */}
-          <div className="flex items-center gap-3 bg-gradient-to-r from-yellow/10 to-red/10 border border-yellow/20 rounded-xl px-5 py-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow to-red rounded-full flex items-center justify-center">
+          {/* Member Level Badge */}
+          <div className="flex items-center gap-3 bg-gradient-to-r from-white/5 to-white/[0.02] border border-white/10 rounded-xl px-5 py-3">
+            <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Level</p>
-              <p className="text-lg font-bold text-yellow">Intermediate</p>
-              <div className="w-24 h-1.5 bg-white/10 rounded-full mt-1">
-                <div className="w-3/5 h-full bg-gradient-to-r from-yellow to-red rounded-full" />
-              </div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">Hạng thành viên</p>
+              <p className="text-lg font-bold text-white">Free</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                <Link href="/pricing" className="text-red hover:underline">Nâng cấp Premium</Link>
+              </p>
             </div>
           </div>
         </div>

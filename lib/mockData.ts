@@ -1,3 +1,5 @@
+export type MemberLevel = 'Free' | 'Premium' | 'VIP';
+
 export interface Course {
   id: string;
   thumbnail: string;
@@ -14,6 +16,7 @@ export interface Course {
   badge?: 'NEW' | 'BESTSELLER' | 'PREMIUM';
   progress?: number;
   category: string;
+  memberLevel: MemberLevel;
 }
 
 export const mockCourses: Course[] = [
@@ -31,6 +34,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'BESTSELLER',
     category: 'Web Dev',
+    memberLevel: 'Free',
   },
   {
     id: '2',
@@ -46,6 +50,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'NEW',
     category: 'AI',
+    memberLevel: 'Free',
   },
   {
     id: '3',
@@ -61,6 +66,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Automation',
+    memberLevel: 'Premium',
   },
   {
     id: '4',
@@ -76,6 +82,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'AI',
+    memberLevel: 'Premium',
   },
   {
     id: '5',
@@ -91,6 +98,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'BESTSELLER',
     category: 'Marketing',
+    memberLevel: 'Premium',
   },
   {
     id: '6',
@@ -106,6 +114,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'BESTSELLER',
     category: 'Youtube',
+    memberLevel: 'Premium',
   },
   {
     id: '7',
@@ -121,6 +130,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'NEW',
     category: 'AI',
+    memberLevel: 'Premium',
   },
   {
     id: '8',
@@ -136,6 +146,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Business',
+    memberLevel: 'VIP',
   },
   {
     id: '9',
@@ -151,6 +162,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Automation',
+    memberLevel: 'VIP',
   },
   {
     id: '10',
@@ -166,6 +178,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Business',
+    memberLevel: 'VIP',
   },
   {
     id: '11',
@@ -181,6 +194,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Business',
+    memberLevel: 'VIP',
   },
   {
     id: '12',
@@ -195,6 +209,7 @@ export const mockCourses: Course[] = [
     lessonsCount: 68,
     isFree: false,
     category: 'Wellness',
+    memberLevel: 'Premium',
   },
   {
     id: '13',
@@ -210,6 +225,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'NEW',
     category: 'Personal',
+    memberLevel: 'Free',
   },
   {
     id: '14',
@@ -225,6 +241,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'NEW',
     category: 'Design',
+    memberLevel: 'Free',
   },
   {
     id: '15',
@@ -240,6 +257,7 @@ export const mockCourses: Course[] = [
     isFree: false,
     badge: 'PREMIUM',
     category: 'Video',
+    memberLevel: 'VIP',
   },
 ];
 
