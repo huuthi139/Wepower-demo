@@ -91,19 +91,6 @@ export async function submitOrder(order: OrderPayload): Promise<boolean> {
   const courseNames = order.courses.map(c => c.title).join(', ');
   const courseIds = order.courses.map(c => c.id).join(', ');
 
-  // Use Google Sheets API via Google Forms/Apps Script proxy
-  // For now, append via the public Google Sheets API (requires sheet to be editable)
-  const formUrl = `https://docs.google.com/forms/d/e/FORM_ID/formResponse`;
-
-  // Alternative: Use a simple Google Apps Script Web App
-  // For demo purposes, we'll use the Google Sheets append API via a proxy
-  // Since direct write requires auth, we'll use the Google Visualization API trick
-  // or a serverless function
-
-  // Approach: POST to Google Sheets via a Google Apps Script Web App
-  // The sheet owner needs to deploy a web app that accepts POST requests
-  // For now, we'll construct the row data and try the append approach
-
   const rowData = [
     formatTimestamp(order.timestamp),
     orderId,
@@ -119,29 +106,20 @@ export async function submitOrder(order: OrderPayload): Promise<boolean> {
   ];
 
   try {
-    // Try to append via Google Sheets API (public append endpoint)
-    const appendUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
-
-    // Since direct append isn't possible without auth from client-side,
-    // use the Next.js API route as a proxy
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rowData, orderId }),
     });
 
-    if (res.ok) {
-      return true;
+    if (!res.ok) {
+      throw new Error(`Order API returned ${res.status}`);
     }
 
-    // Fallback: log the order for manual processing
-    console.log('Order submitted (offline mode):', { orderId, rowData });
     return true;
   } catch (error) {
     console.error('Failed to submit order:', error);
-    // Still return true for demo - order is logged
-    console.log('Order data (fallback):', { orderId, rowData });
-    return true;
+    throw error;
   }
 }
 

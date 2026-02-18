@@ -41,15 +41,15 @@ function CheckoutContent() {
   }
 
   useEffect(() => {
-    if (orderCourses.length === 0) {
+    if (!singleCourseId && !multipleCoursesIds) {
       router.push('/courses');
     }
-  }, [orderCourses, router]);
+  }, [singleCourseId, multipleCoursesIds, router]);
 
   if (orderCourses.length === 0) return null;
 
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: {name?: string; email?: string; phone?: string} = {};
     
     if (!formData.name.trim()) {
       newErrors.name = 'Vui lòng nhập họ tên';
@@ -102,13 +102,7 @@ function CheckoutContent() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Order error:', error);
-      showToast('Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
-
-      if (multipleCoursesIds) {
-        clearCart();
-      }
-
-      router.push('/dashboard');
+      showToast('Có lỗi xảy ra. Vui lòng thử lại sau.', 'error');
     } finally {
       setIsProcessing(false);
     }

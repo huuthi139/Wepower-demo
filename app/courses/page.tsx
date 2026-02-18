@@ -33,8 +33,9 @@ function Courses() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('popular');
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
-    priceRange: [0, 10000000],
+    priceRange: [0, 200000000],
     minRating: 0,
     duration: 'all',
   });
@@ -79,18 +80,30 @@ function Courses() {
     return matchesCategory && matchesSearch && matchesPrice && matchesRating && matchesDuration;
   });
 
+  // Sort courses
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest': return b.id.localeCompare(a.id);
+      case 'price_asc': return a.price - b.price;
+      case 'price_desc': return b.price - a.price;
+      case 'rating': return b.rating - a.rating;
+      default: return b.enrollmentsCount - a.enrollmentsCount; // popular
+    }
+  });
+
   const handleApplyFilters = (filters: FilterState) => {
     setAdvancedFilters(filters);
   };
 
   const handleResetFilters = () => {
     setAdvancedFilters({
-      priceRange: [0, 10000000],
+      priceRange: [0, 200000000],
       minRating: 0,
       duration: 'all',
     });
     setSelectedCategory('all');
     setSearchQuery('');
+    setSortBy('popular');
   };
 
   return (
@@ -160,7 +173,7 @@ function Courses() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="text-gray-400">
-              Hiển thị <span className="text-white font-semibold">{filteredCourses.length}</span> khóa học
+              Hiển thị <span className="text-white font-semibold">{sortedCourses.length}</span> khóa học
             </div>
             <AdvancedFilters
               onApply={handleApplyFilters}
@@ -170,12 +183,16 @@ function Courses() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-400">Sắp xếp:</span>
-            <select className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red">
-              <option>Phổ biến nhất</option>
-              <option>Mới nhất</option>
-              <option>Giá thấp đến cao</option>
-              <option>Giá cao đến thấp</option>
-              <option>Đánh giá cao nhất</option>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red"
+            >
+              <option value="popular">Phổ biến nhất</option>
+              <option value="newest">Mới nhất</option>
+              <option value="price_asc">Giá thấp đến cao</option>
+              <option value="price_desc">Giá cao đến thấp</option>
+              <option value="rating">Đánh giá cao nhất</option>
             </select>
           </div>
         </div>
@@ -187,9 +204,9 @@ function Courses() {
               <SkeletonCard key={i} />
             ))}
           </div>
-        ) : filteredCourses.length > 0 ? (
+        ) : sortedCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {filteredCourses.map((course) => (
+            {sortedCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>

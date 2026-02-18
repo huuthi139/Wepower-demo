@@ -9,16 +9,16 @@ export function Footer() {
       { label: 'Giỏ hàng', href: '/cart' },
     ],
     company: [
-      { label: 'Về chúng tôi', href: '/about' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Nghề nghiệp', href: '/careers' },
-      { label: 'Liên hệ', href: '/contact' },
+      { label: 'Về chúng tôi', href: '#' },
+      { label: 'Blog', href: '#' },
+      { label: 'Nghề nghiệp', href: '#' },
+      { label: 'Liên hệ', href: '#' },
     ],
     support: [
-      { label: 'Trung tâm hỗ trợ', href: '/help' },
-      { label: 'Câu hỏi thường gặp', href: '/faq' },
-      { label: 'Điều khoản dịch vụ', href: '/terms' },
-      { label: 'Chính sách bảo mật', href: '/privacy' },
+      { label: 'Trung tâm hỗ trợ', href: '#' },
+      { label: 'Câu hỏi thường gặp', href: '#' },
+      { label: 'Điều khoản dịch vụ', href: '#' },
+      { label: 'Chính sách bảo mật', href: '#' },
     ],
   };
 
@@ -121,15 +121,15 @@ export function Footer() {
             © 2026 WePower Academy. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-white/40">
-            <Link href="/terms" className="hover:text-white transition-colors">
+            <a href="#" className="hover:text-white transition-colors">
               Điều khoản
-            </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
               Quyền riêng tư
-            </Link>
-            <Link href="/cookies" className="hover:text-white transition-colors">
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
               Cookies
-            </Link>
+            </a>
           </div>
         </div>
       </div>
