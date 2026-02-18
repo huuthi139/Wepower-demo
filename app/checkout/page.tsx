@@ -41,15 +41,15 @@ function CheckoutContent() {
   }
 
   useEffect(() => {
-    if (orderCourses.length === 0) {
+    if (!singleCourseId && !multipleCoursesIds) {
       router.push('/courses');
     }
-  }, [orderCourses, router]);
+  }, [singleCourseId, multipleCoursesIds, router]);
 
   if (orderCourses.length === 0) return null;
 
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: {name?: string; email?: string; phone?: string} = {};
     
     if (!formData.name.trim()) {
       newErrors.name = 'Vui lòng nhập họ tên';
@@ -73,33 +73,39 @@ function CheckoutContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
-    
+
     setIsProcessing(true);
-    
-    // TODO: Send to Google Sheets / Lark
+
     const orderData = {
-      ...formData,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      paymentMethod: formData.paymentMethod,
       courses: orderCourses.map(c => ({ id: c.id, title: c.title, price: c.price })),
       total: totalPrice,
       timestamp: new Date().toISOString(),
     };
-    
-    console.log('Order Data:', orderData);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
+
+    try {
+      // Send order to Google Sheets via API route
+      const { submitOrder } = await import('@/lib/googleSheets');
+      await submitOrder(orderData);
+
       showToast('Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
-      
-      // Clear cart if checkout from cart
+
       if (multipleCoursesIds) {
         clearCart();
       }
-      
+
       router.push('/dashboard');
-    }, 2000);
+    } catch (error) {
+      console.error('Order error:', error);
+      showToast('Có lỗi xảy ra. Vui lòng thử lại sau.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const subtotal = orderCourses.reduce((sum, course) => sum + course.price, 0);

@@ -118,9 +118,13 @@ export default function Login() {
                 />
                 <span className="text-sm text-gray-400">Ghi nhớ đăng nhập</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-red hover:text-red/80 transition-colors">
+              <button
+                type="button"
+                onClick={() => showToast('Tính năng đang phát triển', 'info')}
+                className="text-sm text-red hover:text-red/80 transition-colors"
+              >
                 Quên mật khẩu?
-              </Link>
+              </button>
             </div>
 
             {/* Submit Button */}

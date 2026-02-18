@@ -20,7 +20,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: {name?: string; email?: string; password?: string; confirmPassword?: string; agree?: string} = {};
     
     if (!formData.name) {
       newErrors.name = 'Vui lòng nhập họ tên';
@@ -176,13 +176,13 @@ export default function Register() {
                 />
                 <span className="text-sm text-gray-400">
                   Tôi đồng ý với{' '}
-                  <Link href="/terms" className="text-red hover:text-red/80">
+                  <a href="#" className="text-red hover:text-red/80">
                     Điều khoản dịch vụ
-                  </Link>{' '}
+                  </a>{' '}
                   và{' '}
-                  <Link href="/privacy" className="text-red hover:text-red/80">
+                  <a href="#" className="text-red hover:text-red/80">
                     Chính sách bảo mật
-                  </Link>
+                  </a>
                 </span>
               </label>
               {errors.agree && (
