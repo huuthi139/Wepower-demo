@@ -40,19 +40,19 @@ function parseCSV(csv: string): Record<string, string>[] {
 }
 
 export async function fetchUsers() {
-  const res = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Đăng ký'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }
 
 export async function fetchOrders() {
-  const res = await fetch(getSheetUrl('Orders'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Đơn hàng'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }
 
 export async function fetchCourseVideos() {
-  const res = await fetch(getSheetUrl('Courses'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Khóa học'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }

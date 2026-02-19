@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+// Tab "Đăng ký" trong Google Sheets
+const SHEET_NAME = 'Đăng ký';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -85,18 +87,17 @@ export async function POST(request: Request) {
         );
       } catch (err) {
         console.error('Apps Script register error:', err);
-        // Fall through to direct method
       }
     }
 
     // Method 2: Check email via CSV + write via Sheets API
     try {
-      const csvRes = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
+      const csvRes = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
       const csv = await csvRes.text();
       const users = parseCSV(csv);
 
       const existingUser = users.find(
-        u => u['Email']?.toLowerCase() === email.toLowerCase()
+        u => (u['Email'] || u['Địa chỉ email'] || '').toLowerCase() === email.toLowerCase()
       );
 
       if (existingUser) {
@@ -109,13 +110,12 @@ export async function POST(request: Request) {
       // Can't check, continue
     }
 
-    // Row data: Name, Email, Password, Phone, Role, MemberLevel, JoinDate
-    const rowData = [name, email, password, phone || '', 'user', 'Free', formatDate()];
+    // Row data thứ tự: Dấu thời gian | Họ và tên | Email | Số điện thoại | Mật khẩu | Vai trò | Hạng thành viên
+    const rowData = [formatDate(), name, email, phone || '', password, 'user', 'Free'];
 
-    // Try Google Sheets API
     let written = false;
     if (process.env.GOOGLE_SHEETS_API_KEY) {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('Users')}!A:G:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
       const res = await fetch(appendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

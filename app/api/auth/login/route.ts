@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+// Tab "Đăng ký" trong Google Sheets
+const SHEET_NAME = 'Đăng ký';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -41,6 +43,14 @@ function parseCSV(csv: string): Record<string, string>[] {
   return rows;
 }
 
+// Tìm giá trị cột - hỗ trợ cả tên tiếng Việt
+function getCol(row: Record<string, string>, ...keys: string[]): string {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== '') return row[key];
+  }
+  return '';
+}
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
@@ -79,12 +89,13 @@ export async function POST(request: Request) {
 
     // Method 2: Đọc CSV trực tiếp từ Google Sheets (fallback)
     try {
-      const res = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
+      const res = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
       const csv = await res.text();
       const users = parseCSV(csv);
 
+      // Tìm user theo email - hỗ trợ cả tên cột tiếng Việt và tiếng Anh
       const user = users.find(
-        u => u['Email']?.toLowerCase() === email.toLowerCase()
+        u => getCol(u, 'Email', 'email', 'Địa chỉ email').toLowerCase() === email.toLowerCase()
       );
 
       if (!user) {
@@ -94,23 +105,27 @@ export async function POST(request: Request) {
         );
       }
 
-      if (user['Password'] !== password) {
+      // Kiểm tra mật khẩu
+      const userPassword = getCol(user, 'Mật khẩu', 'Password');
+      if (userPassword !== password) {
         return NextResponse.json(
           { success: false, error: 'Mật khẩu không đúng' },
           { status: 401 }
         );
       }
 
+      // Trả về user data
+      const role = getCol(user, 'Vai trò', 'Role').toLowerCase();
+      const memberLevel = getCol(user, 'Hạng thành viên', 'MemberLevel');
+
       return NextResponse.json({
         success: true,
         user: {
-          name: user['Name'] || user['Họ tên'] || '',
-          email: user['Email'] || '',
-          phone: user['Phone'] || user['Số điện thoại'] || '',
-          role: (user['Role'] || user['Vai trò'] || 'user').toLowerCase() === 'admin' ? 'admin' : 'user',
-          memberLevel: (['Free', 'Premium', 'VIP'].includes(user['MemberLevel'] || user['Hạng'] || '')
-            ? (user['MemberLevel'] || user['Hạng'])
-            : 'Free'),
+          name: getCol(user, 'Họ và tên', 'Họ tên', 'Name'),
+          email: getCol(user, 'Email', 'Địa chỉ email'),
+          phone: getCol(user, 'Số điện thoại', 'Phone', 'SĐT'),
+          role: role === 'admin' ? 'admin' : 'user',
+          memberLevel: (['Free', 'Premium', 'VIP'].includes(memberLevel) ? memberLevel : 'Free'),
         },
       });
     } catch {
