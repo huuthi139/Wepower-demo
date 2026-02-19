@@ -52,13 +52,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch users from Google Sheets
+    // Method 1: Google Apps Script (ưu tiên)
+    if (process.env.GOOGLE_SCRIPT_URL) {
+      try {
+        const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', email, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          return NextResponse.json({ success: true, user: data.user });
+        }
+
+        return NextResponse.json(
+          { success: false, error: data.error || 'Đăng nhập thất bại' },
+          { status: 401 }
+        );
+      } catch (err) {
+        console.error('Apps Script login error:', err);
+        // Fall through to CSV method
+      }
+    }
+
+    // Method 2: Đọc CSV trực tiếp từ Google Sheets (fallback)
     try {
       const res = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
       const csv = await res.text();
       const users = parseCSV(csv);
 
-      // Find user by email (case-insensitive)
       const user = users.find(
         u => u['Email']?.toLowerCase() === email.toLowerCase()
       );
@@ -70,7 +94,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Check password
       if (user['Password'] !== password) {
         return NextResponse.json(
           { success: false, error: 'Mật khẩu không đúng' },
@@ -78,7 +101,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Return user data (exclude password)
       return NextResponse.json({
         success: true,
         user: {
@@ -92,8 +114,7 @@ export async function POST(request: Request) {
         },
       });
     } catch {
-      // If Google Sheets is not accessible, use demo mode
-      // Demo accounts for testing
+      // Method 3: Demo mode
       const demoAccounts = [
         { email: 'admin@wepower.vn', password: 'admin123', name: 'Admin WePower', role: 'admin' as const, memberLevel: 'VIP' as const, phone: '' },
         { email: 'user@wepower.vn', password: 'user123', name: 'Học viên Demo', role: 'user' as const, memberLevel: 'Free' as const, phone: '' },

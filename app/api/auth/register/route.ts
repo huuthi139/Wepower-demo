@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
-const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -59,10 +58,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if email already exists
+    // Method 1: Google Apps Script (ưu tiên)
+    if (process.env.GOOGLE_SCRIPT_URL) {
+      try {
+        const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'register',
+            name,
+            email,
+            password,
+            phone: phone || '',
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          return NextResponse.json({ success: true, user: data.user });
+        }
+
+        return NextResponse.json(
+          { success: false, error: data.error || 'Đăng ký thất bại' },
+          { status: data.error?.includes('đã được sử dụng') ? 409 : 400 }
+        );
+      } catch (err) {
+        console.error('Apps Script register error:', err);
+        // Fall through to direct method
+      }
+    }
+
+    // Method 2: Check email via CSV + write via Sheets API
     try {
-      const res = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
-      const csv = await res.text();
+      const csvRes = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
+      const csv = await csvRes.text();
       const users = parseCSV(csv);
 
       const existingUser = users.find(
@@ -76,66 +106,31 @@ export async function POST(request: Request) {
         );
       }
     } catch {
-      // If can't check, continue with registration (demo mode)
+      // Can't check, continue
     }
 
     // Row data: Name, Email, Password, Phone, Role, MemberLevel, JoinDate
-    const rowData = [
-      name,
-      email,
-      password,
-      phone || '',
-      'user',
-      'Free',
-      formatDate(),
-    ];
+    const rowData = [name, email, password, phone || '', 'user', 'Free', formatDate()];
 
-    // Try to write to Google Sheets
+    // Try Google Sheets API
     let written = false;
-
-    // Method 1: Google Sheets API
     if (process.env.GOOGLE_SHEETS_API_KEY) {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
-
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('Users')}!A:G:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
       const res = await fetch(appendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [rowData] }),
       });
-
       if (res.ok) written = true;
     }
 
-    // Method 2: Google Apps Script
-    if (!written && process.env.GOOGLE_SCRIPT_URL) {
-      const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'appendUser',
-          sheetName: SHEET_NAME,
-          rowData,
-        }),
-      });
-
-      if (res.ok) written = true;
-    }
-
-    // Demo mode fallback
     if (!written) {
       console.log(`[Demo Mode] New user registered:`, rowData);
     }
 
-    // Return new user data
     return NextResponse.json({
       success: true,
-      user: {
-        name,
-        email,
-        phone: phone || '',
-        role: 'user',
-        memberLevel: 'Free',
-      },
+      user: { name, email, phone: phone || '', role: 'user', memberLevel: 'Free' },
       mode: written ? 'live' : 'demo',
     });
   } catch (error) {
