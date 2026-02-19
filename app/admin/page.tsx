@@ -238,7 +238,6 @@ interface CourseFormData {
   instructor: string;
   category: string;
   price: number;
-  memberLevel: MemberLevel;
   lessonsCount: number;
 }
 
@@ -247,7 +246,6 @@ const emptyCourseForm: CourseFormData = {
   instructor: 'WePower Academy',
   category: '',
   price: 0,
-  memberLevel: 'Free',
   lessonsCount: 0,
 };
 
@@ -298,7 +296,6 @@ export default function AdminDashboard() {
       instructor: course.instructor,
       category: course.category,
       price: course.price,
-      memberLevel: course.memberLevel,
       lessonsCount: course.lessonsCount,
     });
     setShowCourseModal(true);
@@ -318,7 +315,6 @@ export default function AdminDashboard() {
                 instructor: courseForm.instructor,
                 category: courseForm.category,
                 price: courseForm.price,
-                memberLevel: courseForm.memberLevel,
                 lessonsCount: courseForm.lessonsCount,
                 isFree: courseForm.price === 0,
               }
@@ -342,7 +338,7 @@ export default function AdminDashboard() {
         duration: 0,
         lessonsCount: courseForm.lessonsCount,
         isFree: courseForm.price === 0,
-        memberLevel: courseForm.memberLevel,
+        memberLevel: 'Free',
       };
       setCourses(prev => [...prev, newCourse]);
     }
@@ -482,75 +478,44 @@ export default function AdminDashboard() {
             </div>
 
             {/* Member Level Distribution */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="VIP" />
-                        <span className="text-sm text-gray-400">{vipCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(vipCount / studentsData.length * 100)}%</span>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="VIP" />
+                      <span className="text-sm text-gray-400">{vipCount} học viên</span>
                     </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / studentsData.length * 100}%` }} />
-                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(vipCount / studentsData.length * 100)}%</span>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="Premium" />
-                        <span className="text-sm text-gray-400">{premiumCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(premiumCount / studentsData.length * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / studentsData.length * 100}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="Free" />
-                        <span className="text-sm text-gray-400">{freeCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(freeCount / studentsData.length * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / studentsData.length * 100}%` }} />
-                    </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / studentsData.length * 100}%` }} />
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-5">Khóa học theo Level</h3>
-                <div className="space-y-4">
-                  {(['Free', 'Premium', 'VIP'] as MemberLevel[]).map(level => {
-                    const levelCourses = courses.filter(c => c.memberLevel === level);
-                    const count = levelCourses.length;
-                    const totalEnrollments = levelCourses.reduce((s, c) => s + c.enrollmentsCount, 0);
-                    const avgPrice = count > 0 ? levelCourses.reduce((s, c) => s + c.price, 0) / count : 0;
-                    return (
-                      <div key={level} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <LevelBadge level={level} />
-                          <div>
-                            <div className="text-sm text-white font-semibold">{count} khóa học</div>
-                            <div className="text-xs text-gray-500">{totalEnrollments.toLocaleString()} học viên</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-yellow font-bold">
-                            {count > 0 ? formatPrice(avgPrice) : '-'}
-                          </div>
-                          <div className="text-xs text-gray-500">Giá TB</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="Premium" />
+                      <span className="text-sm text-gray-400">{premiumCount} học viên</span>
+                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(premiumCount / studentsData.length * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / studentsData.length * 100}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="Free" />
+                      <span className="text-sm text-gray-400">{freeCount} học viên</span>
+                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(freeCount / studentsData.length * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / studentsData.length * 100}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -620,7 +585,6 @@ export default function AdminDashboard() {
                     <tr className="border-b border-gray-800">
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên khóa học</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Level</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Giá</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Bài học</th>
@@ -633,10 +597,11 @@ export default function AdminDashboard() {
                       <tr key={course.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
                         <td className="p-4 text-sm text-gray-400 font-mono">#{course.id}</td>
                         <td className="p-4">
-                          <div className="text-sm text-white font-medium">{course.title}</div>
+                          <Link href={`/admin/courses/${course.id}`} className="text-sm text-white font-medium hover:text-red transition-colors">
+                            {course.title}
+                          </Link>
                           <div className="text-xs text-gray-500 mt-0.5">{course.category}</div>
                         </td>
-                        <td className="p-4"><LevelBadge level={course.memberLevel} /></td>
                         <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(course.price)}</td>
                         <td className="p-4 text-sm text-white">{course.enrollmentsCount.toLocaleString()}</td>
                         <td className="p-4 text-sm text-gray-400">{course.lessonsCount}</td>
@@ -923,31 +888,17 @@ export default function AdminDashboard() {
               />
             </div>
 
-            {/* Price & Member Level row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Giá (VND)</label>
-                <input
-                  type="number"
-                  value={courseForm.price}
-                  onChange={e => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                  placeholder="0"
-                  min={0}
-                  className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Level</label>
-                <select
-                  value={courseForm.memberLevel}
-                  onChange={e => setCourseForm(prev => ({ ...prev, memberLevel: e.target.value as MemberLevel }))}
-                  className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="Free">Free</option>
-                  <option value="Premium">Premium</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Giá (VND)</label>
+              <input
+                type="number"
+                value={courseForm.price}
+                onChange={e => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                placeholder="0"
+                min={0}
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
             </div>
 
             {/* Lessons Count */}
@@ -1002,7 +953,6 @@ export default function AdminDashboard() {
             <div className="bg-black/50 border border-gray-800 rounded-lg p-4 mb-6">
               <div className="text-sm text-white font-medium">{deletingCourse.title}</div>
               <div className="flex items-center gap-3 mt-2">
-                <LevelBadge level={deletingCourse.memberLevel} />
                 <span className="text-xs text-gray-500">{deletingCourse.enrollmentsCount.toLocaleString()} học viên</span>
                 <span className="text-xs text-yellow">{formatPrice(deletingCourse.price)}</span>
               </div>

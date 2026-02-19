@@ -14,6 +14,8 @@ interface Lesson {
   title: string;
   duration: string;
   requiredLevel: MemberLevel;
+  videoId: string;
+  libraryId: string;
 }
 
 interface Chapter {
@@ -27,36 +29,36 @@ const initialChapters: Chapter[] = [
     id: 'ch-1',
     title: 'Chương 1: Giới thiệu và chuẩn bị',
     lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '5:30', requiredLevel: 'Free' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '8:15', requiredLevel: 'Free' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free' },
+      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', videoId: 'abc-123-def', libraryId: '87654' },
+      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', videoId: 'abc-456-ghi', libraryId: '87654' },
+      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', videoId: '', libraryId: '' },
     ],
   },
   {
     id: 'ch-2',
     title: 'Chương 2: Kiến thức nền tảng',
     lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium' },
-      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium' },
-      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free' },
+      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', videoId: 'xyz-789-abc', libraryId: '87654' },
+      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', videoId: 'xyz-012-def', libraryId: '87654' },
+      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', videoId: '', libraryId: '' },
+      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', videoId: 'xyz-345-ghi', libraryId: '87654' },
     ],
   },
   {
     id: 'ch-3',
     title: 'Chương 3: Chiến lược nâng cao',
     lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium' },
+      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', videoId: 'pqr-111-aaa', libraryId: '87654' },
+      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', videoId: 'pqr-222-bbb', libraryId: '87654' },
     ],
   },
   {
     id: 'ch-4',
     title: 'Chương 4: Dự án thực tế và tổng kết',
     lessons: [
-      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP' },
-      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP' },
-      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium' },
+      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', videoId: 'stu-333-ccc', libraryId: '87654' },
+      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', videoId: 'stu-444-ddd', libraryId: '87654' },
     ],
   },
 ];
@@ -115,6 +117,8 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
   const [lessonTitle, setLessonTitle] = useState('');
   const [lessonDuration, setLessonDuration] = useState('');
   const [lessonLevel, setLessonLevel] = useState<MemberLevel>('Free');
+  const [lessonVideoId, setLessonVideoId] = useState('');
+  const [lessonLibraryId, setLessonLibraryId] = useState('');
 
   if (!course) {
     return (
@@ -202,6 +206,8 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
     setLessonTitle('');
     setLessonDuration('');
     setLessonLevel('Free');
+    setLessonVideoId('');
+    setLessonLibraryId('');
     setModal({ kind: 'addLesson', chapterId });
   };
 
@@ -212,6 +218,8 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
       setLessonTitle(lesson.title);
       setLessonDuration(lesson.duration);
       setLessonLevel(lesson.requiredLevel);
+      setLessonVideoId(lesson.videoId);
+      setLessonLibraryId(lesson.libraryId);
       setModal({ kind: 'editLesson', chapterId, lessonId });
     }
   };
@@ -221,12 +229,14 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
   };
 
   const handleAddLesson = () => {
-    if (modal.kind !== 'addLesson' || !lessonTitle.trim() || !lessonDuration.trim()) return;
+    if (modal.kind !== 'addLesson' || !lessonTitle.trim()) return;
     const newLesson: Lesson = {
       id: `ls-${Date.now()}`,
       title: lessonTitle.trim(),
       duration: lessonDuration.trim(),
       requiredLevel: lessonLevel,
+      videoId: lessonVideoId.trim(),
+      libraryId: lessonLibraryId.trim(),
     };
     setChapters((prev) =>
       prev.map((ch) =>
@@ -237,7 +247,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
   };
 
   const handleEditLesson = () => {
-    if (modal.kind !== 'editLesson' || !lessonTitle.trim() || !lessonDuration.trim()) return;
+    if (modal.kind !== 'editLesson' || !lessonTitle.trim()) return;
     setChapters((prev) =>
       prev.map((ch) =>
         ch.id === modal.chapterId
@@ -245,7 +255,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
               ...ch,
               lessons: ch.lessons.map((ls) =>
                 ls.id === modal.lessonId
-                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel }
+                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel, videoId: lessonVideoId.trim(), libraryId: lessonLibraryId.trim() }
                   : ls
               ),
             }
@@ -288,10 +298,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
               </svg>
             </div>
             <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
-                <LevelBadge level={course.memberLevel} />
-              </div>
+              <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
               <p className="text-sm text-gray-400 mt-1">
                 {course.instructor} &middot; {chapters.length} chuong &middot; {totalLessons} bai hoc &middot; {formatPrice(course.price)}
               </p>
@@ -418,16 +425,21 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-7 h-7 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
-                            <svg className="w-3.5 h-3.5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                          <div className={`w-7 h-7 rounded flex items-center justify-center flex-shrink-0 ${lesson.videoId ? 'bg-green-500/10' : 'bg-white/5'}`}>
+                            <svg className={`w-3.5 h-3.5 ${lesson.videoId ? 'text-green-400' : 'text-gray-500'}`} fill="currentColor" viewBox="0 0 24 24">
                               <path d="M8 5v14l11-7z" />
                             </svg>
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="text-sm text-white truncate">{lesson.title}</div>
                             <div className="flex items-center gap-3 mt-0.5">
-                              <span className="text-xs text-gray-500">{lesson.duration}</span>
                               <LevelBadge level={lesson.requiredLevel} />
+                              {lesson.duration && <span className="text-xs text-gray-500">{lesson.duration}</span>}
+                              {lesson.videoId ? (
+                                <span className="text-xs text-green-400">ID: {lesson.videoId}</span>
+                              ) : (
+                                <span className="text-xs text-yellow">Chưa có video</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -585,56 +597,88 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
           <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-white mb-1">Them bai hoc moi</h3>
+            <h3 className="text-lg font-bold text-white mb-1">Thêm bài học mới</h3>
             <p className="text-sm text-gray-400 mb-4">
-              Vao chuong: {getChapterTitle(modal.chapterId)}
+              Vào chương: {getChapterTitle(modal.chapterId)}
             </p>
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Tieu de bai hoc</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Tiêu đề bài học</label>
                 <input
                   type="text"
                   value={lessonTitle}
                   onChange={(e) => setLessonTitle(e.target.value)}
-                  placeholder="Vd: Gioi thieu tong quan"
+                  placeholder="VD: Giới thiệu tổng quan"
                   className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
                   autoFocus
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Thoi luong</label>
-                <input
-                  type="text"
-                  value={lessonDuration}
-                  onChange={(e) => setLessonDuration(e.target.value)}
-                  placeholder="Vd: 10:30"
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
-                />
+              <div className="p-3 bg-white/[0.02] border border-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm font-medium text-orange-400">Bunny Stream</span>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Video ID</label>
+                    <input
+                      type="text"
+                      value={lessonVideoId}
+                      onChange={(e) => setLessonVideoId(e.target.value)}
+                      placeholder="VD: abc-123-def-456"
+                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Library ID</label>
+                    <input
+                      type="text"
+                      value={lessonLibraryId}
+                      onChange={(e) => setLessonLibraryId(e.target.value)}
+                      placeholder="VD: 87654"
+                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Cap do yeu cau</label>
-                <select
-                  value={lessonLevel}
-                  onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="Free" className="bg-gray-900 text-white">Free</option>
-                  <option value="Premium" className="bg-gray-900 text-white">Premium</option>
-                  <option value="VIP" className="bg-gray-900 text-white">VIP</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Thời lượng</label>
+                  <input
+                    type="text"
+                    value={lessonDuration}
+                    onChange={(e) => setLessonDuration(e.target.value)}
+                    placeholder="VD: 10:30"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Cấp độ</label>
+                  <select
+                    value={lessonLevel}
+                    onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="Free" className="bg-gray-900 text-white">Free</option>
+                    <option value="Premium" className="bg-gray-900 text-white">Premium</option>
+                    <option value="VIP" className="bg-gray-900 text-white">VIP</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setModal({ kind: 'none' })}>
-                Huy
+                Hủy
               </Button>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleAddLesson}
-                disabled={!lessonTitle.trim() || !lessonDuration.trim()}
+                disabled={!lessonTitle.trim()}
               >
-                Them bai hoc
+                Thêm bài học
               </Button>
             </div>
           </div>
@@ -646,56 +690,88 @@ export default function CourseContentPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
           <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-white mb-1">Chinh sua bai hoc</h3>
+            <h3 className="text-lg font-bold text-white mb-1">Chỉnh sửa bài học</h3>
             <p className="text-sm text-gray-400 mb-4">
-              Trong chuong: {getChapterTitle(modal.chapterId)}
+              Trong chương: {getChapterTitle(modal.chapterId)}
             </p>
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Tieu de bai hoc</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Tiêu đề bài học</label>
                 <input
                   type="text"
                   value={lessonTitle}
                   onChange={(e) => setLessonTitle(e.target.value)}
-                  placeholder="Nhap tieu de bai hoc"
+                  placeholder="Nhập tiêu đề bài học"
                   className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
                   autoFocus
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Thoi luong</label>
-                <input
-                  type="text"
-                  value={lessonDuration}
-                  onChange={(e) => setLessonDuration(e.target.value)}
-                  placeholder="Vd: 10:30"
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
-                />
+              <div className="p-3 bg-white/[0.02] border border-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm font-medium text-orange-400">Bunny Stream</span>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Video ID</label>
+                    <input
+                      type="text"
+                      value={lessonVideoId}
+                      onChange={(e) => setLessonVideoId(e.target.value)}
+                      placeholder="VD: abc-123-def-456"
+                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Library ID</label>
+                    <input
+                      type="text"
+                      value={lessonLibraryId}
+                      onChange={(e) => setLessonLibraryId(e.target.value)}
+                      placeholder="VD: 87654"
+                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Cap do yeu cau</label>
-                <select
-                  value={lessonLevel}
-                  onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="Free" className="bg-gray-900 text-white">Free</option>
-                  <option value="Premium" className="bg-gray-900 text-white">Premium</option>
-                  <option value="VIP" className="bg-gray-900 text-white">VIP</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Thời lượng</label>
+                  <input
+                    type="text"
+                    value={lessonDuration}
+                    onChange={(e) => setLessonDuration(e.target.value)}
+                    placeholder="VD: 10:30"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Cấp độ</label>
+                  <select
+                    value={lessonLevel}
+                    onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="Free" className="bg-gray-900 text-white">Free</option>
+                    <option value="Premium" className="bg-gray-900 text-white">Premium</option>
+                    <option value="VIP" className="bg-gray-900 text-white">VIP</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setModal({ kind: 'none' })}>
-                Huy
+                Hủy
               </Button>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleEditLesson}
-                disabled={!lessonTitle.trim() || !lessonDuration.trim()}
+                disabled={!lessonTitle.trim()}
               >
-                Luu thay doi
+                Lưu thay đổi
               </Button>
             </div>
           </div>
