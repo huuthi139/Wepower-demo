@@ -12,41 +12,46 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/providers/ToastProvider';
 import Image from 'next/image';
 
+import type { MemberLevel } from '@/lib/mockData';
+
 const curriculumData = [
   {
     title: 'Giới thiệu khóa học',
     lessons: [
-      { name: 'Tổng quan về khóa học', duration: '5:30', isFree: true },
-      { name: 'Cách học hiệu quả nhất', duration: '8:15', isFree: true },
-      { name: 'Chuẩn bị công cụ cần thiết', duration: '12:00', isFree: false },
+      { name: 'Tổng quan về khóa học', duration: '5:30', isFree: true, requiredLevel: 'Free' as MemberLevel },
+      { name: 'Cách học hiệu quả nhất', duration: '8:15', isFree: true, requiredLevel: 'Free' as MemberLevel },
+      { name: 'Chuẩn bị công cụ cần thiết', duration: '12:00', isFree: false, requiredLevel: 'Free' as MemberLevel },
     ],
   },
   {
     title: 'Kiến thức nền tảng',
     lessons: [
-      { name: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', isFree: false },
-      { name: 'Phân tích case study thực tế', duration: '20:00', isFree: false },
-      { name: 'Thực hành bài tập 1', duration: '18:45', isFree: false },
-      { name: 'Kiểm tra kiến thức chương 1', duration: '10:00', isFree: false },
+      { name: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', isFree: false, requiredLevel: 'Free' as MemberLevel },
+      { name: 'Phân tích case study thực tế', duration: '20:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
+      { name: 'Thực hành bài tập 1', duration: '18:45', isFree: false, requiredLevel: 'Premium' as MemberLevel },
+      { name: 'Kiểm tra kiến thức chương 1', duration: '10:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
     ],
   },
   {
     title: 'Kỹ thuật nâng cao',
     lessons: [
-      { name: 'Chiến lược chuyên sâu', duration: '25:00', isFree: false },
-      { name: 'Tối ưu hóa quy trình', duration: '22:30', isFree: false },
-      { name: 'Phân tích dữ liệu thực tế', duration: '30:00', isFree: false },
+      { name: 'Chiến lược chuyên sâu', duration: '25:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
+      { name: 'Tối ưu hóa quy trình', duration: '22:30', isFree: false, requiredLevel: 'VIP' as MemberLevel },
+      { name: 'Phân tích dữ liệu thực tế', duration: '30:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
     ],
   },
   {
     title: 'Dự án thực hành',
     lessons: [
-      { name: 'Hướng dẫn dự án cuối khóa', duration: '10:00', isFree: false },
-      { name: 'Thực hành xây dựng dự án', duration: '45:00', isFree: false },
-      { name: 'Review & phản hồi', duration: '20:00', isFree: false },
+      { name: 'Hướng dẫn dự án cuối khóa', duration: '10:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
+      { name: 'Thực hành xây dựng dự án', duration: '45:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
+      { name: 'Review & phản hồi', duration: '20:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
     ],
   },
 ];
+
+const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
+const userLevel: MemberLevel = 'Free'; // simulate current user level
 
 const reviewsData = [
   {
@@ -167,6 +172,24 @@ export default function CourseDetail() {
                 </span>
               )}
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{course.title}</h1>
+              {/* Member Level Required */}
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold mb-4 ${
+                course.memberLevel === 'VIP' ? 'bg-gradient-to-r from-yellow/20 to-amber-500/20 text-yellow border border-yellow/30' :
+                course.memberLevel === 'Premium' ? 'bg-red/10 text-red border border-red/20' :
+                'bg-white/5 text-gray-300 border border-white/10'
+              }`}>
+                {course.memberLevel === 'VIP' && (
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                )}
+                {course.memberLevel === 'Premium' && (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                )}
+                Yêu cầu: {course.memberLevel}
+              </div>
               <p className="text-gray-400 text-lg mb-4">
                 Khóa học toàn diện giúp bạn nắm vững kiến thức và kỹ năng thực tế từ cơ bản đến nâng cao.
               </p>
@@ -334,26 +357,44 @@ export default function CourseDetail() {
 
                     {expandedSections.includes(sectionIndex) && (
                       <div className="divide-y divide-white/5">
-                        {section.lessons.map((lesson, lessonIndex) => (
-                          <div
-                            key={lessonIndex}
-                            className="flex items-center justify-between p-4 pl-12 hover:bg-white/5 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span className="text-gray-300 text-sm">{lesson.name}</span>
-                              {lesson.isFree && (
-                                <span className="text-xs bg-red/20 text-red px-2 py-0.5 rounded-full font-semibold">
-                                  Xem thử
-                                </span>
-                              )}
+                        {section.lessons.map((lesson, lessonIndex) => {
+                          const isLocked = LEVEL_ORDER[lesson.requiredLevel] > LEVEL_ORDER[userLevel];
+                          return (
+                            <div
+                              key={lessonIndex}
+                              className={`flex items-center justify-between p-4 pl-12 transition-colors ${
+                                isLocked ? 'opacity-60' : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {isLocked ? (
+                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                )}
+                                <span className="text-gray-300 text-sm">{lesson.name}</span>
+                                {lesson.isFree && (
+                                  <span className="text-xs bg-red/20 text-red px-2 py-0.5 rounded-full font-semibold">
+                                    Xem thử
+                                  </span>
+                                )}
+                                {isLocked && (
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                    lesson.requiredLevel === 'VIP' ? 'bg-yellow/10 text-yellow' : 'bg-red/10 text-red'
+                                  }`}>
+                                    {lesson.requiredLevel}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm text-gray-500">{lesson.duration}</span>
                             </div>
-                            <span className="text-sm text-gray-500">{lesson.duration}</span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
