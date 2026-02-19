@@ -9,6 +9,7 @@ import { CourseCard } from '@/components/ui/CourseCard';
 import { mockCourses } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/providers/ToastProvider';
 import Image from 'next/image';
 
@@ -51,7 +52,6 @@ const curriculumData = [
 ];
 
 const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
-const userLevel: MemberLevel = 'Free'; // simulate current user level
 
 const reviewsData = [
   {
@@ -92,7 +92,9 @@ export default function CourseDetail() {
   const params = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
 

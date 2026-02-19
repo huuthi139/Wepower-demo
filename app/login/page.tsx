@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/providers/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     remember: false,
   });
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{email?: string; password?: string; general?: string}>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
@@ -42,13 +44,18 @@ export default function Login() {
     if (!validate()) return;
     
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrors({});
+
+    const result = await login(formData.email, formData.password);
+
+    setIsLoading(false);
+
+    if (result.success) {
       showToast('Đăng nhập thành công!', 'success');
       router.push('/dashboard');
-    }, 1500);
+    } else {
+      setErrors({ general: result.error });
+    }
   };
 
   return (
@@ -67,6 +74,11 @@ export default function Login() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.general && (
+              <div className="p-3 bg-red/10 border border-red/20 rounded-lg text-red text-sm text-center">
+                {errors.general}
+              </div>
+            )}
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
