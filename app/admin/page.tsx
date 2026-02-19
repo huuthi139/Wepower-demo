@@ -12,13 +12,12 @@ import { formatPrice, formatDuration } from '@/lib/utils';
 type Tab = 'overview' | 'courses' | 'students' | 'orders';
 
 /* ============================================================
-   STUDENT INTERFACES & MOCK DATA (per-course enrollments)
+   STUDENT INTERFACES & MOCK DATA
    ============================================================ */
 
 interface StudentEnrollment {
   courseId: string;
   courseName: string;
-  level: MemberLevel;
   progress: number;
 }
 
@@ -27,6 +26,7 @@ interface Student {
   name: string;
   email: string;
   phone: string;
+  memberLevel: MemberLevel;
   enrolledCourses: StudentEnrollment[];
   totalSpent: number;
   joinDate: string;
@@ -40,15 +40,16 @@ const studentsData: Student[] = [
     name: 'Nguyễn Văn A',
     email: 'nguyenvana@gmail.com',
     phone: '0901234567',
+    memberLevel: 'VIP',
     enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', level: 'Free', progress: 65 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', level: 'Free', progress: 80 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', level: 'Premium', progress: 45 },
-      { courseId: '8', courseName: 'Map To Success', level: 'VIP', progress: 30 },
-      { courseId: '9', courseName: 'Business Automation Mystery', level: 'VIP', progress: 15 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', level: 'Premium', progress: 55 },
-      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', level: 'VIP', progress: 20 },
-      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', level: 'Premium', progress: 90 },
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 65 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 80 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 45 },
+      { courseId: '8', courseName: 'Map To Success', progress: 30 },
+      { courseId: '9', courseName: 'Business Automation Mystery', progress: 15 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 55 },
+      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 20 },
+      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 90 },
     ],
     totalSpent: 68000000,
     joinDate: '15/01/2025',
@@ -60,11 +61,12 @@ const studentsData: Student[] = [
     name: 'Trần Thị B',
     email: 'tranthib@gmail.com',
     phone: '0912345678',
+    memberLevel: 'Premium',
     enrolledCourses: [
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', level: 'Free', progress: 100 },
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', level: 'Premium', progress: 60 },
-      { courseId: '7', courseName: 'Tạo ứng dụng với AI', level: 'Premium', progress: 35 },
-      { courseId: '12', courseName: 'Wellness To Wealth', level: 'Premium', progress: 10 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 60 },
+      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 35 },
+      { courseId: '12', courseName: 'Wellness To Wealth', progress: 10 },
     ],
     totalSpent: 12000000,
     joinDate: '20/03/2025',
@@ -76,10 +78,11 @@ const studentsData: Student[] = [
     name: 'Lê Văn C',
     email: 'levanc@gmail.com',
     phone: '0923456789',
+    memberLevel: 'Premium',
     enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', level: 'Free', progress: 100 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', level: 'Premium', progress: 70 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', level: 'Premium', progress: 40 },
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 70 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 40 },
     ],
     totalSpent: 8500000,
     joinDate: '05/05/2025',
@@ -91,8 +94,9 @@ const studentsData: Student[] = [
     name: 'Phạm Thị D',
     email: 'phamthid@gmail.com',
     phone: '0934567890',
+    memberLevel: 'Free',
     enrolledCourses: [
-      { courseId: '13', courseName: 'Unlock Your Power', level: 'Free', progress: 25 },
+      { courseId: '13', courseName: 'Unlock Your Power', progress: 25 },
     ],
     totalSpent: 0,
     joinDate: '10/08/2025',
@@ -104,9 +108,10 @@ const studentsData: Student[] = [
     name: 'Hoàng Văn E',
     email: 'hoangvane@gmail.com',
     phone: '0945678901',
+    memberLevel: 'Free',
     enrolledCourses: [
-      { courseId: '14', courseName: 'Design With AI', level: 'Free', progress: 50 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', level: 'Free', progress: 15 },
+      { courseId: '14', courseName: 'Design With AI', progress: 50 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 15 },
     ],
     totalSpent: 1868000,
     joinDate: '22/09/2025',
@@ -118,19 +123,20 @@ const studentsData: Student[] = [
     name: 'Đỗ Thị F',
     email: 'dothif@gmail.com',
     phone: '0956789012',
+    memberLevel: 'VIP',
     enrolledCourses: [
-      { courseId: '8', courseName: 'Map To Success', level: 'VIP', progress: 85 },
-      { courseId: '9', courseName: 'Business Automation Mystery', level: 'VIP', progress: 60 },
-      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', level: 'VIP', progress: 75 },
-      { courseId: '11', courseName: 'Business Internet System', level: 'VIP', progress: 40 },
-      { courseId: '15', courseName: 'Master Video AI', level: 'VIP', progress: 30 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', level: 'Premium', progress: 100 },
-      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', level: 'Premium', progress: 100 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', level: 'Premium', progress: 95 },
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', level: 'Premium', progress: 100 },
-      { courseId: '7', courseName: 'Tạo ứng dụng với AI', level: 'Premium', progress: 80 },
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', level: 'Free', progress: 100 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', level: 'Free', progress: 100 },
+      { courseId: '8', courseName: 'Map To Success', progress: 85 },
+      { courseId: '9', courseName: 'Business Automation Mystery', progress: 60 },
+      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 75 },
+      { courseId: '11', courseName: 'Business Internet System', progress: 40 },
+      { courseId: '15', courseName: 'Master Video AI', progress: 30 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 100 },
+      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 100 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 95 },
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 100 },
+      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 80 },
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
     ],
     totalSpent: 150000000,
     joinDate: '01/01/2025',
@@ -142,12 +148,13 @@ const studentsData: Student[] = [
     name: 'Bùi Văn G',
     email: 'buivang@gmail.com',
     phone: '0967890123',
+    memberLevel: 'Premium',
     enrolledCourses: [
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', level: 'Premium', progress: 55 },
-      { courseId: '12', courseName: 'Wellness To Wealth', level: 'Premium', progress: 70 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', level: 'Premium', progress: 30 },
-      { courseId: '14', courseName: 'Design With AI', level: 'Free', progress: 90 },
-      { courseId: '13', courseName: 'Unlock Your Power', level: 'Free', progress: 100 },
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 55 },
+      { courseId: '12', courseName: 'Wellness To Wealth', progress: 70 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 30 },
+      { courseId: '14', courseName: 'Design With AI', progress: 90 },
+      { courseId: '13', courseName: 'Unlock Your Power', progress: 100 },
     ],
     totalSpent: 25000000,
     joinDate: '14/06/2025',
@@ -159,8 +166,9 @@ const studentsData: Student[] = [
     name: 'Vũ Thị H',
     email: 'vuthih@gmail.com',
     phone: '0978901234',
+    memberLevel: 'Free',
     enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', level: 'Free', progress: 40 },
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 40 },
     ],
     totalSpent: 868000,
     joinDate: '30/11/2025',
@@ -265,18 +273,15 @@ export default function AdminDashboard() {
   // ------- Computed values -------
   const totalRevenue = recentOrders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.amount, 0);
 
-  // Count students whose enrolledCourses contain at least one enrollment at a given level
-  const studentsWithLevel = (level: MemberLevel) =>
-    studentsData.filter(s => s.enrolledCourses.some(ec => ec.level === level));
+  // Count students by their account level
+  const freeCount = studentsData.filter(s => s.memberLevel === 'Free').length;
+  const premiumCount = studentsData.filter(s => s.memberLevel === 'Premium').length;
+  const vipCount = studentsData.filter(s => s.memberLevel === 'VIP').length;
 
-  const freeCount = studentsWithLevel('Free').length;
-  const premiumCount = studentsWithLevel('Premium').length;
-  const vipCount = studentsWithLevel('VIP').length;
-
-  // Filtered students: filter by whether the student has at least one enrollment at the selected level
+  // Filtered students by account level
   const filteredStudents = studentFilter === 'all'
     ? studentsData
-    : studentsData.filter(s => s.enrolledCourses.some(ec => ec.level === studentFilter));
+    : studentsData.filter(s => s.memberLevel === studentFilter);
 
   /* ------- Course CRUD handlers ------- */
 
@@ -684,7 +689,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {/* Filter */}
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">Lọc theo level:</span>
+              <span className="text-sm text-gray-400">Lọc theo hạng tài khoản:</span>
               {(['all', 'Free', 'Premium', 'VIP'] as const).map(f => (
                 <button
                   key={f}
@@ -693,7 +698,7 @@ export default function AdminDashboard() {
                     studentFilter === f ? 'bg-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
                   }`}
                 >
-                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${studentsWithLevel(f).length})`}
+                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${studentsData.filter(s => s.memberLevel === f).length})`}
                 </button>
               ))}
             </div>
@@ -710,6 +715,7 @@ export default function AdminDashboard() {
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">SĐT</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Hạng</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khóa học</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Chi tiêu</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tham gia</th>
@@ -719,15 +725,6 @@ export default function AdminDashboard() {
                   <tbody>
                     {filteredStudents.map(student => {
                       const isExpanded = expandedStudent === student.id;
-                      // Get the highest level among the student's enrollments
-                      const hasVIP = student.enrolledCourses.some(ec => ec.level === 'VIP');
-                      const hasPremium = student.enrolledCourses.some(ec => ec.level === 'Premium');
-                      const avatarLevel: MemberLevel = hasVIP ? 'VIP' : hasPremium ? 'Premium' : 'Free';
-
-                      // Filter the displayed enrollments based on filter
-                      const displayedEnrollments = studentFilter === 'all'
-                        ? student.enrolledCourses
-                        : student.enrolledCourses.filter(ec => ec.level === studentFilter);
 
                       return (
                         <Fragment key={student.id}>
@@ -749,8 +746,8 @@ export default function AdminDashboard() {
                             <td className="p-4">
                               <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  avatarLevel === 'VIP' ? 'bg-gradient-to-br from-yellow to-amber-500' :
-                                  avatarLevel === 'Premium' ? 'bg-red' : 'bg-gray-600'
+                                  student.memberLevel === 'VIP' ? 'bg-gradient-to-br from-yellow to-amber-500' :
+                                  student.memberLevel === 'Premium' ? 'bg-red' : 'bg-gray-600'
                                 }`}>
                                   <span className="text-white text-xs font-bold">{student.name.charAt(0)}</span>
                                 </div>
@@ -761,22 +758,8 @@ export default function AdminDashboard() {
                               </div>
                             </td>
                             <td className="p-4 text-sm text-gray-400">{student.phone}</td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-white font-medium">{student.enrolledCourses.length}</span>
-                                <div className="flex gap-1">
-                                  {hasVIP && (
-                                    <span className="w-2 h-2 rounded-full bg-yellow" title="VIP" />
-                                  )}
-                                  {hasPremium && (
-                                    <span className="w-2 h-2 rounded-full bg-red" title="Premium" />
-                                  )}
-                                  {student.enrolledCourses.some(ec => ec.level === 'Free') && (
-                                    <span className="w-2 h-2 rounded-full bg-gray-500" title="Free" />
-                                  )}
-                                </div>
-                              </div>
-                            </td>
+                            <td className="p-4"><LevelBadge level={student.memberLevel} /></td>
+                            <td className="p-4 text-sm text-white">{student.enrolledCourses.length}</td>
                             <td className="p-4 text-sm text-yellow font-semibold">
                               {student.totalSpent === 0 ? '-' : formatPrice(student.totalSpent)}
                             </td>
@@ -788,16 +771,16 @@ export default function AdminDashboard() {
                               </div>
                             </td>
                           </tr>
-                          {/* Expanded row: per-course enrollments */}
+                          {/* Expanded row: enrolled courses */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={8} className="p-0">
+                              <td colSpan={9} className="p-0">
                                 <div className="bg-black/40 border-t border-gray-800/50 px-8 py-4">
                                   <div className="text-xs font-semibold text-gray-400 uppercase mb-3">
-                                    Khóa học đã đăng ký ({displayedEnrollments.length})
+                                    Khóa học đã đăng ký ({student.enrolledCourses.length})
                                   </div>
                                   <div className="space-y-2">
-                                    {displayedEnrollments.map(ec => (
+                                    {student.enrolledCourses.map(ec => (
                                       <div
                                         key={ec.courseId}
                                         className="flex items-center justify-between bg-white/[0.03] border border-gray-800/50 rounded-lg px-4 py-3"
@@ -810,28 +793,20 @@ export default function AdminDashboard() {
                                           </div>
                                           <span className="text-sm text-white truncate">{ec.courseName}</span>
                                         </div>
-                                        <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-                                          <LevelBadge level={ec.level} />
-                                          <div className="flex items-center gap-2 min-w-[140px]">
-                                            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                              <div
-                                                className={`h-full rounded-full ${
-                                                  ec.progress === 100 ? 'bg-green-500' :
-                                                  ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
-                                                }`}
-                                                style={{ width: `${ec.progress}%` }}
-                                              />
-                                            </div>
-                                            <span className="text-xs text-gray-400 w-8 text-right">{ec.progress}%</span>
+                                        <div className="flex items-center gap-2 min-w-[140px] flex-shrink-0 ml-4">
+                                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                              className={`h-full rounded-full ${
+                                                ec.progress === 100 ? 'bg-green-500' :
+                                                ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
+                                              }`}
+                                              style={{ width: `${ec.progress}%` }}
+                                            />
                                           </div>
+                                          <span className="text-xs text-gray-400 w-8 text-right">{ec.progress}%</span>
                                         </div>
                                       </div>
                                     ))}
-                                    {displayedEnrollments.length === 0 && (
-                                      <div className="text-sm text-gray-500 text-center py-3">
-                                        Không có khóa học ở level này
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               </td>
