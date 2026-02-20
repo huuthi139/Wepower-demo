@@ -12,7 +12,23 @@ function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split('\n');
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+  // Parse header line properly (same as data rows - handle quoted values)
+  const headerValues: string[] = [];
+  let hCurrent = '';
+  let hInQuotes = false;
+  for (let j = 0; j < lines[0].length; j++) {
+    const char = lines[0][j];
+    if (char === '"') {
+      hInQuotes = !hInQuotes;
+    } else if (char === ',' && !hInQuotes) {
+      headerValues.push(hCurrent.trim());
+      hCurrent = '';
+    } else {
+      hCurrent += char;
+    }
+  }
+  headerValues.push(hCurrent.trim());
+  const headers = headerValues;
   const rows: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -51,6 +67,13 @@ function getCol(row: Record<string, string>, ...keys: string[]): string {
   return '';
 }
 
+// Kiểm tra giá trị có phải admin không - hỗ trợ cả tiếng Việt và tiếng Anh
+function isAdminRole(roleValue: string): boolean {
+  const normalized = roleValue.toLowerCase().trim();
+  const adminValues = ['admin', 'administrator', 'quản trị', 'quản trị viên', 'qtv'];
+  return adminValues.some(v => normalized.includes(v));
+}
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
@@ -64,6 +87,7 @@ export async function POST(request: Request) {
 
     // Method 1: Google Apps Script (ưu tiên)
     if (process.env.GOOGLE_SCRIPT_URL) {
+      console.log('[Login] Using Apps Script method');
       try {
         const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
           method: 'POST',
@@ -72,9 +96,15 @@ export async function POST(request: Request) {
         });
 
         const data = await res.json();
+        console.log('[Login Apps Script] Response:', JSON.stringify(data));
 
         if (data.success) {
-          return NextResponse.json({ success: true, user: data.user });
+          // Chuẩn hóa role từ Apps Script - hỗ trợ tiếng Việt
+          const user = data.user;
+          if (user && user.role) {
+            user.role = isAdminRole(user.role) ? 'admin' : 'user';
+          }
+          return NextResponse.json({ success: true, user });
         }
 
         return NextResponse.json(
@@ -85,13 +115,18 @@ export async function POST(request: Request) {
         console.error('Apps Script login error:', err);
         // Fall through to CSV method
       }
+    } else {
+      console.log('[Login] No GOOGLE_SCRIPT_URL configured, skipping Apps Script');
     }
 
     // Method 2: Đọc CSV trực tiếp từ Google Sheets (fallback)
+    console.log('[Login] Trying CSV method from Google Sheets');
     try {
       const res = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
       const csv = await res.text();
+      console.log('[Login CSV] Response status:', res.status, 'CSV length:', csv.length);
       const users = parseCSV(csv);
+      console.log('[Login CSV] Parsed', users.length, 'users. Headers:', users.length > 0 ? Object.keys(users[0]) : 'none');
 
       // Tìm user theo email - hỗ trợ cả tên cột tiếng Việt và tiếng Anh
       const user = users.find(
@@ -115,8 +150,15 @@ export async function POST(request: Request) {
       }
 
       // Trả về user data
-      const role = getCol(user, 'Vai trò', 'Role').toLowerCase();
+      const roleValue = getCol(user, 'Vai trò', 'Role');
       const memberLevel = getCol(user, 'Hạng thành viên', 'MemberLevel');
+
+      console.log('[Login CSV] User found:', {
+        email: getCol(user, 'Email', 'Địa chỉ email'),
+        roleValue,
+        memberLevel,
+        allKeys: Object.keys(user),
+      });
 
       return NextResponse.json({
         success: true,
@@ -124,12 +166,13 @@ export async function POST(request: Request) {
           name: getCol(user, 'Họ và tên', 'Họ tên', 'Name'),
           email: getCol(user, 'Email', 'Địa chỉ email'),
           phone: getCol(user, 'Số điện thoại', 'Phone', 'SĐT'),
-          role: role === 'admin' ? 'admin' : 'user',
+          role: isAdminRole(roleValue) ? 'admin' : 'user',
           memberLevel: (['Free', 'Premium', 'VIP'].includes(memberLevel) ? memberLevel : 'Free'),
         },
       });
-    } catch {
+    } catch (csvError) {
       // Method 3: Demo mode
+      console.log('[Login] CSV method failed, falling back to demo mode. Error:', csvError);
       const demoAccounts = [
         { email: 'admin@wepower.vn', password: 'admin123', name: 'Admin WePower', role: 'admin' as const, memberLevel: 'VIP' as const, phone: '' },
         { email: 'user@wepower.vn', password: 'user123', name: 'Học viên Demo', role: 'user' as const, memberLevel: 'Free' as const, phone: '' },

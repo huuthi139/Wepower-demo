@@ -156,7 +156,8 @@ function handleLogin(data) {
     var rowPassword = (row[passwordCol] || '').toString().trim();
 
     if (rowEmail === email && rowPassword === password) {
-      var role = (roleCol !== -1 ? row[roleCol] : 'user').toString().toLowerCase().trim();
+      var roleRaw = (roleCol !== -1 ? row[roleCol] : 'user').toString().trim();
+      var roleNormalized = roleRaw.toLowerCase();
       var memberLevel = (levelCol !== -1 ? row[levelCol] : 'Free').toString().trim();
 
       // Validate memberLevel
@@ -164,13 +165,19 @@ function handleLogin(data) {
         memberLevel = 'Free';
       }
 
+      // Hỗ trợ cả tiếng Việt và tiếng Anh cho vai trò admin
+      var isAdmin = (roleNormalized === 'admin' ||
+                     roleNormalized === 'administrator' ||
+                     roleNormalized.indexOf('quản trị') !== -1 ||
+                     roleNormalized === 'qtv');
+
       return {
         success: true,
         user: {
           name: nameCol !== -1 ? row[nameCol].toString().trim() : '',
           email: row[emailCol].toString().trim(),
           phone: phoneCol !== -1 ? row[phoneCol].toString().trim() : '',
-          role: role === 'admin' ? 'admin' : 'user',
+          role: isAdmin ? 'admin' : 'user',
           memberLevel: memberLevel
         }
       };
