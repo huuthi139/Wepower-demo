@@ -281,90 +281,12 @@
 
   <script>
     // Show error from URL params (from form POST redirect)
-    (function() {
-      var params = new URLSearchParams(window.location.search);
-      var errorParam = params.get('error');
-      if (errorParam) {
-        var errorBox = document.getElementById('error-box');
-        if (errorBox) {
-          errorBox.textContent = errorParam;
-          errorBox.style.display = 'block';
-        }
-      }
-      // Check for user cookie and restore to localStorage
-      var cookies = document.cookie.split(';');
-      for (var i = 0; i < cookies.length; i++) {
-        var c = cookies[i].trim();
-        if (c.indexOf('wepower-user=') === 0) {
-          try {
-            var encoded = c.substring('wepower-user='.length);
-            var userJson = atob(encoded);
-            localStorage.setItem('wepower-user', userJson);
-          } catch(e) {}
-        }
-      }
-    })();
-
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var errorBox = document.getElementById('error-box');
-      var successBox = document.getElementById('success-box');
-      var submitBtn = document.getElementById('submit-btn');
-
-      errorBox.style.display = 'none';
-      successBox.style.display = 'none';
-
-      if (!email || !password) {
-        errorBox.textContent = 'Vui lòng nhập email và mật khẩu';
-        errorBox.style.display = 'block';
-        return;
-      }
-
-      if (password.length < 6) {
-        errorBox.textContent = 'Mật khẩu phải có ít nhất 6 ký tự';
-        errorBox.style.display = 'block';
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...';
-
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, password: password })
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data.success && data.user) {
-          try {
-            localStorage.setItem('wepower-user', JSON.stringify(data.user));
-          } catch(e) {}
-
-          successBox.textContent = 'Đăng nhập thành công! Đang chuyển hướng...';
-          successBox.style.display = 'block';
-
-          setTimeout(function() {
-            window.location.href = '/dashboard';
-          }, 500);
-        } else {
-          errorBox.textContent = data.error || 'Đăng nhập thất bại';
-          errorBox.style.display = 'block';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Đăng nhập';
-        }
-      })
-      .catch(function(err) {
-        console.error('Login error:', err);
-        errorBox.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
-        errorBox.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Đăng nhập';
-      });
-    });
+    var p = new URLSearchParams(window.location.search);
+    var err = p.get('error');
+    if (err) {
+      var b = document.getElementById('error-box');
+      if (b) { b.textContent = err; b.style.display = 'block'; }
+    }
   </script>
 </body>
 </html>
