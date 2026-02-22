@@ -27,10 +27,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
+  // Load user from localStorage or cookie on mount
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem('wepower-user');
+      let savedUser = localStorage.getItem('wepower-user');
+
+      // Fallback: check cookie if localStorage is empty
+      if (!savedUser) {
+        const cookies = document.cookie.split(';');
+        for (const c of cookies) {
+          const trimmed = c.trim();
+          if (trimmed.startsWith('wepower-user=')) {
+            const encoded = trimmed.substring('wepower-user='.length);
+            savedUser = atob(encoded);
+            // Sync to localStorage
+            if (savedUser) localStorage.setItem('wepower-user', savedUser);
+            break;
+          }
+        }
+      }
+
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       }
