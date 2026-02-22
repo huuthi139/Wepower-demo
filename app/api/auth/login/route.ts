@@ -1,43 +1,28 @@
 import { NextResponse } from 'next/server';
+import { execSync } from 'child_process';
 
 const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
-// Tab "Đăng ký" trong Google Sheets
 const SHEET_NAME = 'Đăng ký';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 }
 
+// Dùng curl thay vì fetch (Node.js DNS không resolve được Google)
+function curlFetch(url: string): string {
+  return execSync(`curl -sL "${url}"`, { timeout: 15000, encoding: 'utf-8' });
+}
+
 function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split('\n');
   if (lines.length < 2) return [];
 
-  // Parse header line properly (same as data rows - handle quoted values)
-  const headerValues: string[] = [];
-  let hCurrent = '';
-  let hInQuotes = false;
-  for (let j = 0; j < lines[0].length; j++) {
-    const char = lines[0][j];
-    if (char === '"') {
-      hInQuotes = !hInQuotes;
-    } else if (char === ',' && !hInQuotes) {
-      headerValues.push(hCurrent.trim());
-      hCurrent = '';
-    } else {
-      hCurrent += char;
-    }
-  }
-  headerValues.push(hCurrent.trim());
-  const headers = headerValues;
-  const rows: Record<string, string>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
+  const parseRow = (line: string): string[] => {
     const values: string[] = [];
     let current = '';
     let inQuotes = false;
-
-    for (let j = 0; j < lines[i].length; j++) {
-      const char = lines[i][j];
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -48,7 +33,14 @@ function parseCSV(csv: string): Record<string, string>[] {
       }
     }
     values.push(current.trim());
+    return values;
+  };
 
+  const headers = parseRow(lines[0]);
+  const rows: Record<string, string>[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseRow(lines[i]);
     const row: Record<string, string> = {};
     headers.forEach((header, idx) => {
       row[header] = values[idx] || '';
@@ -59,7 +51,6 @@ function parseCSV(csv: string): Record<string, string>[] {
   return rows;
 }
 
-// Tìm giá trị cột - hỗ trợ cả tên tiếng Việt
 function getCol(row: Record<string, string>, ...keys: string[]): string {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== '') return row[key];
@@ -67,7 +58,6 @@ function getCol(row: Record<string, string>, ...keys: string[]): string {
   return '';
 }
 
-// Kiểm tra giá trị có phải admin không - hỗ trợ cả tiếng Việt và tiếng Anh
 function isAdminRole(roleValue: string): boolean {
   const normalized = roleValue.toLowerCase().trim();
   const adminValues = ['admin', 'administrator', 'quản trị', 'quản trị viên', 'qtv'];
@@ -87,19 +77,11 @@ export async function POST(request: Request) {
 
     // Method 1: Google Apps Script (ưu tiên)
     if (process.env.GOOGLE_SCRIPT_URL) {
-      console.log('[Login] Using Apps Script method');
       try {
-        const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'login', email, password }),
-        });
-
-        const data = await res.json();
-        console.log('[Login Apps Script] Response:', JSON.stringify(data));
+        const resText = execSync(`curl -sL -X POST -H "Content-Type: application/json" -d '${JSON.stringify({ action: 'login', email, password })}' "${process.env.GOOGLE_SCRIPT_URL}"`, { timeout: 15000, encoding: 'utf-8' });
+        const data = JSON.parse(resText);
 
         if (data.success) {
-          // Chuẩn hóa role từ Apps Script - hỗ trợ tiếng Việt
           const user = data.user;
           if (user && user.role) {
             user.role = isAdminRole(user.role) ? 'admin' : 'user';
@@ -113,22 +95,15 @@ export async function POST(request: Request) {
         );
       } catch (err) {
         console.error('Apps Script login error:', err);
-        // Fall through to CSV method
       }
-    } else {
-      console.log('[Login] No GOOGLE_SCRIPT_URL configured, skipping Apps Script');
     }
 
-    // Method 2: Đọc CSV trực tiếp từ Google Sheets (fallback)
-    console.log('[Login] Trying CSV method from Google Sheets');
+    // Method 2: Đọc CSV từ Google Sheets (dùng curl)
     try {
-      const res = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
-      const csv = await res.text();
-      console.log('[Login CSV] Response status:', res.status, 'CSV length:', csv.length);
+      const csv = curlFetch(getSheetUrl(SHEET_NAME));
       const users = parseCSV(csv);
       console.log('[Login CSV] Parsed', users.length, 'users. Headers:', users.length > 0 ? Object.keys(users[0]) : 'none');
 
-      // Tìm user theo email
       const user = users.find(
         u => getCol(u, 'Email', 'email').toLowerCase() === email.toLowerCase()
       );
@@ -140,7 +115,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Kiểm tra mật khẩu
       const userPassword = getCol(user, 'Password', 'Mật khẩu');
       if (userPassword !== password) {
         return NextResponse.json(
@@ -149,16 +123,10 @@ export async function POST(request: Request) {
         );
       }
 
-      // Trả về user data
       const roleValue = getCol(user, 'Role', 'Vai trò');
       const memberLevel = getCol(user, 'Level', 'Hạng thành viên', 'MemberLevel');
 
-      console.log('[Login CSV] User found:', {
-        email: getCol(user, 'Email'),
-        roleValue,
-        memberLevel,
-        allKeys: Object.keys(user),
-      });
+      console.log('[Login CSV] User found:', { email, roleValue, memberLevel });
 
       return NextResponse.json({
         success: true,
@@ -171,10 +139,11 @@ export async function POST(request: Request) {
         },
       });
     } catch (csvError) {
+      console.log('[Login] CSV failed, using demo mode. Error:', csvError);
+
       // Method 3: Demo mode
-      console.log('[Login] CSV method failed, falling back to demo mode. Error:', csvError);
       const demoAccounts = [
-        { email: 'admin@wepower.vn', password: 'admin123', name: 'Admin WePower', role: 'admin' as const, memberLevel: 'VIP' as const, phone: '' },
+        { email: 'admin@wepower.vn', password: '123456', name: 'Admin WePower', role: 'admin' as const, memberLevel: 'VIP' as const, phone: '' },
         { email: 'user@wepower.vn', password: 'user123', name: 'Học viên Demo', role: 'user' as const, memberLevel: 'Free' as const, phone: '' },
         { email: 'premium@wepower.vn', password: 'premium123', name: 'Học viên Premium', role: 'user' as const, memberLevel: 'Premium' as const, phone: '' },
         { email: 'vip@wepower.vn', password: 'vip123', name: 'Học viên VIP', role: 'user' as const, memberLevel: 'VIP' as const, phone: '' },
