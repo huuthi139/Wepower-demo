@@ -14,10 +14,10 @@
  *    GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/XXXX/exec
  *
  * CẤU TRÚC SHEET "Đăng ký" (hàng 1 = headers):
- * | Dấu thời gian | Họ và tên | Email | Số điện thoại | Mật khẩu | Vai trò | Hạng thành viên |
+ * | Email | Password | Role | Tên | Level | Enrolled | Completed | Phone |
  *
  * CẤU TRÚC SHEET "Đơn hàng" (hàng 1 = headers):
- * | Thời gian | Mã đơn hàng | Họ tên | Email | Số điện thoại | Tên khóa học | Mã khóa học | Tổng tiền | Phương thức thanh toán | Trạng thái | Ghi chú |
+ * | (tùy theo cấu trúc đơn hàng) |
  *
  * CẤU TRÚC SHEET "Khóa học" (hàng 1 = headers):
  * | (tùy theo cấu trúc khóa học) |
@@ -30,27 +30,15 @@ var TAB_USERS = 'Đăng ký';
 var TAB_ORDERS = 'Đơn hàng';
 var TAB_COURSES = 'Khóa học';
 
-// Tên các cột trong tab "Đăng ký"
-var COL_TIMESTAMP = 'Dấu thời gian';
-var COL_NAME = 'Họ và tên';
+// Tên các cột trong tab "Đăng ký" - khớp với headers thực tế
 var COL_EMAIL = 'Email';
-var COL_PHONE = 'Số điện thoại';
-var COL_PASSWORD = 'Mật khẩu';
-var COL_ROLE = 'Vai trò';
-var COL_LEVEL = 'Hạng thành viên';
-
-// Tên các cột trong tab "Đơn hàng"
-var COL_ORDER_TIME = 'Thời gian';
-var COL_ORDER_ID = 'Mã đơn hàng';
-var COL_ORDER_NAME = 'Họ tên';
-var COL_ORDER_EMAIL = 'Email';
-var COL_ORDER_PHONE = 'Số điện thoại';
-var COL_ORDER_COURSES = 'Tên khóa học';
-var COL_ORDER_COURSE_IDS = 'Mã khóa học';
-var COL_ORDER_TOTAL = 'Tổng tiền';
-var COL_ORDER_PAYMENT = 'Phương thức thanh toán';
-var COL_ORDER_STATUS = 'Trạng thái';
-var COL_ORDER_NOTES = 'Ghi chú';
+var COL_PASSWORD = 'Password';
+var COL_ROLE = 'Role';
+var COL_NAME = 'Tên';
+var COL_LEVEL = 'Level';
+var COL_ENROLLED = 'Enrolled';
+var COL_COMPLETED = 'Completed';
+var COL_PHONE = 'Phone';
 
 function doPost(e) {
   try {
@@ -206,7 +194,7 @@ function handleRegister(data) {
   if (!sheet) {
     // Tạo sheet nếu chưa có
     sheet = ss.insertSheet(TAB_USERS);
-    sheet.appendRow([COL_TIMESTAMP, COL_NAME, COL_EMAIL, COL_PHONE, COL_PASSWORD, COL_ROLE, COL_LEVEL]);
+    sheet.appendRow([COL_EMAIL, COL_PASSWORD, COL_ROLE, COL_NAME, COL_LEVEL, COL_ENROLLED, COL_COMPLETED, COL_PHONE]);
   }
 
   // Kiểm tra email đã tồn tại chưa
@@ -224,9 +212,8 @@ function handleRegister(data) {
     }
   }
 
-  // Thêm user mới - đúng thứ tự cột: Dấu thời gian | Họ và tên | Email | Số điện thoại | Mật khẩu | Vai trò | Hạng thành viên
-  var joinDate = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm:ss');
-  sheet.appendRow([joinDate, name, email, phone, password, 'user', 'Free']);
+  // Thêm user mới - đúng thứ tự: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
+  sheet.appendRow([email, password, 'Student', name, 'Free', '', '', phone]);
 
   return {
     success: true,
@@ -255,7 +242,7 @@ function handleAppendOrder(data) {
 
   if (!sheet) {
     sheet = ss.insertSheet(TAB_ORDERS);
-    sheet.appendRow([COL_ORDER_TIME, COL_ORDER_ID, COL_ORDER_NAME, COL_ORDER_EMAIL, COL_ORDER_PHONE, COL_ORDER_COURSES, COL_ORDER_COURSE_IDS, COL_ORDER_TOTAL, COL_ORDER_PAYMENT, COL_ORDER_STATUS, COL_ORDER_NOTES]);
+    // Headers sẽ được tạo theo dữ liệu đầu tiên
   }
 
   sheet.appendRow(rowData);

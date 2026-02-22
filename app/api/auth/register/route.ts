@@ -43,12 +43,6 @@ function parseCSV(csv: string): Record<string, string>[] {
   return rows;
 }
 
-function formatDate(): string {
-  const d = new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
 export async function POST(request: Request) {
   try {
     const { name, email, password, phone } = await request.json();
@@ -97,7 +91,7 @@ export async function POST(request: Request) {
       const users = parseCSV(csv);
 
       const existingUser = users.find(
-        u => (u['Email'] || u['Địa chỉ email'] || '').toLowerCase() === email.toLowerCase()
+        u => (u['Email'] || '').toLowerCase() === email.toLowerCase()
       );
 
       if (existingUser) {
@@ -110,12 +104,12 @@ export async function POST(request: Request) {
       // Can't check, continue
     }
 
-    // Row data thứ tự: Dấu thời gian | Họ và tên | Email | Số điện thoại | Mật khẩu | Vai trò | Hạng thành viên
-    const rowData = [formatDate(), name, email, phone || '', password, 'user', 'Free'];
+    // Row data thứ tự khớp headers thực tế: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
+    const rowData = [email, password, 'Student', name, 'Free', '', '', phone || ''];
 
     let written = false;
     if (process.env.GOOGLE_SHEETS_API_KEY) {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:H:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
       const res = await fetch(appendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

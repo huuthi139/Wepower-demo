@@ -128,9 +128,9 @@ export async function POST(request: Request) {
       const users = parseCSV(csv);
       console.log('[Login CSV] Parsed', users.length, 'users. Headers:', users.length > 0 ? Object.keys(users[0]) : 'none');
 
-      // Tìm user theo email - hỗ trợ cả tên cột tiếng Việt và tiếng Anh
+      // Tìm user theo email
       const user = users.find(
-        u => getCol(u, 'Email', 'email', 'Địa chỉ email').toLowerCase() === email.toLowerCase()
+        u => getCol(u, 'Email', 'email').toLowerCase() === email.toLowerCase()
       );
 
       if (!user) {
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       }
 
       // Kiểm tra mật khẩu
-      const userPassword = getCol(user, 'Mật khẩu', 'Password');
+      const userPassword = getCol(user, 'Password', 'Mật khẩu');
       if (userPassword !== password) {
         return NextResponse.json(
           { success: false, error: 'Mật khẩu không đúng' },
@@ -150,11 +150,11 @@ export async function POST(request: Request) {
       }
 
       // Trả về user data
-      const roleValue = getCol(user, 'Vai trò', 'Role');
-      const memberLevel = getCol(user, 'Hạng thành viên', 'MemberLevel');
+      const roleValue = getCol(user, 'Role', 'Vai trò');
+      const memberLevel = getCol(user, 'Level', 'Hạng thành viên', 'MemberLevel');
 
       console.log('[Login CSV] User found:', {
-        email: getCol(user, 'Email', 'Địa chỉ email'),
+        email: getCol(user, 'Email'),
         roleValue,
         memberLevel,
         allKeys: Object.keys(user),
@@ -163,9 +163,9 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         user: {
-          name: getCol(user, 'Họ và tên', 'Họ tên', 'Name'),
-          email: getCol(user, 'Email', 'Địa chỉ email'),
-          phone: getCol(user, 'Số điện thoại', 'Phone', 'SĐT'),
+          name: getCol(user, 'Tên', 'Họ và tên', 'Họ tên', 'Name'),
+          email: getCol(user, 'Email'),
+          phone: getCol(user, 'Phone', 'Số điện thoại', 'SĐT'),
           role: isAdminRole(roleValue) ? 'admin' : 'user',
           memberLevel: (['Free', 'Premium', 'VIP'].includes(memberLevel) ? memberLevel : 'Free'),
         },
