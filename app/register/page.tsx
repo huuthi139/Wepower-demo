@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/providers/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,7 +18,7 @@ export default function Register() {
     confirmPassword: '',
     agree: false,
   });
-  const [errors, setErrors] = useState<{name?: string; email?: string; password?: string; confirmPassword?: string; agree?: string}>({});
+  const [errors, setErrors] = useState<{name?: string; email?: string; password?: string; confirmPassword?: string; agree?: string; general?: string}>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
@@ -60,13 +62,22 @@ export default function Register() {
     if (!validate()) return;
     
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrors({});
+
+    const result = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    setIsLoading(false);
+
+    if (result.success) {
       showToast('Đăng ký thành công! Chào mừng bạn đến với WEPOWER!', 'success');
       router.push('/dashboard');
-    }, 1500);
+    } else {
+      setErrors({ general: result.error });
+    }
   };
 
   return (
@@ -85,6 +96,11 @@ export default function Register() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {errors.general && (
+              <div className="p-3 bg-red/10 border border-red/20 rounded-lg text-red text-sm text-center">
+                {errors.general}
+              </div>
+            )}
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-semibold text-white mb-2">

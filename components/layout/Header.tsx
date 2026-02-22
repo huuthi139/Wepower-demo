@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { totalItems } = useCart();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -19,8 +20,13 @@ export function Header() {
     if (searchQuery.trim()) {
       router.push(`/courses?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
-      setIsSearchOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+    router.push('/');
   };
 
   return (
@@ -43,6 +49,11 @@ export function Header() {
             <Link href="/community" className="text-white/70 hover:text-white transition-colors font-medium">
               Cộng Đồng
             </Link>
+            {user?.role === 'admin' && (
+              <Link href="/admin" className="text-red hover:text-red/80 transition-colors font-medium">
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* Desktop Search */}
@@ -87,16 +98,44 @@ export function Header() {
               )}
             </Link>
 
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Đăng nhập
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button variant="primary" size="sm">
-                Đăng ký
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                {/* User Info */}
+                <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
+                  <div className="w-8 h-8 bg-red rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="hidden xl:block">
+                    <p className="text-sm text-white font-medium leading-tight">{user.name}</p>
+                    <p className="text-[10px] text-gray-400 leading-tight">
+                      {user.role === 'admin' ? 'Admin' : user.memberLevel}
+                    </p>
+                  </div>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-white/70 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5"
+                  aria-label="Đăng xuất"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="primary" size="sm">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile: Cart + Menu Button */}
@@ -152,6 +191,20 @@ export function Header() {
                   </svg>
                 </div>
               </form>
+
+              {/* User info on mobile */}
+              {user && (
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-10 h-10 bg-red rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{user.name}</p>
+                    <p className="text-xs text-gray-400">{user.role === 'admin' ? 'Admin' : user.memberLevel}</p>
+                  </div>
+                </div>
+              )}
+
               <Link
                 href="/"
                 className="text-white/70 hover:text-white transition-colors py-2"
@@ -173,6 +226,15 @@ export function Header() {
               >
                 Cộng Đồng
               </Link>
+              {user?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="text-red hover:text-red/80 transition-colors py-2 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
 
               {/* Language Switcher Mobile */}
               <button
@@ -183,16 +245,31 @@ export function Header() {
               </button>
 
               <div className="flex flex-col gap-2 pt-4 border-t border-red/20">
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="ghost" size="md" className="w-full">
-                    Đăng nhập
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="primary" size="md" className="w-full">
-                    Đăng ký
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="ghost" size="md" className="w-full">
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button variant="primary" size="md" className="w-full" onClick={handleLogout}>
+                      Đăng xuất
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="ghost" size="md" className="w-full">
+                        Đăng nhập
+                      </Button>
+                    </Link>
+                    <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="primary" size="md" className="w-full">
+                        Đăng ký
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>

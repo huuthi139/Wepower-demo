@@ -1,11 +1,49 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { enrolledCourses } from '@/lib/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+
+const levelColors: Record<string, { bg: string; text: string; border: string }> = {
+  Free: { bg: 'bg-white/10', text: 'text-gray-300', border: 'border-white/20' },
+  Premium: { bg: 'bg-red/10', text: 'text-red', border: 'border-red/30' },
+  VIP: { bg: 'bg-gradient-to-r from-yellow/10 to-amber-500/10', text: 'text-yellow', border: 'border-yellow/30' },
+};
 
 export default function Dashboard() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <svg className="w-10 h-10 animate-spin text-red mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-400">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const colors = levelColors[user.memberLevel] || levelColors.Free;
+
   return (
     <div className="min-h-screen bg-black">
       <Header />
@@ -15,28 +53,67 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-              Chào mừng trở lại, Kevin!
+              Chào mừng trở lại, {user.name}!
             </h1>
             <p className="text-gray-400">
-              Tiếp tục hành trình học tập của bạn
+              {user.role === 'admin' ? 'Quản trị viên hệ thống' : 'Tiếp tục hành trình học tập của bạn'}
             </p>
           </div>
           {/* Member Level Badge */}
-          <div className="flex items-center gap-3 bg-gradient-to-r from-white/5 to-white/[0.02] border border-white/10 rounded-xl px-5 py-3">
-            <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+          <div className={`flex items-center gap-3 ${colors.bg} border ${colors.border} rounded-xl px-5 py-3`}>
+            <div className={`w-12 h-12 bg-white/10 border ${colors.border} rounded-full flex items-center justify-center`}>
+              {user.memberLevel === 'VIP' ? (
+                <svg className="w-6 h-6 text-yellow" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ) : user.memberLevel === 'Premium' ? (
+                <svg className="w-6 h-6 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Hạng thành viên</p>
-              <p className="text-lg font-bold text-white">Free</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                <Link href="/pricing" className="text-red hover:underline">Nâng cấp Premium</Link>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">
+                {user.role === 'admin' ? 'Vai trò' : 'Hạng thành viên'}
               </p>
+              <p className={`text-lg font-bold ${colors.text}`}>
+                {user.role === 'admin' ? 'Admin' : user.memberLevel}
+              </p>
+              {user.memberLevel === 'Free' && user.role !== 'admin' && (
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  <Link href="/pricing" className="text-red hover:underline">Nâng cấp Premium</Link>
+                </p>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Admin Quick Link */}
+        {user.role === 'admin' && (
+          <div className="mb-8 p-4 bg-red/10 border border-red/20 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-semibold">Khu vực quản trị</p>
+                <p className="text-sm text-gray-400">Quản lý khóa học, học viên và đơn hàng</p>
+              </div>
+            </div>
+            <Link href="/admin">
+              <Button variant="primary" size="sm">
+                Vào Admin
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
@@ -90,7 +167,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">7</div>
-            <div className="text-white/60 text-sm">Ngày học liên tiếp 🔥</div>
+            <div className="text-white/60 text-sm">Ngày học liên tiếp</div>
           </div>
         </div>
 
@@ -119,7 +196,6 @@ export default function Dashboard() {
               {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, index) => {
                 const hours = [2.5, 3.0, 1.5, 4.0, 2.0, 3.5, 1.0][index];
                 const percentage = (hours / 4) * 100;
-                // Alternate colors: red, yellow, white for variety
                 const barColors = ['bg-red', 'bg-yellow', 'bg-white', 'bg-red', 'bg-yellow', 'bg-white', 'bg-red'];
                 return (
                   <div key={day}>
@@ -186,7 +262,7 @@ export default function Dashboard() {
           </p>
           <Link href="/courses">
             <Button variant="primary" size="lg">
-              Xem khóa học →
+              Xem khóa học
             </Button>
           </Link>
         </div>

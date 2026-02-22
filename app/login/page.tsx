@@ -1,58 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/providers/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     remember: false,
   });
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{email?: string; password?: string; general?: string}>({});
   const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    // Signal to fallback script that React has hydrated
+    (window as unknown as Record<string, boolean>).__reactHydrated = true;
+  }, []);
 
   const validate = () => {
     const newErrors: {email?: string; password?: string} = {};
-    
+
     if (!formData.email) {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
-    
+
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrors({});
+
+    const result = await login(formData.email, formData.password);
+
+    setIsLoading(false);
+
+    if (result.success) {
       showToast('Đăng nhập thành công!', 'success');
       router.push('/dashboard');
-    }, 1500);
+    } else {
+      setErrors({ general: result.error });
+    }
   };
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      {/* Fallback: redirect to static login if React doesn't hydrate within 2s */}
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function() {
+          if (window.__loginFB) return;
+          window.__loginFB = true;
+          setTimeout(function() {
+            if (!window.__reactHydrated) {
+              window.location.replace('/login.html');
+            }
+          }, 2000);
+        })();
+      `}} />
+
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex justify-center mb-8">
@@ -66,7 +90,16 @@ export default function Login() {
             Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form id="login-form" onSubmit={handleSubmit} className="space-y-6">
+            {/* Error display for both React and fallback */}
+            <div
+              id="login-error"
+              className="p-3 bg-red/10 border border-red/20 rounded-lg text-red text-sm text-center"
+              style={{ display: errors.general ? 'block' : 'none' }}
+            >
+              {errors.general || ''}
+            </div>
+
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
@@ -74,6 +107,7 @@ export default function Login() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -94,6 +128,7 @@ export default function Login() {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -129,6 +164,7 @@ export default function Login() {
 
             {/* Submit Button */}
             <Button
+              id="login-submit"
               type="submit"
               variant="primary"
               size="lg"

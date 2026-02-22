@@ -1,15 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { mockCourses } from '@/lib/mockData';
+import { mockCourses, Course } from '@/lib/mockData';
 import type { MemberLevel } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
 
-type Tab = 'overview' | 'students' | 'courses' | 'videos' | 'orders';
+type Tab = 'overview' | 'courses' | 'students' | 'orders';
+
+/* ============================================================
+   STUDENT INTERFACES & MOCK DATA
+   ============================================================ */
+
+interface StudentEnrollment {
+  courseId: string;
+  courseName: string;
+  progress: number;
+}
 
 interface Student {
   id: string;
@@ -17,47 +27,159 @@ interface Student {
   email: string;
   phone: string;
   memberLevel: MemberLevel;
-  enrolledCourses: number;
+  enrolledCourses: StudentEnrollment[];
   totalSpent: number;
   joinDate: string;
   status: 'Active' | 'Inactive';
   lastActive: string;
 }
 
-interface Video {
-  id: string;
-  title: string;
-  courseId: string;
-  courseName: string;
-  duration: string;
-  requiredLevel: MemberLevel;
-  views: number;
-  status: 'Published' | 'Draft' | 'Processing';
-}
-
-const students: Student[] = [
-  { id: 'S001', name: 'Nguyễn Văn A', email: 'nguyenvana@gmail.com', phone: '0901234567', memberLevel: 'VIP', enrolledCourses: 8, totalSpent: 68000000, joinDate: '15/01/2025', status: 'Active', lastActive: '18/02/2026' },
-  { id: 'S002', name: 'Trần Thị B', email: 'tranthib@gmail.com', phone: '0912345678', memberLevel: 'Premium', enrolledCourses: 4, totalSpent: 12000000, joinDate: '20/03/2025', status: 'Active', lastActive: '18/02/2026' },
-  { id: 'S003', name: 'Lê Văn C', email: 'levanc@gmail.com', phone: '0923456789', memberLevel: 'Premium', enrolledCourses: 3, totalSpent: 8500000, joinDate: '05/05/2025', status: 'Active', lastActive: '17/02/2026' },
-  { id: 'S004', name: 'Phạm Thị D', email: 'phamthid@gmail.com', phone: '0934567890', memberLevel: 'Free', enrolledCourses: 1, totalSpent: 0, joinDate: '10/08/2025', status: 'Active', lastActive: '16/02/2026' },
-  { id: 'S005', name: 'Hoàng Văn E', email: 'hoangvane@gmail.com', phone: '0945678901', memberLevel: 'Free', enrolledCourses: 2, totalSpent: 1868000, joinDate: '22/09/2025', status: 'Inactive', lastActive: '01/01/2026' },
-  { id: 'S006', name: 'Đỗ Thị F', email: 'dothif@gmail.com', phone: '0956789012', memberLevel: 'VIP', enrolledCourses: 12, totalSpent: 150000000, joinDate: '01/01/2025', status: 'Active', lastActive: '18/02/2026' },
-  { id: 'S007', name: 'Bùi Văn G', email: 'buivang@gmail.com', phone: '0967890123', memberLevel: 'Premium', enrolledCourses: 5, totalSpent: 25000000, joinDate: '14/06/2025', status: 'Active', lastActive: '15/02/2026' },
-  { id: 'S008', name: 'Vũ Thị H', email: 'vuthih@gmail.com', phone: '0978901234', memberLevel: 'Free', enrolledCourses: 1, totalSpent: 868000, joinDate: '30/11/2025', status: 'Active', lastActive: '14/02/2026' },
+const studentsData: Student[] = [
+  {
+    id: 'S001',
+    name: 'Nguyễn Văn A',
+    email: 'nguyenvana@gmail.com',
+    phone: '0901234567',
+    memberLevel: 'VIP',
+    enrolledCourses: [
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 65 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 80 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 45 },
+      { courseId: '8', courseName: 'Map To Success', progress: 30 },
+      { courseId: '9', courseName: 'Business Automation Mystery', progress: 15 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 55 },
+      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 20 },
+      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 90 },
+    ],
+    totalSpent: 68000000,
+    joinDate: '15/01/2025',
+    status: 'Active',
+    lastActive: '18/02/2026',
+  },
+  {
+    id: 'S002',
+    name: 'Trần Thị B',
+    email: 'tranthib@gmail.com',
+    phone: '0912345678',
+    memberLevel: 'Premium',
+    enrolledCourses: [
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 60 },
+      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 35 },
+      { courseId: '12', courseName: 'Wellness To Wealth', progress: 10 },
+    ],
+    totalSpent: 12000000,
+    joinDate: '20/03/2025',
+    status: 'Active',
+    lastActive: '18/02/2026',
+  },
+  {
+    id: 'S003',
+    name: 'Lê Văn C',
+    email: 'levanc@gmail.com',
+    phone: '0923456789',
+    memberLevel: 'Premium',
+    enrolledCourses: [
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 70 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 40 },
+    ],
+    totalSpent: 8500000,
+    joinDate: '05/05/2025',
+    status: 'Active',
+    lastActive: '17/02/2026',
+  },
+  {
+    id: 'S004',
+    name: 'Phạm Thị D',
+    email: 'phamthid@gmail.com',
+    phone: '0934567890',
+    memberLevel: 'Free',
+    enrolledCourses: [
+      { courseId: '13', courseName: 'Unlock Your Power', progress: 25 },
+    ],
+    totalSpent: 0,
+    joinDate: '10/08/2025',
+    status: 'Active',
+    lastActive: '16/02/2026',
+  },
+  {
+    id: 'S005',
+    name: 'Hoàng Văn E',
+    email: 'hoangvane@gmail.com',
+    phone: '0945678901',
+    memberLevel: 'Free',
+    enrolledCourses: [
+      { courseId: '14', courseName: 'Design With AI', progress: 50 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 15 },
+    ],
+    totalSpent: 1868000,
+    joinDate: '22/09/2025',
+    status: 'Inactive',
+    lastActive: '01/01/2026',
+  },
+  {
+    id: 'S006',
+    name: 'Đỗ Thị F',
+    email: 'dothif@gmail.com',
+    phone: '0956789012',
+    memberLevel: 'VIP',
+    enrolledCourses: [
+      { courseId: '8', courseName: 'Map To Success', progress: 85 },
+      { courseId: '9', courseName: 'Business Automation Mystery', progress: 60 },
+      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 75 },
+      { courseId: '11', courseName: 'Business Internet System', progress: 40 },
+      { courseId: '15', courseName: 'Master Video AI', progress: 30 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 100 },
+      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 100 },
+      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 95 },
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 100 },
+      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 80 },
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
+      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
+    ],
+    totalSpent: 150000000,
+    joinDate: '01/01/2025',
+    status: 'Active',
+    lastActive: '18/02/2026',
+  },
+  {
+    id: 'S007',
+    name: 'Bùi Văn G',
+    email: 'buivang@gmail.com',
+    phone: '0967890123',
+    memberLevel: 'Premium',
+    enrolledCourses: [
+      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 55 },
+      { courseId: '12', courseName: 'Wellness To Wealth', progress: 70 },
+      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 30 },
+      { courseId: '14', courseName: 'Design With AI', progress: 90 },
+      { courseId: '13', courseName: 'Unlock Your Power', progress: 100 },
+    ],
+    totalSpent: 25000000,
+    joinDate: '14/06/2025',
+    status: 'Active',
+    lastActive: '15/02/2026',
+  },
+  {
+    id: 'S008',
+    name: 'Vũ Thị H',
+    email: 'vuthih@gmail.com',
+    phone: '0978901234',
+    memberLevel: 'Free',
+    enrolledCourses: [
+      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 40 },
+    ],
+    totalSpent: 868000,
+    joinDate: '30/11/2025',
+    status: 'Active',
+    lastActive: '14/02/2026',
+  },
 ];
 
-const videos: Video[] = [
-  { id: 'V001', title: 'Tổng quan về khóa học', courseId: '1', courseName: 'Thiết kế website với Wordpress', duration: '5:30', requiredLevel: 'Free', views: 3245, status: 'Published' },
-  { id: 'V002', title: 'Cách học hiệu quả nhất', courseId: '1', courseName: 'Thiết kế website với Wordpress', duration: '8:15', requiredLevel: 'Free', views: 2890, status: 'Published' },
-  { id: 'V003', title: 'Chuẩn bị công cụ cần thiết', courseId: '1', courseName: 'Thiết kế website với Wordpress', duration: '12:00', requiredLevel: 'Premium', views: 1567, status: 'Published' },
-  { id: 'V004', title: 'Hiểu rõ các khái niệm cơ bản', courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', duration: '15:20', requiredLevel: 'Free', views: 4521, status: 'Published' },
-  { id: 'V005', title: 'Phân tích case study thực tế', courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', duration: '20:00', requiredLevel: 'Premium', views: 2134, status: 'Published' },
-  { id: 'V006', title: 'Chiến lược chuyên sâu', courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', duration: '25:00', requiredLevel: 'Premium', views: 987, status: 'Published' },
-  { id: 'V007', title: 'Tối ưu hóa quy trình', courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', duration: '22:30', requiredLevel: 'VIP', views: 456, status: 'Published' },
-  { id: 'V008', title: 'Phân tích dữ liệu thực tế', courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', duration: '30:00', requiredLevel: 'VIP', views: 312, status: 'Published' },
-  { id: 'V009', title: 'Dự án cuối khóa nâng cao', courseId: '8', courseName: 'Map To Success', duration: '45:00', requiredLevel: 'VIP', views: 89, status: 'Draft' },
-  { id: 'V010', title: 'Hướng dẫn xây dựng funnel', courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng', duration: '18:00', requiredLevel: 'Premium', views: 0, status: 'Processing' },
-];
+/* ============================================================
+   ORDERS DATA
+   ============================================================ */
 
 const recentOrders = [
   { id: 'WP-2026-0001', name: 'Nguyễn Văn A', email: 'nguyenvana@gmail.com', course: 'Business Automation Mystery', amount: 168868000, status: 'Hoàn thành' as const, date: '18/02/2026', method: 'Chuyển khoản' },
@@ -68,6 +190,10 @@ const recentOrders = [
   { id: 'WP-2026-0006', name: 'Đỗ Thị F', email: 'dothif@gmail.com', course: 'Map To Success', amount: 38868000, status: 'Hoàn thành' as const, date: '15/02/2026', method: 'Chuyển khoản' },
   { id: 'WP-2026-0007', name: 'Bùi Văn G', email: 'buivang@gmail.com', course: 'Design With AI', amount: 1868000, status: 'Hoàn thành' as const, date: '14/02/2026', method: 'MoMo' },
 ];
+
+/* ============================================================
+   INLINE COMPONENTS
+   ============================================================ */
 
 function LevelBadge({ level }: { level: MemberLevel }) {
   return (
@@ -91,18 +217,150 @@ function LevelBadge({ level }: { level: MemberLevel }) {
   );
 }
 
+function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   COURSE FORM TYPES
+   ============================================================ */
+
+interface CourseFormData {
+  title: string;
+  instructor: string;
+  category: string;
+  price: number;
+  lessonsCount: number;
+}
+
+const emptyCourseForm: CourseFormData = {
+  title: '',
+  instructor: 'WePower Academy',
+  category: '',
+  price: 0,
+  lessonsCount: 0,
+};
+
+/* ============================================================
+   MAIN COMPONENT
+   ============================================================ */
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+
+  // ------- Course CRUD state -------
+  const [courses, setCourses] = useState<Course[]>(() => [...mockCourses]);
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [courseForm, setCourseForm] = useState<CourseFormData>(emptyCourseForm);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
+
+  // ------- Students state -------
   const [studentFilter, setStudentFilter] = useState<'all' | MemberLevel>('all');
-  const [videoFilter, setVideoFilter] = useState<'all' | MemberLevel>('all');
+  const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
 
+  // ------- Computed values -------
   const totalRevenue = recentOrders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.amount, 0);
-  const freeCount = students.filter(s => s.memberLevel === 'Free').length;
-  const premiumCount = students.filter(s => s.memberLevel === 'Premium').length;
-  const vipCount = students.filter(s => s.memberLevel === 'VIP').length;
 
-  const filteredStudents = studentFilter === 'all' ? students : students.filter(s => s.memberLevel === studentFilter);
-  const filteredVideos = videoFilter === 'all' ? videos : videos.filter(v => v.requiredLevel === videoFilter);
+  // Count students by their account level
+  const freeCount = studentsData.filter(s => s.memberLevel === 'Free').length;
+  const premiumCount = studentsData.filter(s => s.memberLevel === 'Premium').length;
+  const vipCount = studentsData.filter(s => s.memberLevel === 'VIP').length;
+
+  // Filtered students by account level
+  const filteredStudents = studentFilter === 'all'
+    ? studentsData
+    : studentsData.filter(s => s.memberLevel === studentFilter);
+
+  /* ------- Course CRUD handlers ------- */
+
+  const openAddCourse = () => {
+    setEditingCourse(null);
+    setCourseForm(emptyCourseForm);
+    setShowCourseModal(true);
+  };
+
+  const openEditCourse = (course: Course) => {
+    setEditingCourse(course);
+    setCourseForm({
+      title: course.title,
+      instructor: course.instructor,
+      category: course.category,
+      price: course.price,
+      lessonsCount: course.lessonsCount,
+    });
+    setShowCourseModal(true);
+  };
+
+  const handleSaveCourse = () => {
+    if (!courseForm.title.trim() || !courseForm.category.trim()) return;
+
+    if (editingCourse) {
+      // Update existing course
+      setCourses(prev =>
+        prev.map(c =>
+          c.id === editingCourse.id
+            ? {
+                ...c,
+                title: courseForm.title,
+                instructor: courseForm.instructor,
+                category: courseForm.category,
+                price: courseForm.price,
+                lessonsCount: courseForm.lessonsCount,
+                isFree: courseForm.price === 0,
+              }
+            : c
+        )
+      );
+    } else {
+      // Add new course
+      const newId = String(Math.max(...courses.map(c => parseInt(c.id)), 0) + 1);
+      const newCourse: Course = {
+        id: newId,
+        thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=450&fit=crop',
+        title: courseForm.title,
+        instructor: courseForm.instructor,
+        category: courseForm.category,
+        price: courseForm.price,
+        originalPrice: undefined,
+        rating: 0,
+        reviewsCount: 0,
+        enrollmentsCount: 0,
+        duration: 0,
+        lessonsCount: courseForm.lessonsCount,
+        isFree: courseForm.price === 0,
+        memberLevel: 'Free',
+      };
+      setCourses(prev => [...prev, newCourse]);
+    }
+
+    setShowCourseModal(false);
+    setEditingCourse(null);
+    setCourseForm(emptyCourseForm);
+  };
+
+  const openDeleteCourse = (course: Course) => {
+    setDeletingCourse(course);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCourse = () => {
+    if (!deletingCourse) return;
+    setCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
+    setShowDeleteModal(false);
+    setDeletingCourse(null);
+  };
+
+  /* ------- Tabs config ------- */
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     {
@@ -110,16 +368,12 @@ export default function AdminDashboard() {
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
     },
     {
-      key: 'students', label: 'Học viên',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-    },
-    {
       key: 'courses', label: 'Khóa học',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
     },
     {
-      key: 'videos', label: 'Video',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+      key: 'students', label: 'Học viên',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
     },
     {
       key: 'orders', label: 'Đơn hàng',
@@ -144,7 +398,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white">Quản trị Admin</h1>
-                <p className="text-sm text-gray-400">Quản lý học viên, khóa học, video và đơn hàng</p>
+                <p className="text-sm text-gray-400">Quản lý học viên, khóa học và đơn hàng</p>
               </div>
             </div>
           </div>
@@ -198,7 +452,7 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <div className="text-xl md:text-2xl font-bold text-white mb-1">{students.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-white mb-1">{studentsData.length}</div>
                 <p className="text-xs text-gray-400">Học viên</p>
               </div>
 
@@ -208,94 +462,65 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <div className="text-xl md:text-2xl font-bold text-white mb-1">{mockCourses.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-white mb-1">{courses.length}</div>
                 <p className="text-xs text-gray-400">Khóa học</p>
               </div>
 
               <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
                 <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
-                <div className="text-xl md:text-2xl font-bold text-white mb-1">{videos.length}</div>
-                <p className="text-xs text-gray-400">Video</p>
+                <div className="text-xl md:text-2xl font-bold text-white mb-1">{recentOrders.length}</div>
+                <p className="text-xs text-gray-400">Đơn hàng</p>
               </div>
             </div>
 
             {/* Member Level Distribution */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="VIP" />
-                        <span className="text-sm text-gray-400">{vipCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(vipCount / students.length * 100)}%</span>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="VIP" />
+                      <span className="text-sm text-gray-400">{vipCount} học viên</span>
                     </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / students.length * 100}%` }} />
-                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(vipCount / studentsData.length * 100)}%</span>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="Premium" />
-                        <span className="text-sm text-gray-400">{premiumCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(premiumCount / students.length * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / students.length * 100}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <LevelBadge level="Free" />
-                        <span className="text-sm text-gray-400">{freeCount} học viên</span>
-                      </div>
-                      <span className="text-sm text-white font-bold">{Math.round(freeCount / students.length * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / students.length * 100}%` }} />
-                    </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / studentsData.length * 100}%` }} />
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-5">Khóa học theo Level</h3>
-                <div className="space-y-4">
-                  {(['Free', 'Premium', 'VIP'] as MemberLevel[]).map(level => {
-                    const count = mockCourses.filter(c => c.memberLevel === level).length;
-                    const totalEnrollments = mockCourses.filter(c => c.memberLevel === level).reduce((s, c) => s + c.enrollmentsCount, 0);
-                    return (
-                      <div key={level} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <LevelBadge level={level} />
-                          <div>
-                            <div className="text-sm text-white font-semibold">{count} khóa học</div>
-                            <div className="text-xs text-gray-500">{totalEnrollments.toLocaleString()} học viên</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-yellow font-bold">
-                            {formatPrice(mockCourses.filter(c => c.memberLevel === level).reduce((s, c) => s + c.price, 0) / count)}
-                          </div>
-                          <div className="text-xs text-gray-500">Giá TB</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="Premium" />
+                      <span className="text-sm text-gray-400">{premiumCount} học viên</span>
+                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(premiumCount / studentsData.length * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / studentsData.length * 100}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <LevelBadge level="Free" />
+                      <span className="text-sm text-gray-400">{freeCount} học viên</span>
+                    </div>
+                    <span className="text-sm text-white font-bold">{Math.round(freeCount / studentsData.length * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / studentsData.length * 100}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Recent Orders */}
+            {/* Recent Orders (overview) */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               <div className="p-6 border-b border-gray-800 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-white">Đơn hàng gần đây</h3>
@@ -338,12 +563,98 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ============ STUDENTS TAB ============ */}
+        {/* ============ COURSES TAB (CRUD) ============ */}
+        {activeTab === 'courses' && (
+          <div className="space-y-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Tất cả khóa học ({courses.length})</h3>
+                <button
+                  onClick={openAddCourse}
+                  className="flex items-center gap-2 bg-red hover:bg-red/80 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Thêm khóa học
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên khóa học</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Giá</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Bài học</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Thời lượng</th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courses.map(course => (
+                      <tr key={course.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
+                        <td className="p-4 text-sm text-gray-400 font-mono">#{course.id}</td>
+                        <td className="p-4">
+                          <Link href={`/admin/courses/${course.id}`} className="text-sm text-white font-medium hover:text-red transition-colors">
+                            {course.title}
+                          </Link>
+                          <div className="text-xs text-gray-500 mt-0.5">{course.category}</div>
+                        </td>
+                        <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(course.price)}</td>
+                        <td className="p-4 text-sm text-white">{course.enrollmentsCount.toLocaleString()}</td>
+                        <td className="p-4 text-sm text-gray-400">{course.lessonsCount}</td>
+                        <td className="p-4 text-sm text-gray-400">{formatDuration(course.duration)}</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            {/* Edit button */}
+                            <button
+                              onClick={() => openEditCourse(course)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                              title="Chỉnh sửa"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            {/* Delete button */}
+                            <button
+                              onClick={() => openDeleteCourse(course)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red/20 text-gray-400 hover:text-red transition-colors"
+                              title="Xóa"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                            {/* Manage content link */}
+                            <Link
+                              href={`/admin/courses/${course.id}`}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                              title="Quản lý nội dung"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============ STUDENTS TAB (per-course level) ============ */}
         {activeTab === 'students' && (
           <div className="space-y-6">
             {/* Filter */}
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">Lọc theo hạng:</span>
+              <span className="text-sm text-gray-400">Lọc theo hạng tài khoản:</span>
               {(['all', 'Free', 'Premium', 'VIP'] as const).map(f => (
                 <button
                   key={f}
@@ -352,7 +663,7 @@ export default function AdminDashboard() {
                     studentFilter === f ? 'bg-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
                   }`}
                 >
-                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${students.filter(s => s.memberLevel === f).length})`}
+                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${studentsData.filter(s => s.memberLevel === f).length})`}
                 </button>
               ))}
             </div>
@@ -365,6 +676,7 @@ export default function AdminDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-800">
+                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase w-8"></th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">SĐT</th>
@@ -376,163 +688,98 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStudents.map(student => (
-                      <tr key={student.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
-                        <td className="p-4 text-sm text-gray-400 font-mono">{student.id}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              student.memberLevel === 'VIP' ? 'bg-gradient-to-br from-yellow to-amber-500' :
-                              student.memberLevel === 'Premium' ? 'bg-red' : 'bg-gray-600'
-                            }`}>
-                              <span className="text-white text-xs font-bold">{student.name.charAt(0)}</span>
-                            </div>
-                            <div>
-                              <div className="text-sm text-white font-medium">{student.name}</div>
-                              <div className="text-xs text-gray-500">{student.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-sm text-gray-400">{student.phone}</td>
-                        <td className="p-4"><LevelBadge level={student.memberLevel} /></td>
-                        <td className="p-4 text-sm text-white">{student.enrolledCourses}</td>
-                        <td className="p-4 text-sm text-yellow font-semibold">
-                          {student.totalSpent === 0 ? '-' : formatPrice(student.totalSpent)}
-                        </td>
-                        <td className="p-4 text-sm text-gray-400">{student.joinDate}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${student.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}`} />
-                            <span className="text-sm text-gray-400">{student.status === 'Active' ? 'Hoạt động' : 'Ngưng'}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+                    {filteredStudents.map(student => {
+                      const isExpanded = expandedStudent === student.id;
 
-        {/* ============ COURSES TAB ============ */}
-        {activeTab === 'courses' && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800">
-              <h3 className="text-lg font-bold text-white">Tất cả khóa học ({mockCourses.length})</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên khóa học</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Level</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Giá</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Bài học</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Thời lượng</th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Đánh giá</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockCourses.map(course => (
-                    <tr key={course.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
-                      <td className="p-4 text-sm text-gray-400 font-mono">#{course.id}</td>
-                      <td className="p-4">
-                        <Link href={`/courses/${course.id}`} className="text-sm text-white hover:text-red transition-colors font-medium">
-                          {course.title}
-                        </Link>
-                        <div className="text-xs text-gray-500 mt-0.5">{course.category}</div>
-                      </td>
-                      <td className="p-4"><LevelBadge level={course.memberLevel} /></td>
-                      <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(course.price)}</td>
-                      <td className="p-4 text-sm text-white">{course.enrollmentsCount.toLocaleString()}</td>
-                      <td className="p-4 text-sm text-gray-400">{course.lessonsCount}</td>
-                      <td className="p-4 text-sm text-gray-400">{formatDuration(course.duration)}</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1">
-                          <svg className="w-4 h-4 text-yellow" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="text-sm text-white">{course.rating}</span>
-                          <span className="text-xs text-gray-500">({course.reviewsCount})</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ============ VIDEOS TAB ============ */}
-        {activeTab === 'videos' && (
-          <div className="space-y-6">
-            {/* Filter */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">Lọc theo level:</span>
-              {(['all', 'Free', 'Premium', 'VIP'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setVideoFilter(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    videoFilter === f ? 'bg-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${videos.filter(v => v.requiredLevel === f).length})`}
-                </button>
-              ))}
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="p-6 border-b border-gray-800">
-                <h3 className="text-lg font-bold text-white">Quản lý Video ({filteredVideos.length})</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên video</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khóa học</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Level</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Thời lượng</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Lượt xem</th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredVideos.map(video => (
-                      <tr key={video.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
-                        <td className="p-4 text-sm text-gray-400 font-mono">{video.id}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
-                              <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
+                      return (
+                        <Fragment key={student.id}>
+                          <tr
+                            className="border-b border-gray-800/50 hover:bg-white/[0.02] cursor-pointer"
+                            onClick={() => setExpandedStudent(isExpanded ? null : student.id)}
+                          >
+                            <td className="p-4 text-center">
+                              <svg
+                                className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
-                            </div>
-                            <span className="text-sm text-white font-medium">{video.title}</span>
-                          </div>
-                        </td>
-                        <td className="p-4 text-sm text-gray-300 max-w-[180px] truncate">{video.courseName}</td>
-                        <td className="p-4"><LevelBadge level={video.requiredLevel} /></td>
-                        <td className="p-4 text-sm text-gray-400">{video.duration}</td>
-                        <td className="p-4 text-sm text-white">{video.views.toLocaleString()}</td>
-                        <td className="p-4">
-                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            video.status === 'Published' ? 'bg-green-500/10 text-green-400' :
-                            video.status === 'Draft' ? 'bg-yellow/10 text-yellow' :
-                            'bg-blue-500/10 text-blue-400'
-                          }`}>{
-                            video.status === 'Published' ? 'Đã xuất bản' :
-                            video.status === 'Draft' ? 'Nháp' : 'Đang xử lý'
-                          }</span>
-                        </td>
-                      </tr>
-                    ))}
+                            </td>
+                            <td className="p-4 text-sm text-gray-400 font-mono">{student.id}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                  student.memberLevel === 'VIP' ? 'bg-gradient-to-br from-yellow to-amber-500' :
+                                  student.memberLevel === 'Premium' ? 'bg-red' : 'bg-gray-600'
+                                }`}>
+                                  <span className="text-white text-xs font-bold">{student.name.charAt(0)}</span>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-white font-medium">{student.name}</div>
+                                  <div className="text-xs text-gray-500">{student.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm text-gray-400">{student.phone}</td>
+                            <td className="p-4"><LevelBadge level={student.memberLevel} /></td>
+                            <td className="p-4 text-sm text-white">{student.enrolledCourses.length}</td>
+                            <td className="p-4 text-sm text-yellow font-semibold">
+                              {student.totalSpent === 0 ? '-' : formatPrice(student.totalSpent)}
+                            </td>
+                            <td className="p-4 text-sm text-gray-400">{student.joinDate}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${student.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}`} />
+                                <span className="text-sm text-gray-400">{student.status === 'Active' ? 'Hoạt động' : 'Ngưng'}</span>
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Expanded row: enrolled courses */}
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={9} className="p-0">
+                                <div className="bg-black/40 border-t border-gray-800/50 px-8 py-4">
+                                  <div className="text-xs font-semibold text-gray-400 uppercase mb-3">
+                                    Khóa học đã đăng ký ({student.enrolledCourses.length})
+                                  </div>
+                                  <div className="space-y-2">
+                                    {student.enrolledCourses.map(ec => (
+                                      <div
+                                        key={ec.courseId}
+                                        className="flex items-center justify-between bg-white/[0.03] border border-gray-800/50 rounded-lg px-4 py-3"
+                                      >
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                          <div className="w-6 h-6 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
+                                            <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            </svg>
+                                          </div>
+                                          <span className="text-sm text-white truncate">{ec.courseName}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 min-w-[140px] flex-shrink-0 ml-4">
+                                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                              className={`h-full rounded-full ${
+                                                ec.progress === 100 ? 'bg-green-500' :
+                                                ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
+                                              }`}
+                                              style={{ width: `${ec.progress}%` }}
+                                            />
+                                          </div>
+                                          <span className="text-xs text-gray-400 w-8 text-right">{ec.progress}%</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -586,6 +833,152 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* ============ ADD/EDIT COURSE MODAL ============ */}
+      <Modal open={showCourseModal} onClose={() => { setShowCourseModal(false); setEditingCourse(null); }}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-white">
+              {editingCourse ? 'Chỉnh sửa khóa học' : 'Thêm khóa học mới'}
+            </h3>
+            <button
+              onClick={() => { setShowCourseModal(false); setEditingCourse(null); }}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Tên khóa học</label>
+              <input
+                type="text"
+                value={courseForm.title}
+                onChange={e => setCourseForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Nhập tên khóa học..."
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
+            </div>
+
+            {/* Instructor */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Giảng viên</label>
+              <input
+                type="text"
+                value={courseForm.instructor}
+                onChange={e => setCourseForm(prev => ({ ...prev, instructor: e.target.value }))}
+                placeholder="Nhập tên giảng viên..."
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Danh mục</label>
+              <input
+                type="text"
+                value={courseForm.category}
+                onChange={e => setCourseForm(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="VD: AI, Business, Marketing..."
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Giá (VND)</label>
+              <input
+                type="number"
+                value={courseForm.price}
+                onChange={e => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                placeholder="0"
+                min={0}
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
+            </div>
+
+            {/* Lessons Count */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Số bài học</label>
+              <input
+                type="number"
+                value={courseForm.lessonsCount}
+                onChange={e => setCourseForm(prev => ({ ...prev, lessonsCount: Number(e.target.value) }))}
+                placeholder="0"
+                min={0}
+                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-800">
+            <button
+              onClick={() => { setShowCourseModal(false); setEditingCourse(null); }}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSaveCourse}
+              disabled={!courseForm.title.trim() || !courseForm.category.trim()}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {editingCourse ? 'Cập nhật' : 'Thêm mới'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ============ DELETE CONFIRMATION MODAL ============ */}
+      <Modal open={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeletingCourse(null); }}>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-red/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">Xác nhận xóa</h3>
+              <p className="text-sm text-gray-400">Hành động này không thể hoàn tác</p>
+            </div>
+          </div>
+
+          {deletingCourse && (
+            <div className="bg-black/50 border border-gray-800 rounded-lg p-4 mb-6">
+              <div className="text-sm text-white font-medium">{deletingCourse.title}</div>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-xs text-gray-500">{deletingCourse.enrollmentsCount.toLocaleString()} học viên</span>
+                <span className="text-xs text-yellow">{formatPrice(deletingCourse.price)}</span>
+              </div>
+            </div>
+          )}
+
+          <p className="text-sm text-gray-300 mb-6">
+            Bạn có chắc chắn muốn xóa khóa học <span className="text-white font-semibold">&quot;{deletingCourse?.title}&quot;</span>? Tất cả dữ liệu liên quan sẽ bị mất vĩnh viễn.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setShowDeleteModal(false); setDeletingCourse(null); }}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleDeleteCourse}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/80 transition-colors"
+            >
+              Xóa khóa học
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <Footer />
     </div>
