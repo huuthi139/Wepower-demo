@@ -229,18 +229,18 @@
       <h1>Đăng nhập</h1>
       <p class="subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.</p>
 
-      <form id="login-form">
+      <form id="login-form" method="POST" action="/api/auth/login-form">
         <div id="error-box" class="error-box"></div>
         <div id="success-box" class="success-box"></div>
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input id="email" type="email" placeholder="example@email.com" autocomplete="email" required />
+          <input id="email" name="email" type="email" placeholder="example@email.com" autocomplete="email" required />
         </div>
 
         <div class="form-group">
           <label for="password">Mật khẩu</label>
-          <input id="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" required />
+          <input id="password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" required />
         </div>
 
         <div class="row">
@@ -280,6 +280,31 @@
   </div>
 
   <script>
+    // Show error from URL params (from form POST redirect)
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var errorParam = params.get('error');
+      if (errorParam) {
+        var errorBox = document.getElementById('error-box');
+        if (errorBox) {
+          errorBox.textContent = errorParam;
+          errorBox.style.display = 'block';
+        }
+      }
+      // Check for user cookie and restore to localStorage
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.indexOf('wepower-user=') === 0) {
+          try {
+            var encoded = c.substring('wepower-user='.length);
+            var userJson = atob(encoded);
+            localStorage.setItem('wepower-user', userJson);
+          } catch(e) {}
+        }
+      }
+    })();
+
     document.getElementById('login-form').addEventListener('submit', function(e) {
       e.preventDefault();
 
