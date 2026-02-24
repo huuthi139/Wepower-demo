@@ -21,7 +21,7 @@
  * CẤU TRÚC TABS:
  * - Users:   Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
  * - Orders:  Thời gian | Mã đơn hàng | Tên khách hàng | Email | SĐT | Khóa học | Mã khóa học | Tổng tiền | PTTT | Trạng thái | Mã GD
- * - Courses: (chỉ đọc - quản lý thủ công trên Sheet)
+ * - Courses: ID | Title | Thumbnail | Instructor | Price | OriginalPrice | Rating | ReviewsCount | EnrollmentsCount | Duration | LessonsCount | Badge | Category | MemberLevel
  */
 
 var SPREADSHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
@@ -56,8 +56,8 @@ function setup() {
   var courses = ss.getSheetByName('Courses');
   if (!courses) {
     courses = ss.insertSheet('Courses');
-    courses.appendRow(['ID', 'Title', 'Description', 'Price', 'VideoURL', 'Thumbnail', 'Category', 'Level']);
-    formatHeader_(courses, 8, '#4a9e4a');
+    courses.appendRow(['ID', 'Title', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
+    formatHeader_(courses, 14, '#4a9e4a');
     Logger.log('Tab Courses đã tạo');
   }
 

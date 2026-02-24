@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { enrolledCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 const levelColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -39,6 +39,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const { courses } = useCourses();
 
   if (!user) return null;
 
@@ -126,7 +128,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">3</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-white/90 text-sm">Khóa học đang học</div>
           </div>
 
@@ -139,7 +141,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-black mb-1">24.5</div>
+            <div className="text-3xl font-bold text-black mb-1">0</div>
             <div className="text-black/90 text-sm">Giờ đã học</div>
           </div>
 
@@ -152,7 +154,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">1</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-white/60 text-sm">Chứng chỉ đã đạt</div>
           </div>
 
@@ -166,7 +168,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">7</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-white/60 text-sm">Ngày học liên tiếp</div>
           </div>
         </div>
@@ -181,8 +183,8 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enrolledCourses.map((course) => (
-              <CourseCard key={course.id} course={course} showProgress={true} />
+            {courses.slice(0, 3).map((course) => (
+              <CourseCard key={course.id} course={course} />
             ))}
           </div>
         </div>

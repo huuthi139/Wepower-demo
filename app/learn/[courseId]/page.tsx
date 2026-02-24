@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MemberLevel } from '@/lib/mockData';
 
@@ -54,44 +54,7 @@ interface Chapter {
   lessons: Lesson[];
 }
 
-const defaultChapters: Chapter[] = [
-  {
-    id: 'ch-1',
-    title: 'Chương 1: Giới thiệu và chuẩn bị',
-    lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-2',
-    title: 'Chương 2: Kiến thức nền tảng',
-    lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-3',
-    title: 'Chương 3: Chiến lược nâng cao',
-    lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-4',
-    title: 'Chương 4: Dự án thực tế và tổng kết',
-    lessons: [
-      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', directPlayUrl: '' },
-    ],
-  },
-];
+const defaultChapters: Chapter[] = [];
 
 const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
 
@@ -104,21 +67,18 @@ interface Comment {
   likes: number;
 }
 
-const mockComments: Comment[] = [
-  { id: 1, name: 'Nguyễn Minh Tuấn', avatar: 'T', time: '2 giờ trước', text: 'Bài giảng rất dễ hiểu, cảm ơn thầy!', likes: 12 },
-  { id: 2, name: 'Trần Thu Hà', avatar: 'H', time: '5 giờ trước', text: 'Phần này hay quá, em đã áp dụng được ngay vào project của mình.', likes: 8 },
-  { id: 3, name: 'Lê Văn Đức', avatar: 'D', time: '1 ngày trước', text: 'Thầy có thể giải thích thêm phần cuối được không ạ?', likes: 3 },
-  { id: 4, name: 'Phạm Thị Lan', avatar: 'L', time: '2 ngày trước', text: 'Video chất lượng, âm thanh rõ ràng. Mong có thêm nhiều bài như vậy!', likes: 15 },
-];
+// TODO: Fetch comments from backend when comment system is implemented
+const mockComments: Comment[] = [];
 
 export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { courses } = useCourses();
   const courseId = params.courseId as string;
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
 
-  const course = mockCourses.find(c => c.id === courseId);
+  const course = courses.find(c => c.id === courseId);
 
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
   const [currentLessonId, setCurrentLessonId] = useState<string>('');

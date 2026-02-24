@@ -1,16 +1,22 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { enrolledCourses, mockCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MyCourses() {
+  const { courses, isLoading } = useCourses();
+  const { user } = useAuth();
+
+  // TODO: Fetch enrolled courses from Google Sheets when enrollment tracking is implemented
+  const enrolledCourses: typeof courses = [];
   const completedCourses = enrolledCourses.filter(c => c.progress === 100);
   const inProgressCourses = enrolledCourses.filter(c => (c.progress ?? 0) < 100);
-  const recommendedCourses = mockCourses
-    .filter(c => !enrolledCourses.find(e => e.id === c.id))
-    .slice(0, 3);
+  const recommendedCourses = courses.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-black">
@@ -67,22 +73,37 @@ export default function MyCourses() {
           </div>
         )}
 
-        {/* Recommended */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Khóa học đề xuất</h2>
+        {/* Empty state */}
+        {enrolledCourses.length === 0 && (
+          <div className="mb-12 text-center py-12 bg-white/5 border border-white/10 rounded-xl">
+            <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <p className="text-gray-400 mb-4">Bạn chưa đăng ký khóa học nào</p>
             <Link href="/courses">
-              <Button variant="ghost" size="sm">
-                Xem tất cả →
-              </Button>
+              <Button variant="primary" size="md">Khám phá khóa học</Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendedCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
+        )}
+
+        {/* Recommended */}
+        {recommendedCourses.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Khóa học đề xuất</h2>
+              <Link href="/courses">
+                <Button variant="ghost" size="sm">
+                  Xem tất cả →
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <Footer />
