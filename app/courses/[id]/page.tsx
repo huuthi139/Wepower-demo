@@ -222,8 +222,8 @@ export default function CourseDetail() {
                 className="object-cover"
                 priority
               />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <div className="w-16 h-16 bg-red rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-glow-red">
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center cursor-pointer" onClick={() => router.push(`/learn/${course.id}`)}>
+                <div className="w-16 h-16 bg-red rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-glow-red">
                   <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
@@ -504,7 +504,13 @@ export default function CourseDetail() {
                 </div>
 
                 {/* CTA Buttons */}
-                <Button variant="primary" size="lg" className="w-full mb-3" onClick={handleCheckout}>
+                <Button variant="primary" size="lg" className="w-full mb-3" onClick={() => router.push(`/learn/${course.id}`)}>
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  HỌC NGAY
+                </Button>
+                <Button variant="secondary" size="lg" className="w-full mb-3" onClick={handleCheckout}>
                   Đăng Ký Ngay
                 </Button>
                 <Button variant="secondary" size="lg" className="w-full" onClick={handleAddToCart}>
