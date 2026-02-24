@@ -53,6 +53,7 @@ export async function GET() {
         id: r['ID'] || '',
         thumbnail: r['Thumbnail'] || '',
         title: r['Title'] || '',
+        description: r['Description'] || '',
         instructor: r['Instructor'] || 'WePower Academy',
         price: Number(r['Price']) || 0,
         originalPrice: r['OriginalPrice'] ? Number(r['OriginalPrice']) : undefined,

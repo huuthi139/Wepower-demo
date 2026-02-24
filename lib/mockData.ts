@@ -4,6 +4,7 @@ export interface Course {
   id: string;
   thumbnail: string;
   title: string;
+  description: string;
   instructor: string;
   price: number;
   originalPrice?: number;

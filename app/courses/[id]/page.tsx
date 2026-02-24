@@ -294,20 +294,23 @@ export default function CourseDetail() {
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-4">Mô tả khóa học</h2>
                   <div className="text-gray-400 space-y-4 leading-relaxed">
-                    <p>
-                      Đây là khóa học toàn diện được thiết kế bởi đội ngũ chuyên gia tại WePower Academy.
-                      Khóa học sẽ đưa bạn từ người mới bắt đầu đến trình độ chuyên nghiệp thông qua
-                      các bài giảng chi tiết, bài tập thực hành, và dự án thực tế.
-                    </p>
-                    <p>
-                      Với {course.lessonsCount} bài học được sắp xếp khoa học, bạn sẽ từng bước nắm vững
-                      kiến thức cần thiết. Mỗi bài học đều có video hướng dẫn chi tiết, tài liệu bổ trợ,
-                      và bài tập kiểm tra giúp bạn củng cố kiến thức.
-                    </p>
-                    <p>
-                      Sau khi hoàn thành khóa học, bạn sẽ nhận được chứng chỉ từ WePower Academy
-                      và có thể tự tin áp dụng những gì đã học vào công việc thực tế.
-                    </p>
+                    {course.description ? (
+                      course.description.split('\n').map((paragraph, i) => (
+                        <p key={i}>{paragraph}</p>
+                      ))
+                    ) : (
+                      <>
+                        <p>
+                          Khóa học toàn diện được thiết kế bởi đội ngũ chuyên gia tại WePower Academy.
+                          Với {course.lessonsCount} bài học được sắp xếp khoa học, bạn sẽ từng bước nắm vững
+                          kiến thức cần thiết.
+                        </p>
+                        <p>
+                          Sau khi hoàn thành khóa học, bạn sẽ nhận được chứng chỉ từ WePower Academy
+                          và có thể tự tin áp dụng những gì đã học vào công việc thực tế.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
