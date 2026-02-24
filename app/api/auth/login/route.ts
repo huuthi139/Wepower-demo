@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
 
-const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Đăng ký';
 
 function getSheetUrl(sheetName: string): string {

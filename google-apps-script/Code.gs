@@ -1,49 +1,133 @@
 /**
- * WePower Academy - Google Apps Script
- * =====================================
+ * WePower Academy - Google Apps Script (Auto-Setup)
+ * ==================================================
  *
  * HƯỚNG DẪN CÀI ĐẶT:
- * 1. Mở Google Sheets: https://docs.google.com/spreadsheets/d/1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM/edit
+ * 1. Mở Google Sheets: https://docs.google.com/spreadsheets/d/1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY/edit
  * 2. Vào menu: Tiện ích mở rộng > Apps Script
  * 3. Xóa code mặc định, dán toàn bộ code này vào
  * 4. Lưu (Ctrl+S)
- * 5. Deploy > Triển khai mới > Loại: Ứng dụng web
+ * 5. Chạy hàm "setupSheets" từ menu dropdown để tự động tạo các sheet + headers
+ * 6. Deploy > Triển khai mới > Loại: Ứng dụng web
  *    - Thực thi với: Tôi (your account)
  *    - Ai có quyền truy cập: Bất kỳ ai
- * 6. Copy URL deploy, dán vào file .env.local trong project:
+ * 7. Copy URL deploy, dán vào file .env.local trong project:
  *    GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/XXXX/exec
  *
- * CẤU TRÚC SHEET "Đăng ký" (hàng 1 = headers):
- * | Email | Password | Role | Tên | Level | Enrolled | Completed | Phone |
+ * TỰ ĐỘNG TẠO 3 SHEET:
+ * - "Đăng ký": Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
+ * - "Đơn hàng": Thời gian | Mã đơn | Tên | Email | SĐT | Khóa học | Mã KH | Tổng tiền | Thanh toán | Trạng thái | Ghi chú
+ * - "Khóa học": ID | Tên khóa học | Giảng viên | Giá | Danh mục | Mô tả
  *
- * CẤU TRÚC SHEET "Đơn hàng" (hàng 1 = headers):
- * | (tùy theo cấu trúc đơn hàng) |
- *
- * CẤU TRÚC SHEET "Khóa học" (hàng 1 = headers):
- * | (tùy theo cấu trúc khóa học) |
+ * Khi chạy setupSheets(), nó cũng tạo sẵn 1 tài khoản admin mặc định:
+ *   Email: admin@wepower.vn | Password: 123456
  */
 
-var SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+var SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 
-// Tên các tab trong Google Sheets
+// Tên các tab
 var TAB_USERS = 'Đăng ký';
 var TAB_ORDERS = 'Đơn hàng';
 var TAB_COURSES = 'Khóa học';
 
-// Tên các cột trong tab "Đăng ký" - khớp với headers thực tế
+// Headers cho từng tab
+var HEADERS_USERS = ['Email', 'Password', 'Role', 'Tên', 'Level', 'Enrolled', 'Completed', 'Phone'];
+var HEADERS_ORDERS = ['Thời gian', 'Mã đơn', 'Tên', 'Email', 'SĐT', 'Khóa học', 'Mã KH', 'Tổng tiền', 'Thanh toán', 'Trạng thái', 'Ghi chú'];
+var HEADERS_COURSES = ['ID', 'Tên khóa học', 'Giảng viên', 'Giá', 'Danh mục', 'Mô tả'];
+
+// Tên cột dùng trong code
 var COL_EMAIL = 'Email';
 var COL_PASSWORD = 'Password';
 var COL_ROLE = 'Role';
 var COL_NAME = 'Tên';
 var COL_LEVEL = 'Level';
-var COL_ENROLLED = 'Enrolled';
-var COL_COMPLETED = 'Completed';
 var COL_PHONE = 'Phone';
 
+// =====================================================
+// AUTO-SETUP: Chạy hàm này 1 lần để tạo tất cả sheets
+// =====================================================
+function setupSheets() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // Tạo sheet "Đăng ký"
+  var usersSheet = ensureSheet_(ss, TAB_USERS, HEADERS_USERS);
+
+  // Tạo tài khoản admin mặc định nếu chưa có data
+  if (usersSheet.getLastRow() <= 1) {
+    usersSheet.appendRow(['admin@wepower.vn', '123456', 'Admin', 'Admin WePower', 'VIP', '', '', '']);
+    Logger.log('Đã tạo tài khoản admin mặc định: admin@wepower.vn / 123456');
+  }
+
+  // Tạo sheet "Đơn hàng"
+  ensureSheet_(ss, TAB_ORDERS, HEADERS_ORDERS);
+
+  // Tạo sheet "Khóa học"
+  ensureSheet_(ss, TAB_COURSES, HEADERS_COURSES);
+
+  // Xóa sheet mặc định "Sheet1" nếu còn tồn tại và có ít nhất 2 sheet khác
+  var defaultSheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('Trang tính1');
+  if (defaultSheet && ss.getSheets().length > 1) {
+    try {
+      ss.deleteSheet(defaultSheet);
+      Logger.log('Đã xóa sheet mặc định');
+    } catch (e) {
+      // Bỏ qua nếu không xóa được
+    }
+  }
+
+  // Format header cho đẹp
+  var sheets = [
+    { sheet: ss.getSheetByName(TAB_USERS), cols: HEADERS_USERS.length },
+    { sheet: ss.getSheetByName(TAB_ORDERS), cols: HEADERS_ORDERS.length },
+    { sheet: ss.getSheetByName(TAB_COURSES), cols: HEADERS_COURSES.length }
+  ];
+
+  sheets.forEach(function(s) {
+    if (s.sheet) {
+      var headerRange = s.sheet.getRange(1, 1, 1, s.cols);
+      headerRange.setFontWeight('bold');
+      headerRange.setBackground('#4a86e8');
+      headerRange.setFontColor('#ffffff');
+      s.sheet.setFrozenRows(1);
+    }
+  });
+
+  Logger.log('Setup hoàn tất! 3 sheets đã được tạo với headers và format.');
+}
+
+// Helper: tạo sheet nếu chưa có, thêm headers nếu trống
+function ensureSheet_(ss, tabName, headers) {
+  var sheet = ss.getSheetByName(tabName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(tabName);
+    sheet.appendRow(headers);
+    Logger.log('Đã tạo sheet: ' + tabName);
+  } else {
+    // Sheet đã có, kiểm tra headers
+    var firstRow = sheet.getRange(1, 1, 1, sheet.getMaxColumns()).getValues()[0];
+    var hasHeaders = firstRow.some(function(cell) { return cell.toString().trim() !== ''; });
+
+    if (!hasHeaders) {
+      // Sheet trống, thêm headers
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      Logger.log('Đã thêm headers vào sheet: ' + tabName);
+    }
+  }
+
+  return sheet;
+}
+
+// =====================
+// WEB APP ENDPOINTS
+// =====================
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
+
+    // Tự động setup nếu sheet chưa có
+    autoSetupIfNeeded_();
 
     var result;
 
@@ -63,6 +147,13 @@ function doPost(e) {
       case 'updateUserLevel':
         result = handleUpdateUserLevel(data);
         break;
+      case 'deleteUser':
+        result = handleDeleteUser(data);
+        break;
+      case 'setup':
+        setupSheets();
+        result = { success: true, message: 'Setup hoàn tất!' };
+        break;
       default:
         result = { success: false, error: 'Action không hợp lệ: ' + action };
     }
@@ -79,11 +170,14 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  var action = e.parameter.action || 'ping';
+  var action = (e.parameter && e.parameter.action) || 'ping';
+
+  // Tự động setup nếu sheet chưa có
+  autoSetupIfNeeded_();
 
   if (action === 'ping') {
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, message: 'WePower Apps Script is running!' }))
+      .createTextOutput(JSON.stringify({ success: true, message: 'WePower Apps Script is running!', version: '2.0' }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -94,9 +188,26 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (action === 'setup') {
+    setupSheets();
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true, message: 'Setup hoàn tất!' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Tự động tạo sheet khi chưa có (chạy mỗi request)
+function autoSetupIfNeeded_() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var usersSheet = ss.getSheetByName(TAB_USERS);
+
+  if (!usersSheet) {
+    setupSheets();
+  }
 }
 
 // =====================
@@ -114,7 +225,7 @@ function handleLogin(data) {
   var sheet = ss.getSheetByName(TAB_USERS);
 
   if (!sheet) {
-    return { success: false, error: 'Sheet "' + TAB_USERS + '" không tồn tại' };
+    return { success: false, error: 'Sheet "' + TAB_USERS + '" không tồn tại. Hãy chạy setupSheets().' };
   }
 
   var dataRange = sheet.getDataRange();
@@ -124,7 +235,6 @@ function handleLogin(data) {
     return { success: false, error: 'Chưa có dữ liệu người dùng' };
   }
 
-  // Headers ở hàng 1
   var headers = values[0].map(function(h) { return h.toString().trim(); });
   var emailCol = headers.indexOf(COL_EMAIL);
   var passwordCol = headers.indexOf(COL_PASSWORD);
@@ -137,7 +247,6 @@ function handleLogin(data) {
     return { success: false, error: 'Sheet thiếu cột "' + COL_EMAIL + '" hoặc "' + COL_PASSWORD + '"' };
   }
 
-  // Tìm user
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var rowEmail = (row[emailCol] || '').toString().toLowerCase().trim();
@@ -145,19 +254,11 @@ function handleLogin(data) {
 
     if (rowEmail === email && rowPassword === password) {
       var roleRaw = (roleCol !== -1 ? row[roleCol] : 'user').toString().trim();
-      var roleNormalized = roleRaw.toLowerCase();
       var memberLevel = (levelCol !== -1 ? row[levelCol] : 'Free').toString().trim();
 
-      // Validate memberLevel
       if (['Free', 'Premium', 'VIP'].indexOf(memberLevel) === -1) {
         memberLevel = 'Free';
       }
-
-      // Hỗ trợ cả tiếng Việt và tiếng Anh cho vai trò admin
-      var isAdmin = (roleNormalized === 'admin' ||
-                     roleNormalized === 'administrator' ||
-                     roleNormalized.indexOf('quản trị') !== -1 ||
-                     roleNormalized === 'qtv');
 
       return {
         success: true,
@@ -165,7 +266,7 @@ function handleLogin(data) {
           name: nameCol !== -1 ? row[nameCol].toString().trim() : '',
           email: row[emailCol].toString().trim(),
           phone: phoneCol !== -1 ? row[phoneCol].toString().trim() : '',
-          role: isAdmin ? 'admin' : 'user',
+          role: isAdmin_(roleRaw) ? 'admin' : 'user',
           memberLevel: memberLevel
         }
       };
@@ -192,9 +293,7 @@ function handleRegister(data) {
   var sheet = ss.getSheetByName(TAB_USERS);
 
   if (!sheet) {
-    // Tạo sheet nếu chưa có
-    sheet = ss.insertSheet(TAB_USERS);
-    sheet.appendRow([COL_EMAIL, COL_PASSWORD, COL_ROLE, COL_NAME, COL_LEVEL, COL_ENROLLED, COL_COMPLETED, COL_PHONE]);
+    sheet = ensureSheet_(ss, TAB_USERS, HEADERS_USERS);
   }
 
   // Kiểm tra email đã tồn tại chưa
@@ -212,7 +311,7 @@ function handleRegister(data) {
     }
   }
 
-  // Thêm user mới - đúng thứ tự: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
+  // Thêm user mới: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
   sheet.appendRow([email, password, 'Student', name, 'Free', '', '', phone]);
 
   return {
@@ -241,8 +340,7 @@ function handleAppendOrder(data) {
   var sheet = ss.getSheetByName(TAB_ORDERS);
 
   if (!sheet) {
-    sheet = ss.insertSheet(TAB_ORDERS);
-    // Headers sẽ được tạo theo dữ liệu đầu tiên
+    sheet = ensureSheet_(ss, TAB_ORDERS, HEADERS_ORDERS);
   }
 
   sheet.appendRow(rowData);
@@ -251,7 +349,7 @@ function handleAppendOrder(data) {
 }
 
 // =====================
-// GET USERS (read all - không trả password)
+// GET USERS (không trả password)
 // =====================
 function handleGetUsers() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
@@ -274,7 +372,7 @@ function handleGetUsers() {
   for (var i = 1; i < values.length; i++) {
     var user = {};
     for (var j = 0; j < headers.length; j++) {
-      if (headers[j] !== COL_PASSWORD) { // Không trả về mật khẩu
+      if (headers[j] !== COL_PASSWORD) {
         user[headers[j]] = values[i][j] ? values[i][j].toString().trim() : '';
       }
     }
@@ -325,4 +423,52 @@ function handleUpdateUserLevel(data) {
   }
 
   return { success: false, error: 'Không tìm thấy user với email: ' + email };
+}
+
+// =====================
+// DELETE USER
+// =====================
+function handleDeleteUser(data) {
+  var email = (data.email || '').toLowerCase().trim();
+
+  if (!email) {
+    return { success: false, error: 'Thiếu email' };
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(TAB_USERS);
+
+  if (!sheet) {
+    return { success: false, error: 'Sheet "' + TAB_USERS + '" không tồn tại' };
+  }
+
+  var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues();
+  var headers = values[0].map(function(h) { return h.toString().trim(); });
+  var emailCol = headers.indexOf(COL_EMAIL);
+
+  if (emailCol === -1) {
+    return { success: false, error: 'Sheet thiếu cột "' + COL_EMAIL + '"' };
+  }
+
+  for (var i = 1; i < values.length; i++) {
+    var rowEmail = (values[i][emailCol] || '').toString().toLowerCase().trim();
+    if (rowEmail === email) {
+      sheet.deleteRow(i + 1);
+      return { success: true, message: 'Đã xóa user: ' + email };
+    }
+  }
+
+  return { success: false, error: 'Không tìm thấy user với email: ' + email };
+}
+
+// =====================
+// HELPER
+// =====================
+function isAdmin_(roleValue) {
+  var normalized = (roleValue || '').toLowerCase().trim();
+  return (normalized === 'admin' ||
+          normalized === 'administrator' ||
+          normalized.indexOf('quản trị') !== -1 ||
+          normalized === 'qtv');
 }

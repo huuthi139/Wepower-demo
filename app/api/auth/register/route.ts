@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 // Tab "Đăng ký" trong Google Sheets
 const SHEET_NAME = 'Đăng ký';
 
