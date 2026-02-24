@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { execSync } from 'child_process';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 // Tab "Users" trong Google Sheets
@@ -54,22 +55,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Method 1: Google Apps Script (ưu tiên)
+    // Method 1: Google Apps Script via GET (tránh POST redirect issues)
     if (process.env.GOOGLE_SCRIPT_URL) {
       try {
-        const res = await fetch(process.env.GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'register',
-            name,
-            email,
-            password,
-            phone: phone || '',
-          }),
+        const params = new URLSearchParams({
+          action: 'register',
+          name,
+          email,
+          password,
+          phone: phone || '',
         });
-
-        const data = await res.json();
+        const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+        const resText = execSync(`curl -sL "${scriptUrl}"`, { timeout: 15000, encoding: 'utf-8' });
+        const data = JSON.parse(resText);
 
         if (data.success) {
           return NextResponse.json({ success: true, user: data.user });

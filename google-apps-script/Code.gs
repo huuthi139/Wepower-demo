@@ -103,7 +103,7 @@ function doGet(e) {
           success: true,
           message: 'WePower Academy API is running!',
           version: '3.0-unified',
-          actions_get: ['addRegistration', 'addOrder', 'getUsers', 'ping'],
+          actions_get: ['login', 'register', 'addRegistration', 'addOrder', 'getUsers', 'ping'],
           actions_post: ['login', 'register', 'addRegistration', 'addOrder', 'appendOrder', 'getUsers', 'updateUserLevel', 'deleteUser', 'setup']
         }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -124,6 +124,41 @@ function doGet(e) {
     if (action === 'getUsers') {
       return ContentService
         .createTextOutput(JSON.stringify(handleGetUsers()))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Login via GET (tránh CORS/redirect issues với POST)
+    if (action === 'login') {
+      var loginResult = handleLogin({ email: e.parameter.email, password: e.parameter.password });
+      return ContentService
+        .createTextOutput(JSON.stringify(loginResult))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Append Order via GET (rowData as JSON string)
+    if (action === 'appendOrder') {
+      var rowData = e.parameter.rowData;
+      try {
+        rowData = JSON.parse(rowData);
+      } catch (parseErr) {
+        return createResponse(false, 'Invalid rowData JSON');
+      }
+      var appendResult = handleAppendOrder({ rowData: rowData });
+      return ContentService
+        .createTextOutput(JSON.stringify(appendResult))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Register via GET
+    if (action === 'register') {
+      var regResult = handleRegister({
+        name: e.parameter.name,
+        email: e.parameter.email,
+        password: e.parameter.password,
+        phone: e.parameter.phone || ''
+      });
+      return ContentService
+        .createTextOutput(JSON.stringify(regResult))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
