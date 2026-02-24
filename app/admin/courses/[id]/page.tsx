@@ -9,6 +9,18 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { formatPrice } from '@/lib/utils';
 
+// Helper: detect if URL is a Bunny Stream embed/player URL
+function isEmbedUrl(url: string): boolean {
+  return /mediadelivery\.net\/(embed|play)/.test(url) || /player\.mediadelivery\.net/.test(url);
+}
+
+// Helper: format seconds to MM:SS
+function formatSecondsToMMSS(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = Math.floor(totalSeconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -138,6 +150,61 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [lessonDuration, setLessonDuration] = useState('');
   const [lessonLevel, setLessonLevel] = useState<MemberLevel>('Free');
   const [lessonDirectPlayUrl, setLessonDirectPlayUrl] = useState('');
+  const [durationLoading, setDurationLoading] = useState(false);
+
+  // Auto-detect video duration when URL changes
+  const handleUrlChange = useCallback((url: string) => {
+    setLessonDirectPlayUrl(url);
+    const trimmed = url.trim();
+    if (!trimmed) return;
+
+    // For embed URLs, try to extract duration via Bunny API pattern
+    // For direct video URLs, use hidden <video> element
+    if (!isEmbedUrl(trimmed)) {
+      setDurationLoading(true);
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.src = trimmed;
+      video.onloadedmetadata = () => {
+        if (video.duration && isFinite(video.duration)) {
+          setLessonDuration(formatSecondsToMMSS(video.duration));
+        }
+        setDurationLoading(false);
+        video.src = '';
+      };
+      video.onerror = () => {
+        setDurationLoading(false);
+        video.src = '';
+      };
+    } else {
+      // For embed URLs: try to fetch the embed page and extract duration
+      // Bunny embed URLs contain a direct play URL we can probe
+      // Pattern: extract libraryId and videoId from embed URL
+      const match = trimmed.match(/mediadelivery\.net\/(?:embed|play)\/(\d+)\/([a-f0-9-]+)/i);
+      if (match) {
+        const [, libId, vidId] = match;
+        // Try the Bunny CDN direct URL pattern to get metadata
+        const probeUrl = `https://vz-${libId}.b-cdn.net/${vidId}/original`;
+        setDurationLoading(true);
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.crossOrigin = 'anonymous';
+        video.src = probeUrl;
+        video.onloadedmetadata = () => {
+          if (video.duration && isFinite(video.duration)) {
+            setLessonDuration(formatSecondsToMMSS(video.duration));
+          }
+          setDurationLoading(false);
+          video.src = '';
+        };
+        video.onerror = () => {
+          // Probe failed - that's OK, admin can set duration manually
+          setDurationLoading(false);
+          video.src = '';
+        };
+      }
+    }
+  }, []);
 
   if (!course) {
     return (
@@ -663,20 +730,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 <input
                   type="text"
                   value={lessonDirectPlayUrl}
-                  onChange={(e) => setLessonDirectPlayUrl(e.target.value)}
-                  placeholder="Dán link Direct Play URL vào đây"
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="Dán link video URL vào đây"
                   className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
                 />
-                <p className="text-xs text-gray-600 mt-1">Lấy từ Bunny Stream &rarr; Video &rarr; Direct Play URL</p>
+                <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Thời lượng</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
+                    Thời lượng
+                    {durationLoading && (
+                      <span className="text-xs text-orange-400 animate-pulse">Đang lấy...</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     value={lessonDuration}
                     onChange={(e) => setLessonDuration(e.target.value)}
-                    placeholder="VD: 10:30"
+                    placeholder="Tự động hoặc VD: 10:30"
                     className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
                   />
                 </div>
@@ -744,20 +816,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 <input
                   type="text"
                   value={lessonDirectPlayUrl}
-                  onChange={(e) => setLessonDirectPlayUrl(e.target.value)}
-                  placeholder="Dán link Direct Play URL vào đây"
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="Dán link video URL vào đây"
                   className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
                 />
-                <p className="text-xs text-gray-600 mt-1">Lấy từ Bunny Stream &rarr; Video &rarr; Direct Play URL</p>
+                <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Thời lượng</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
+                    Thời lượng
+                    {durationLoading && (
+                      <span className="text-xs text-orange-400 animate-pulse">Đang lấy...</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     value={lessonDuration}
                     onChange={(e) => setLessonDuration(e.target.value)}
-                    placeholder="VD: 10:30"
+                    placeholder="Tự động hoặc VD: 10:30"
                     className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
                   />
                 </div>
@@ -845,13 +922,23 @@ export default function CourseContentPage({ params }: { params: { id: string } }
             </button>
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               <div className="relative aspect-video bg-black">
-                <video
-                  key={previewVideo.directPlayUrl}
-                  src={previewVideo.directPlayUrl}
-                  controls
-                  className="w-full h-full"
-                  controlsList="nodownload"
-                />
+                {isEmbedUrl(previewVideo.directPlayUrl) ? (
+                  <iframe
+                    key={previewVideo.directPlayUrl}
+                    src={previewVideo.directPlayUrl}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    key={previewVideo.directPlayUrl}
+                    src={previewVideo.directPlayUrl}
+                    controls
+                    className="w-full h-full"
+                    controlsList="nodownload"
+                  />
+                )}
               </div>
               <div className="p-4 border-t border-gray-800">
                 <p className="text-white font-semibold">{previewVideo.title}</p>
