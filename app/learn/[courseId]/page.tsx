@@ -7,6 +7,10 @@ import { mockCourses } from '@/lib/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MemberLevel } from '@/lib/mockData';
 
+function isEmbedUrl(url: string): boolean {
+  return /mediadelivery\.net\/(embed|play)/.test(url) || /player\.mediadelivery\.net/.test(url);
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -243,14 +247,24 @@ export default function LearnPage() {
           <div className="relative bg-black">
             <div className="aspect-video w-full max-h-[calc(100vh-280px)]">
               {currentLesson?.directPlayUrl ? (
-                <video
-                  key={currentLesson.directPlayUrl}
-                  src={currentLesson.directPlayUrl}
-                  controls
-                  className="w-full h-full bg-black"
-                  controlsList="nodownload"
-                  playsInline
-                />
+                isEmbedUrl(currentLesson.directPlayUrl) ? (
+                  <iframe
+                    key={currentLesson.directPlayUrl}
+                    src={currentLesson.directPlayUrl}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    key={currentLesson.directPlayUrl}
+                    src={currentLesson.directPlayUrl}
+                    controls
+                    className="w-full h-full bg-black"
+                    controlsList="nodownload"
+                    playsInline
+                  />
+                )
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-900">
                   <div className="text-center">

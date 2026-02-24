@@ -15,6 +15,10 @@ import Image from 'next/image';
 
 import type { MemberLevel } from '@/lib/mockData';
 
+function isEmbedUrl(url: string): boolean {
+  return /mediadelivery\.net\/(embed|play)/.test(url) || /player\.mediadelivery\.net/.test(url);
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -637,14 +641,24 @@ export default function CourseDetail() {
               {/* Video Player */}
               <div className="relative aspect-video bg-black">
                 {previewLesson.directPlayUrl ? (
-                  <video
-                    key={previewLesson.directPlayUrl}
-                    src={previewLesson.directPlayUrl}
-                    controls
-                    className="w-full h-full"
-                    controlsList="nodownload"
-                    playsInline
-                  />
+                  isEmbedUrl(previewLesson.directPlayUrl) ? (
+                    <iframe
+                      key={previewLesson.directPlayUrl}
+                      src={previewLesson.directPlayUrl}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      key={previewLesson.directPlayUrl}
+                      src={previewLesson.directPlayUrl}
+                      controls
+                      className="w-full h-full"
+                      controlsList="nodownload"
+                      playsInline
+                    />
+                  )
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <p className="text-gray-500 text-sm">Video chưa được tải lên</p>
