@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
-import { execSync } from 'child_process';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-}
-
-// Dùng curl thay vì fetch (Node.js DNS không resolve được Google)
-function curlFetch(url: string): string {
-  return execSync(`curl -sL "${url}"`, { timeout: 15000, encoding: 'utf-8' });
 }
 
 function parseCSV(csv: string): Record<string, string>[] {
@@ -75,13 +69,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Method 1: Google Apps Script via GET (tránh POST redirect issues)
+    // Method 1: Google Apps Script via GET
     if (process.env.GOOGLE_SCRIPT_URL) {
       try {
         const params = new URLSearchParams({ action: 'login', email, password });
         const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
-        const resText = execSync(`curl -sL "${scriptUrl}"`, { timeout: 15000, encoding: 'utf-8' });
-        const data = JSON.parse(resText);
+        const res = await fetch(scriptUrl, { redirect: 'follow' });
+        const data = await res.json();
 
         if (data.success) {
           const user = data.user;
@@ -100,9 +94,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Method 2: Đọc CSV từ Google Sheets (dùng curl)
+    // Method 2: Đọc CSV từ Google Sheets
     try {
-      const csv = curlFetch(getSheetUrl(SHEET_NAME));
+      const csvRes = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
+      const csv = await csvRes.text();
       const users = parseCSV(csv);
       console.log('[Login CSV] Parsed', users.length, 'users. Headers:', users.length > 0 ? Object.keys(users[0]) : 'none');
 
