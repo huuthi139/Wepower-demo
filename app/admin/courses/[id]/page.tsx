@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { mockCourses } from '@/lib/mockData';
 import type { MemberLevel } from '@/lib/mockData';
@@ -108,9 +108,29 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const course = mockCourses.find((c) => c.id === id);
 
-  const [chapters, setChapters] = useState<Chapter[]>(initialChapters);
+  const storageKey = `wepower-chapters-${id}`;
+  const [chapters, setChapters] = useState<Chapter[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) return JSON.parse(saved);
+      } catch { /* ignore */ }
+    }
+    return initialChapters;
+  });
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set(['ch-1']));
   const [modal, setModal] = useState<ModalType>({ kind: 'none' });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+
+  // Persist chapters to localStorage
+  const saveChapters = useCallback((newChapters: Chapter[]) => {
+    setChapters(newChapters);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newChapters));
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch { /* ignore */ }
+  }, [storageKey]);
 
   // Form states
   const [chapterTitle, setChapterTitle] = useState('');
@@ -178,21 +198,21 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       title: chapterTitle.trim(),
       lessons: [],
     };
-    setChapters((prev) => [...prev, newChapter]);
+    saveChapters([...chapters, newChapter]);
     setModal({ kind: 'none' });
   };
 
   const handleEditChapter = () => {
     if (modal.kind !== 'editChapter' || !chapterTitle.trim()) return;
-    setChapters((prev) =>
-      prev.map((ch) => (ch.id === modal.chapterId ? { ...ch, title: chapterTitle.trim() } : ch))
+    saveChapters(
+      chapters.map((ch) => (ch.id === modal.chapterId ? { ...ch, title: chapterTitle.trim() } : ch))
     );
     setModal({ kind: 'none' });
   };
 
   const handleDeleteChapter = () => {
     if (modal.kind !== 'deleteChapter') return;
-    setChapters((prev) => prev.filter((ch) => ch.id !== modal.chapterId));
+    saveChapters(chapters.filter((ch) => ch.id !== modal.chapterId));
     setExpandedChapters((prev) => {
       const next = new Set(prev);
       next.delete(modal.chapterId);
@@ -238,8 +258,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       videoId: lessonVideoId.trim(),
       libraryId: lessonLibraryId.trim(),
     };
-    setChapters((prev) =>
-      prev.map((ch) =>
+    saveChapters(
+      chapters.map((ch) =>
         ch.id === modal.chapterId ? { ...ch, lessons: [...ch.lessons, newLesson] } : ch
       )
     );
@@ -248,8 +268,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const handleEditLesson = () => {
     if (modal.kind !== 'editLesson' || !lessonTitle.trim()) return;
-    setChapters((prev) =>
-      prev.map((ch) =>
+    saveChapters(
+      chapters.map((ch) =>
         ch.id === modal.chapterId
           ? {
               ...ch,
@@ -267,8 +287,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const handleDeleteLesson = () => {
     if (modal.kind !== 'deleteLesson') return;
-    setChapters((prev) =>
-      prev.map((ch) =>
+    saveChapters(
+      chapters.map((ch) =>
         ch.id === modal.chapterId
           ? { ...ch, lessons: ch.lessons.filter((ls) => ls.id !== modal.lessonId) }
           : ch
@@ -298,9 +318,19 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               </svg>
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
+                {saveStatus === 'saved' && (
+                  <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Đã lưu
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-400 mt-1">
-                {course.instructor} &middot; {chapters.length} chuong &middot; {totalLessons} bai hoc &middot; {formatPrice(course.price)}
+                {course.instructor} &middot; {chapters.length} chương &middot; {totalLessons} bài học &middot; {formatPrice(course.price)}
               </p>
             </div>
           </div>
@@ -309,7 +339,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Quay lai
+              Quay lại
             </Button>
           </Link>
         </div>

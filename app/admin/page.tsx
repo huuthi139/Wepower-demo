@@ -265,21 +265,46 @@ export default function AdminDashboard() {
   const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
 
   // ------- Students state -------
+  const [students, setStudents] = useState<Student[]>(() => [...studentsData]);
   const [studentFilter, setStudentFilter] = useState<'all' | MemberLevel>('all');
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+  const [showAddCourseModal, setShowAddCourseModal] = useState<string | null>(null); // studentId
 
   // ------- Computed values -------
   const totalRevenue = recentOrders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.amount, 0);
 
   // Count students by their account level
-  const freeCount = studentsData.filter(s => s.memberLevel === 'Free').length;
-  const premiumCount = studentsData.filter(s => s.memberLevel === 'Premium').length;
-  const vipCount = studentsData.filter(s => s.memberLevel === 'VIP').length;
+  const freeCount = students.filter(s => s.memberLevel === 'Free').length;
+  const premiumCount = students.filter(s => s.memberLevel === 'Premium').length;
+  const vipCount = students.filter(s => s.memberLevel === 'VIP').length;
 
   // Filtered students by account level
   const filteredStudents = studentFilter === 'all'
-    ? studentsData
-    : studentsData.filter(s => s.memberLevel === studentFilter);
+    ? students
+    : students.filter(s => s.memberLevel === studentFilter);
+
+  /* ------- Student course management ------- */
+  const handleRemoveCourse = (studentId: string, courseId: string) => {
+    setStudents(prev => prev.map(s =>
+      s.id === studentId
+        ? { ...s, enrolledCourses: s.enrolledCourses.filter(ec => ec.courseId !== courseId) }
+        : s
+    ));
+  };
+
+  const handleAddCourseToStudent = (studentId: string, courseId: string) => {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+    setStudents(prev => prev.map(s =>
+      s.id === studentId
+        ? {
+            ...s,
+            enrolledCourses: [...s.enrolledCourses, { courseId, courseName: course.title, progress: 0 }],
+          }
+        : s
+    ));
+    setShowAddCourseModal(null);
+  };
 
   /* ------- Course CRUD handlers ------- */
 
@@ -452,7 +477,7 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <div className="text-xl md:text-2xl font-bold text-white mb-1">{studentsData.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-white mb-1">{students.length}</div>
                 <p className="text-xs text-gray-400">Học viên</p>
               </div>
 
@@ -487,10 +512,10 @@ export default function AdminDashboard() {
                       <LevelBadge level="VIP" />
                       <span className="text-sm text-gray-400">{vipCount} học viên</span>
                     </div>
-                    <span className="text-sm text-white font-bold">{Math.round(vipCount / studentsData.length * 100)}%</span>
+                    <span className="text-sm text-white font-bold">{Math.round(vipCount / students.length * 100)}%</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / studentsData.length * 100}%` }} />
+                    <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / students.length * 100}%` }} />
                   </div>
                 </div>
                 <div>
@@ -499,10 +524,10 @@ export default function AdminDashboard() {
                       <LevelBadge level="Premium" />
                       <span className="text-sm text-gray-400">{premiumCount} học viên</span>
                     </div>
-                    <span className="text-sm text-white font-bold">{Math.round(premiumCount / studentsData.length * 100)}%</span>
+                    <span className="text-sm text-white font-bold">{Math.round(premiumCount / students.length * 100)}%</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / studentsData.length * 100}%` }} />
+                    <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / students.length * 100}%` }} />
                   </div>
                 </div>
                 <div>
@@ -511,10 +536,10 @@ export default function AdminDashboard() {
                       <LevelBadge level="Free" />
                       <span className="text-sm text-gray-400">{freeCount} học viên</span>
                     </div>
-                    <span className="text-sm text-white font-bold">{Math.round(freeCount / studentsData.length * 100)}%</span>
+                    <span className="text-sm text-white font-bold">{Math.round(freeCount / students.length * 100)}%</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / studentsData.length * 100}%` }} />
+                    <div className="h-full bg-gray-500 rounded-full" style={{ width: `${freeCount / students.length * 100}%` }} />
                   </div>
                 </div>
               </div>
@@ -724,7 +749,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="p-4 text-sm text-gray-400">{student.phone}</td>
                             <td className="p-4"><LevelBadge level={student.memberLevel} /></td>
-                            <td className="p-4 text-sm text-white">{student.enrolledCourses.length}</td>
+                            <td className="p-4 text-sm text-white font-semibold">{student.enrolledCourses.length}</td>
                             <td className="p-4 text-sm text-yellow font-semibold">
                               {student.totalSpent === 0 ? '-' : formatPrice(student.totalSpent)}
                             </td>
@@ -741,14 +766,25 @@ export default function AdminDashboard() {
                             <tr>
                               <td colSpan={9} className="p-0">
                                 <div className="bg-black/40 border-t border-gray-800/50 px-8 py-4">
-                                  <div className="text-xs font-semibold text-gray-400 uppercase mb-3">
-                                    Khóa học đã đăng ký ({student.enrolledCourses.length})
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="text-xs font-semibold text-gray-400 uppercase">
+                                      Khóa học đã đăng ký ({student.enrolledCourses.length})
+                                    </div>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setShowAddCourseModal(student.id); }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red hover:bg-red/80 text-white text-xs font-semibold rounded-lg transition-colors"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                      </svg>
+                                      Thêm khóa học
+                                    </button>
                                   </div>
                                   <div className="space-y-2">
                                     {student.enrolledCourses.map(ec => (
                                       <div
                                         key={ec.courseId}
-                                        className="flex items-center justify-between bg-white/[0.03] border border-gray-800/50 rounded-lg px-4 py-3"
+                                        className="flex items-center justify-between bg-white/[0.03] border border-gray-800/50 rounded-lg px-4 py-3 group"
                                       >
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                           <div className="w-6 h-6 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
@@ -758,20 +794,36 @@ export default function AdminDashboard() {
                                           </div>
                                           <span className="text-sm text-white truncate">{ec.courseName}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 min-w-[140px] flex-shrink-0 ml-4">
-                                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                            <div
-                                              className={`h-full rounded-full ${
-                                                ec.progress === 100 ? 'bg-green-500' :
-                                                ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
-                                              }`}
-                                              style={{ width: `${ec.progress}%` }}
-                                            />
+                                        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                          <div className="flex items-center gap-2 min-w-[120px]">
+                                            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                              <div
+                                                className={`h-full rounded-full ${
+                                                  ec.progress === 100 ? 'bg-green-500' :
+                                                  ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
+                                                }`}
+                                                style={{ width: `${ec.progress}%` }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-gray-400 w-8 text-right">{ec.progress}%</span>
                                           </div>
-                                          <span className="text-xs text-gray-400 w-8 text-right">{ec.progress}%</span>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveCourse(student.id, ec.courseId); }}
+                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-red hover:bg-red/10 opacity-0 group-hover:opacity-100 transition-all"
+                                            title="Xóa khóa học"
+                                          >
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </button>
                                         </div>
                                       </div>
                                     ))}
+                                    {student.enrolledCourses.length === 0 && (
+                                      <div className="text-center py-4 text-sm text-gray-500">
+                                        Chưa có khóa học nào
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </td>
@@ -979,6 +1031,52 @@ export default function AdminDashboard() {
           </div>
         </div>
       </Modal>
+
+      {/* ============ ADD COURSE TO STUDENT MODAL ============ */}
+      {showAddCourseModal && (() => {
+        const student = students.find(s => s.id === showAddCourseModal);
+        if (!student) return null;
+        const enrolledIds = new Set(student.enrolledCourses.map(ec => ec.courseId));
+        const availableCourses = courses.filter(c => !enrolledIds.has(c.id));
+        return (
+          <Modal open onClose={() => setShowAddCourseModal(null)}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Thêm khóa học</h3>
+                  <p className="text-sm text-gray-400 mt-1">Cho học viên: {student.name}</p>
+                </div>
+                <button onClick={() => setShowAddCourseModal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {availableCourses.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">Học viên đã đăng ký tất cả khóa học</p>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {availableCourses.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => handleAddCourseToStudent(student.id, c.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.03] border border-gray-800 rounded-lg hover:border-red/50 hover:bg-red/5 transition-colors text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white font-medium truncate">{c.title}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{c.category} &middot; {formatPrice(c.price)}</div>
+                      </div>
+                      <svg className="w-5 h-5 text-gray-500 flex-shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
 
       <Footer />
     </div>

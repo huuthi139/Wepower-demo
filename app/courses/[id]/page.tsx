@@ -97,6 +97,7 @@ export default function CourseDetail() {
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
+  const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string } | null>(null);
 
   const course = mockCourses.find(c => c.id === params.id);
 
@@ -368,32 +369,40 @@ export default function CourseDetail() {
                                 isLocked ? 'opacity-60' : 'hover:bg-white/5'
                               }`}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {isLocked ? (
-                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                   </svg>
                                 ) : (
-                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
+                                  <button
+                                    onClick={() => setPreviewLesson({ name: lesson.name, sectionTitle: section.title })}
+                                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red/20 hover:bg-red/40 text-red flex-shrink-0 transition-colors"
+                                    title="Xem trước"
+                                  >
+                                    <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </button>
                                 )}
-                                <span className="text-gray-300 text-sm">{lesson.name}</span>
+                                <span className="text-gray-300 text-sm truncate">{lesson.name}</span>
+                                {/* Level badge - always show */}
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${
+                                  lesson.requiredLevel === 'VIP'
+                                    ? 'bg-gradient-to-r from-yellow/10 to-amber-500/10 text-yellow border border-yellow/30'
+                                    : lesson.requiredLevel === 'Premium'
+                                      ? 'bg-red/10 text-red border border-red/20'
+                                      : 'bg-white/5 text-gray-400 border border-white/10'
+                                }`}>
+                                  {lesson.requiredLevel}
+                                </span>
                                 {lesson.isFree && (
-                                  <span className="text-xs bg-red/20 text-red px-2 py-0.5 rounded-full font-semibold">
+                                  <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-bold flex-shrink-0">
                                     Xem thử
                                   </span>
                                 )}
-                                {isLocked && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                    lesson.requiredLevel === 'VIP' ? 'bg-yellow/10 text-yellow' : 'bg-red/10 text-red'
-                                  }`}>
-                                    {lesson.requiredLevel}
-                                  </span>
-                                )}
                               </div>
-                              <span className="text-sm text-gray-500">{lesson.duration}</span>
+                              <span className="text-sm text-gray-500 flex-shrink-0 ml-3">{lesson.duration}</span>
                             </div>
                           );
                         })}
@@ -566,6 +575,42 @@ export default function CourseDetail() {
           </div>
         )}
       </div>
+
+      {/* Video Preview Modal */}
+      {previewLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewLesson(null)} />
+          <div className="relative w-full max-w-3xl">
+            {/* Close button */}
+            <button
+              onClick={() => setPreviewLesson(null)}
+              className="absolute -top-10 right-0 text-white/60 hover:text-white transition-colors text-sm flex items-center gap-2"
+            >
+              Đóng
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              {/* Bunny Stream Player */}
+              <div className="relative aspect-video bg-black">
+                <iframe
+                  src="https://iframe.mediadelivery.net/embed/598901/d4d1e0d6-adb7-4e46-abc2-f3eaf71cd34a?autoplay=false&preload=true"
+                  loading="lazy"
+                  className="w-full h-full border-0"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              {/* Lesson info */}
+              <div className="p-4 border-t border-gray-800">
+                <p className="text-xs text-gray-500 mb-1">{previewLesson.sectionTitle}</p>
+                <p className="text-white font-semibold">{previewLesson.name}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
