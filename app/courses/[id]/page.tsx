@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -15,38 +15,57 @@ import Image from 'next/image';
 
 import type { MemberLevel } from '@/lib/mockData';
 
-const curriculumData = [
+interface Lesson {
+  id: string;
+  title: string;
+  duration: string;
+  requiredLevel: MemberLevel;
+  videoId: string;
+  libraryId: string;
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  lessons: Lesson[];
+}
+
+const defaultChapters: Chapter[] = [
   {
+    id: 'ch-1',
     title: 'Giới thiệu khóa học',
     lessons: [
-      { name: 'Tổng quan về khóa học', duration: '5:30', isFree: true, requiredLevel: 'Free' as MemberLevel },
-      { name: 'Cách học hiệu quả nhất', duration: '8:15', isFree: true, requiredLevel: 'Free' as MemberLevel },
-      { name: 'Chuẩn bị công cụ cần thiết', duration: '12:00', isFree: false, requiredLevel: 'Free' as MemberLevel },
+      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', videoId: '', libraryId: '' },
     ],
   },
   {
+    id: 'ch-2',
     title: 'Kiến thức nền tảng',
     lessons: [
-      { name: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', isFree: false, requiredLevel: 'Free' as MemberLevel },
-      { name: 'Phân tích case study thực tế', duration: '20:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
-      { name: 'Thực hành bài tập 1', duration: '18:45', isFree: false, requiredLevel: 'Premium' as MemberLevel },
-      { name: 'Kiểm tra kiến thức chương 1', duration: '10:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
+      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
+      { id: 'ls-2-3', title: 'Thực hành bài tập 1', duration: '18:45', requiredLevel: 'Premium', videoId: '', libraryId: '' },
+      { id: 'ls-2-4', title: 'Kiểm tra kiến thức chương 1', duration: '10:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
     ],
   },
   {
+    id: 'ch-3',
     title: 'Kỹ thuật nâng cao',
     lessons: [
-      { name: 'Chiến lược chuyên sâu', duration: '25:00', isFree: false, requiredLevel: 'Premium' as MemberLevel },
-      { name: 'Tối ưu hóa quy trình', duration: '22:30', isFree: false, requiredLevel: 'VIP' as MemberLevel },
-      { name: 'Phân tích dữ liệu thực tế', duration: '30:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
+      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
+      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-3-3', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
     ],
   },
   {
+    id: 'ch-4',
     title: 'Dự án thực hành',
     lessons: [
-      { name: 'Hướng dẫn dự án cuối khóa', duration: '10:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
-      { name: 'Thực hành xây dựng dự án', duration: '45:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
-      { name: 'Review & phản hồi', duration: '20:00', isFree: false, requiredLevel: 'VIP' as MemberLevel },
+      { id: 'ls-4-1', title: 'Hướng dẫn dự án cuối khóa', duration: '10:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-4-2', title: 'Thực hành xây dựng dự án', duration: '45:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-4-3', title: 'Review & phản hồi', duration: '20:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
     ],
   },
 ];
@@ -97,7 +116,20 @@ export default function CourseDetail() {
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
-  const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string } | null>(null);
+  const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string; videoId: string; libraryId: string } | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
+
+  // Load chapters from localStorage (shared with admin)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && params.id) {
+      try {
+        const saved = localStorage.getItem(`wepower-chapters-${params.id}`);
+        if (saved) {
+          setChapters(JSON.parse(saved));
+        }
+      } catch { /* ignore */ }
+    }
+  }, [params.id]);
 
   const course = mockCourses.find(c => c.id === params.id);
 
@@ -142,7 +174,7 @@ export default function CourseDetail() {
     .filter(c => c.category === course.category && c.id !== course.id)
     .slice(0, 3);
 
-  const totalLessons = curriculumData.reduce((sum, section) => sum + section.lessons.length, 0);
+  const totalLessons = chapters.reduce((sum, section) => sum + section.lessons.length, 0);
 
   return (
     <div className="min-h-screen bg-black">
@@ -322,21 +354,21 @@ export default function CourseDetail() {
               <div className="space-y-4 animate-fadeIn">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-gray-400">
-                    {curriculumData.length} phần - {totalLessons} bài học - {formatDuration(course.duration)}
+                    {chapters.length} phần - {totalLessons} bài học - {formatDuration(course.duration)}
                   </p>
                   <button
                     onClick={() => setExpandedSections(
-                      expandedSections.length === curriculumData.length
+                      expandedSections.length === chapters.length
                         ? []
-                        : curriculumData.map((_, i) => i)
+                        : chapters.map((_, i) => i)
                     )}
                     className="text-red text-sm font-semibold hover:underline"
                   >
-                    {expandedSections.length === curriculumData.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả'}
+                    {expandedSections.length === chapters.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả'}
                   </button>
                 </div>
 
-                {curriculumData.map((section, sectionIndex) => (
+                {chapters.map((section, sectionIndex) => (
                   <div key={sectionIndex} className="border border-white/10 rounded-xl overflow-hidden">
                     <button
                       onClick={() => toggleSection(sectionIndex)}
@@ -376,16 +408,21 @@ export default function CourseDetail() {
                                   </svg>
                                 ) : (
                                   <button
-                                    onClick={() => setPreviewLesson({ name: lesson.name, sectionTitle: section.title })}
-                                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red/20 hover:bg-red/40 text-red flex-shrink-0 transition-colors"
-                                    title="Xem trước"
+                                    onClick={() => setPreviewLesson({ name: lesson.title, sectionTitle: section.title, videoId: lesson.videoId, libraryId: lesson.libraryId })}
+                                    disabled={!lesson.videoId}
+                                    className={`w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-colors ${
+                                      lesson.videoId
+                                        ? 'bg-red/20 hover:bg-red/40 text-red cursor-pointer'
+                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                    }`}
+                                    title={lesson.videoId ? 'Xem trước' : 'Chưa có video'}
                                   >
                                     <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                       <path d="M8 5v14l11-7z" />
                                     </svg>
                                   </button>
                                 )}
-                                <span className="text-gray-300 text-sm truncate">{lesson.name}</span>
+                                <span className="text-gray-300 text-sm truncate">{lesson.title}</span>
                                 {/* Level badge - always show */}
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${
                                   lesson.requiredLevel === 'VIP'
@@ -396,9 +433,9 @@ export default function CourseDetail() {
                                 }`}>
                                   {lesson.requiredLevel}
                                 </span>
-                                {lesson.isFree && (
+                                {lesson.requiredLevel === 'Free' && (
                                   <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-bold flex-shrink-0">
-                                    Xem thử
+                                    FREE
                                   </span>
                                 )}
                               </div>
@@ -600,13 +637,20 @@ export default function CourseDetail() {
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               {/* Bunny Stream Player */}
               <div className="relative aspect-video bg-black">
-                <iframe
-                  src="https://iframe.mediadelivery.net/embed/598901/d4d1e0d6-adb7-4e46-abc2-f3eaf71cd34a?autoplay=false&preload=true"
-                  loading="lazy"
-                  className="w-full h-full border-0"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
+                {previewLesson.videoId && previewLesson.libraryId ? (
+                  <iframe
+                    key={previewLesson.videoId}
+                    src={`https://iframe.mediadelivery.net/embed/${previewLesson.libraryId}/${previewLesson.videoId}?autoplay=false&preload=true`}
+                    loading="lazy"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-gray-500 text-sm">Video chưa được tải lên</p>
+                  </div>
+                )}
               </div>
               {/* Lesson info */}
               <div className="p-4 border-t border-gray-800">
