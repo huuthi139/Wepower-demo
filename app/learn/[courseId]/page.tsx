@@ -12,8 +12,7 @@ interface Lesson {
   title: string;
   duration: string;
   requiredLevel: MemberLevel;
-  videoId: string;
-  libraryId: string;
+  directPlayUrl: string;
 }
 
 interface Chapter {
@@ -27,36 +26,36 @@ const defaultChapters: Chapter[] = [
     id: 'ch-1',
     title: 'Chương 1: Giới thiệu và chuẩn bị',
     lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', videoId: 'abc-123-def', libraryId: '87654' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', videoId: 'abc-456-ghi', libraryId: '87654' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-2',
     title: 'Chương 2: Kiến thức nền tảng',
     lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', videoId: 'xyz-789-abc', libraryId: '87654' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', videoId: 'xyz-012-def', libraryId: '87654' },
-      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', videoId: '', libraryId: '' },
-      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', videoId: 'xyz-345-ghi', libraryId: '87654' },
+      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-3',
     title: 'Chương 3: Chiến lược nâng cao',
     lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', videoId: 'pqr-111-aaa', libraryId: '87654' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', videoId: 'pqr-222-bbb', libraryId: '87654' },
+      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-4',
     title: 'Chương 4: Dự án thực tế và tổng kết',
     lessons: [
-      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', videoId: 'stu-333-ccc', libraryId: '87654' },
-      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
-      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', videoId: 'stu-444-ddd', libraryId: '87654' },
+      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', directPlayUrl: '' },
     ],
   },
 ];
@@ -113,7 +112,7 @@ export default function LearnPage() {
     if (chapters.length > 0 && !currentLessonId) {
       for (const ch of chapters) {
         for (const ls of ch.lessons) {
-          if (ls.videoId && LEVEL_ORDER[ls.requiredLevel] <= LEVEL_ORDER[userLevel]) {
+          if (ls.directPlayUrl && LEVEL_ORDER[ls.requiredLevel] <= LEVEL_ORDER[userLevel]) {
             setCurrentLessonId(ls.id);
             setExpandedChapters(new Set([ch.id]));
             return;
@@ -243,13 +242,14 @@ export default function LearnPage() {
           {/* Video Player */}
           <div className="relative bg-black">
             <div className="aspect-video w-full max-h-[calc(100vh-280px)]">
-              {currentLesson?.videoId ? (
-                <iframe
-                  key={currentLesson.videoId}
-                  src={`https://iframe.mediadelivery.net/embed/${currentLesson.libraryId}/${currentLesson.videoId}?autoplay=false&preload=true`}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
+              {currentLesson?.directPlayUrl ? (
+                <video
+                  key={currentLesson.directPlayUrl}
+                  src={currentLesson.directPlayUrl}
+                  controls
+                  className="w-full h-full bg-black"
+                  controlsList="nodownload"
+                  playsInline
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -548,7 +548,7 @@ export default function LearnPage() {
                             ? 'bg-red text-white'
                             : isLocked
                               ? 'bg-white/5 text-gray-600'
-                              : lesson.videoId
+                              : lesson.directPlayUrl
                                 ? 'bg-green-500/10 text-green-400'
                                 : 'bg-white/5 text-gray-500'
                         }`}>
@@ -636,7 +636,7 @@ export default function LearnPage() {
                             } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                              isActive ? 'bg-red text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.videoId ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
+                              isActive ? 'bg-red text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.directPlayUrl ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
                             }`}>
                               {isLocked ? (
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

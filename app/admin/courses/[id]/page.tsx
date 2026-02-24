@@ -14,8 +14,7 @@ interface Lesson {
   title: string;
   duration: string;
   requiredLevel: MemberLevel;
-  videoId: string;
-  libraryId: string;
+  directPlayUrl: string;
 }
 
 interface Chapter {
@@ -29,36 +28,36 @@ const initialChapters: Chapter[] = [
     id: 'ch-1',
     title: 'Chương 1: Giới thiệu và chuẩn bị',
     lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', videoId: 'abc-123-def', libraryId: '87654' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', videoId: 'abc-456-ghi', libraryId: '87654' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-2',
     title: 'Chương 2: Kiến thức nền tảng',
     lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', videoId: 'xyz-789-abc', libraryId: '87654' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', videoId: 'xyz-012-def', libraryId: '87654' },
-      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', videoId: '', libraryId: '' },
-      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', videoId: 'xyz-345-ghi', libraryId: '87654' },
+      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-3',
     title: 'Chương 3: Chiến lược nâng cao',
     lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', videoId: 'pqr-111-aaa', libraryId: '87654' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', videoId: 'pqr-222-bbb', libraryId: '87654' },
+      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-4',
     title: 'Chương 4: Dự án thực tế và tổng kết',
     lessons: [
-      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', videoId: 'stu-333-ccc', libraryId: '87654' },
-      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
-      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', videoId: 'stu-444-ddd', libraryId: '87654' },
+      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', directPlayUrl: '' },
     ],
   },
 ];
@@ -121,7 +120,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set(['ch-1']));
   const [modal, setModal] = useState<ModalType>({ kind: 'none' });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
-  const [previewVideo, setPreviewVideo] = useState<{ videoId: string; libraryId: string; title: string } | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<{ directPlayUrl: string; title: string } | null>(null);
 
   // Persist chapters to localStorage
   const saveChapters = useCallback((newChapters: Chapter[]) => {
@@ -138,8 +137,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [lessonTitle, setLessonTitle] = useState('');
   const [lessonDuration, setLessonDuration] = useState('');
   const [lessonLevel, setLessonLevel] = useState<MemberLevel>('Free');
-  const [lessonVideoId, setLessonVideoId] = useState('');
-  const [lessonLibraryId, setLessonLibraryId] = useState('');
+  const [lessonDirectPlayUrl, setLessonDirectPlayUrl] = useState('');
 
   if (!course) {
     return (
@@ -227,8 +225,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     setLessonTitle('');
     setLessonDuration('');
     setLessonLevel('Free');
-    setLessonVideoId('');
-    setLessonLibraryId('');
+    setLessonDirectPlayUrl('');
     setModal({ kind: 'addLesson', chapterId });
   };
 
@@ -239,8 +236,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       setLessonTitle(lesson.title);
       setLessonDuration(lesson.duration);
       setLessonLevel(lesson.requiredLevel);
-      setLessonVideoId(lesson.videoId);
-      setLessonLibraryId(lesson.libraryId);
+      setLessonDirectPlayUrl(lesson.directPlayUrl);
       setModal({ kind: 'editLesson', chapterId, lessonId });
     }
   };
@@ -256,8 +252,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       title: lessonTitle.trim(),
       duration: lessonDuration.trim(),
       requiredLevel: lessonLevel,
-      videoId: lessonVideoId.trim(),
-      libraryId: lessonLibraryId.trim(),
+      directPlayUrl: lessonDirectPlayUrl.trim(),
     };
     saveChapters(
       chapters.map((ch) =>
@@ -276,7 +271,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               ...ch,
               lessons: ch.lessons.map((ls) =>
                 ls.id === modal.lessonId
-                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel, videoId: lessonVideoId.trim(), libraryId: lessonLibraryId.trim() }
+                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel, directPlayUrl: lessonDirectPlayUrl.trim() }
                   : ls
               ),
             }
@@ -456,9 +451,9 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {lesson.videoId ? (
+                          {lesson.directPlayUrl ? (
                             <button
-                              onClick={() => setPreviewVideo({ videoId: lesson.videoId, libraryId: lesson.libraryId, title: lesson.title })}
+                              onClick={() => setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
                               className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 hover:bg-green-500/25 transition-colors cursor-pointer"
                               title="Xem trước video"
                             >
@@ -478,8 +473,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                             <div className="flex items-center gap-3 mt-0.5">
                               <LevelBadge level={lesson.requiredLevel} />
                               {lesson.duration && <span className="text-xs text-gray-500">{lesson.duration}</span>}
-                              {lesson.videoId ? (
-                                <span className="text-xs text-green-400">ID: {lesson.videoId}</span>
+                              {lesson.directPlayUrl ? (
+                                <span className="text-xs text-green-400">Đã có video</span>
                               ) : (
                                 <span className="text-xs text-yellow">Chưa có video</span>
                               )}
@@ -656,35 +651,23 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   autoFocus
                 />
               </div>
-              <div className="p-3 bg-white/[0.02] border border-gray-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm font-medium text-orange-400">Bunny Stream</span>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Video ID</label>
-                    <input
-                      type="text"
-                      value={lessonVideoId}
-                      onChange={(e) => setLessonVideoId(e.target.value)}
-                      placeholder="VD: abc-123-def-456"
-                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Library ID</label>
-                    <input
-                      type="text"
-                      value={lessonLibraryId}
-                      onChange={(e) => setLessonLibraryId(e.target.value)}
-                      placeholder="VD: 87654"
-                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Direct Play URL
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={lessonDirectPlayUrl}
+                  onChange={(e) => setLessonDirectPlayUrl(e.target.value)}
+                  placeholder="Dán link Direct Play URL vào đây"
+                  className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ Bunny Stream &rarr; Video &rarr; Direct Play URL</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -749,35 +732,23 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   autoFocus
                 />
               </div>
-              <div className="p-3 bg-white/[0.02] border border-gray-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm font-medium text-orange-400">Bunny Stream</span>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Video ID</label>
-                    <input
-                      type="text"
-                      value={lessonVideoId}
-                      onChange={(e) => setLessonVideoId(e.target.value)}
-                      placeholder="VD: abc-123-def-456"
-                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Library ID</label>
-                    <input
-                      type="text"
-                      value={lessonLibraryId}
-                      onChange={(e) => setLessonLibraryId(e.target.value)}
-                      placeholder="VD: 87654"
-                      className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Direct Play URL
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={lessonDirectPlayUrl}
+                  onChange={(e) => setLessonDirectPlayUrl(e.target.value)}
+                  placeholder="Dán link Direct Play URL vào đây"
+                  className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ Bunny Stream &rarr; Video &rarr; Direct Play URL</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -874,17 +845,16 @@ export default function CourseContentPage({ params }: { params: { id: string } }
             </button>
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               <div className="relative aspect-video bg-black">
-                <iframe
-                  src={`https://iframe.mediadelivery.net/embed/${previewVideo.libraryId}/${previewVideo.videoId}?autoplay=false&preload=true`}
-                  loading="lazy"
-                  className="w-full h-full border-0"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
+                <video
+                  key={previewVideo.directPlayUrl}
+                  src={previewVideo.directPlayUrl}
+                  controls
+                  className="w-full h-full"
+                  controlsList="nodownload"
                 />
               </div>
               <div className="p-4 border-t border-gray-800">
                 <p className="text-white font-semibold">{previewVideo.title}</p>
-                <p className="text-xs text-gray-500 mt-1 font-mono">Video ID: {previewVideo.videoId}</p>
               </div>
             </div>
           </div>
