@@ -21,7 +21,7 @@
  * CẤU TRÚC TABS:
  * - Users:   Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
  * - Orders:  Thời gian | Mã đơn hàng | Tên khách hàng | Email | SĐT | Khóa học | Mã khóa học | Tổng tiền | PTTT | Trạng thái | Mã GD
- * - Courses: ID | Title | Thumbnail | Instructor | Price | OriginalPrice | Rating | ReviewsCount | EnrollmentsCount | Duration | LessonsCount | Badge | Category | MemberLevel
+ * - Courses: ID | Title | Description | Thumbnail | Instructor | Price | OriginalPrice | Rating | ReviewsCount | EnrollmentsCount | Duration | LessonsCount | Badge | Category | MemberLevel
  */
 
 var SPREADSHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
@@ -56,8 +56,8 @@ function setup() {
   var courses = ss.getSheetByName('Courses');
   if (!courses) {
     courses = ss.insertSheet('Courses');
-    courses.appendRow(['ID', 'Title', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
-    formatHeader_(courses, 14, '#4a9e4a');
+    courses.appendRow(['ID', 'Title', 'Description', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
+    formatHeader_(courses, 15, '#4a9e4a');
     Logger.log('Tab Courses đã tạo');
   }
 
@@ -359,6 +359,156 @@ function jsonResponse_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==========================================
+// SEED COURSES - Chạy 1 lần để thêm 15 khóa học
+// ==========================================
+function seedCourses() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName('Courses');
+
+  if (!sheet) {
+    sheet = ss.insertSheet('Courses');
+    sheet.appendRow(['ID', 'Title', 'Description', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
+    formatHeader_(sheet, 15, '#4a9e4a');
+  }
+
+  // Xóa data cũ (giữ header)
+  if (sheet.getLastRow() > 1) {
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clear();
+  }
+
+  // Dữ liệu: [ID, Title, Description, Thumbnail, Instructor, Price, OriginalPrice, Rating, ReviewsCount, EnrollmentsCount, Duration, LessonsCount, Badge, Category, MemberLevel]
+  var courses = [
+    [
+      '1',
+      'Thiết kế website với Wordpress',
+      'Từ con số 0 đến website chuyên nghiệp chỉ trong 30 ngày! Khóa học giúp bạn tự tay xây dựng website bán hàng, landing page, blog cá nhân mà KHÔNG cần biết code. Bạn sẽ học cách chọn hosting, cài đặt Wordpress, thiết kế giao diện đẹp mắt với Elementor, tối ưu SEO và tăng tốc độ website. Hơn 1,500 học viên đã tạo website riêng sau khóa học này.',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop',
+      'WePower Academy',
+      868000, 1500000, 4.8, 234, 1543, 14400, 32, 'BESTSELLER', 'Web Dev', 'Free'
+    ],
+    [
+      '2',
+      'Khởi nghiệp kiếm tiền online với AI',
+      'Khám phá cách tận dụng sức mạnh AI để xây dựng nguồn thu nhập thụ động! Từ ChatGPT, MidJourney đến các công cụ AI tự động - bạn sẽ học cách tạo content, viết copy bán hàng, thiết kế hình ảnh và xây dựng funnel kiếm tiền hoàn toàn bằng AI. Đã có hàng trăm học viên tạo thu nhập từ 10-50 triệu/tháng sau khóa học.',
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 3500000, 4.9, 456, 2871, 18000, 45, 'BESTSELLER', 'AI', 'Free'
+    ],
+    [
+      '3',
+      'Xây dựng hệ thống Automation với N8N',
+      'Tự động hóa mọi quy trình kinh doanh - tiết kiệm 80% thời gian! Học cách sử dụng N8N (công cụ automation miễn phí) để tự động gửi email, đồng bộ dữ liệu, quản lý đơn hàng, chăm sóc khách hàng tự động. Không cần biết lập trình - chỉ cần kéo thả. Phù hợp cho chủ shop online, freelancer và doanh nghiệp nhỏ.',
+      'https://images.unsplash.com/photo-1518432031352-d6fc5c10da5a?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 3000000, 4.7, 189, 1205, 16200, 38, 'NEW', 'Automation', 'Free'
+    ],
+    [
+      '4',
+      'Thiết kế hệ thống chatbot AI',
+      'Xây dựng chatbot AI thông minh - phục vụ khách hàng 24/7 không cần nhân viên! Bạn sẽ học cách tạo chatbot tư vấn sản phẩm, hỗ trợ khách hàng, chốt đơn tự động trên Website, Facebook Messenger và Zalo. Tích hợp ChatGPT để chatbot hiểu và trả lời tự nhiên như người thật. Giảm 70% chi phí nhân sự CSKH.',
+      'https://images.unsplash.com/photo-1531746790095-e5cb157f3086?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 2800000, 4.8, 312, 1876, 14400, 35, '', 'AI', 'Free'
+    ],
+    [
+      '5',
+      'Xây dựng hệ thống thu hút 1000 khách hàng tự động',
+      'Hệ thống marketing tự động giúp bạn có 1000 khách hàng tiềm năng mỗi tháng! Khóa học bật mí bí quyết xây dựng phễu marketing (funnel), chạy quảng cáo Facebook/Google hiệu quả, tạo lead magnet hấp dẫn và nuôi dưỡng khách hàng bằng email automation. Đã được kiểm chứng bởi hơn 200 doanh nghiệp.',
+      'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800&h=450&fit=crop',
+      'WePower Academy',
+      2868000, 5000000, 4.9, 567, 2341, 21600, 52, 'BESTSELLER', 'Marketing', 'Premium'
+    ],
+    [
+      '6',
+      'Khởi nghiệp kiếm tiền với Youtube',
+      'Biến Youtube thành cỗ máy in tiền - từ 0 đến 100K subscribers! Học trọn bộ kỹ năng: lên ý tưởng content viral, quay dựng video chuyên nghiệp bằng điện thoại, tối ưu SEO Youtube, xây dựng thương hiệu cá nhân và kiếm tiền từ nhiều nguồn (Adsense, affiliate, tài trợ, bán khóa học). Phù hợp mọi lĩnh vực.',
+      'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 3200000, 4.6, 278, 1654, 16200, 40, '', 'Marketing', 'Free'
+    ],
+    [
+      '7',
+      'Tạo ứng dụng với AI',
+      'Không biết code vẫn tạo được app! Khóa học hướng dẫn bạn sử dụng AI (Cursor, V0, Bolt) để xây dựng ứng dụng web và mobile từ A-Z. Từ ý tưởng đến sản phẩm hoàn chỉnh chỉ trong vài giờ. Bạn sẽ tạo được app quản lý, SaaS tool, marketplace... và có thể kiếm tiền ngay từ sản phẩm của mình.',
+      'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=450&fit=crop',
+      'WePower Academy',
+      868000, 1800000, 4.7, 198, 1432, 10800, 28, 'NEW', 'AI', 'Free'
+    ],
+    [
+      '8',
+      'Map To Success',
+      'Bản đồ chiến lược dành cho người muốn thành công trong kinh doanh online! Khóa học VIP giúp bạn xây dựng tư duy kinh doanh đúng đắn, lập kế hoạch chiến lược, phân tích thị trường, xây dựng đội nhóm và scale business lên 7 con số. Bao gồm mentoring 1-1 và cộng đồng mastermind độc quyền.',
+      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=450&fit=crop',
+      'WePower Academy',
+      38868000, 58000000, 4.9, 89, 342, 36000, 65, 'PREMIUM', 'Business', 'VIP'
+    ],
+    [
+      '9',
+      'Business Automation Mystery',
+      'Bí mật tự động hóa kinh doanh triệu đô - dành riêng cho CEO và founders! Khóa học cao cấp nhất giúp bạn xây dựng hệ thống kinh doanh chạy tự động 24/7: từ marketing, bán hàng, chăm sóc khách hàng đến quản lý tài chính. Bao gồm 12 buổi coaching riêng, templates hệ thống trị giá 100 triệu và lifetime access.',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=450&fit=crop',
+      'WePower Academy',
+      168868000, 250000000, 5.0, 45, 128, 54000, 85, 'PREMIUM', 'Business', 'VIP'
+    ],
+    [
+      '10',
+      'Bản Đồ Kinh Doanh Triệu Đô',
+      'Lộ trình chi tiết từ 0 đến doanh thu 1 triệu USD! Đây là khóa học flagship của WePower Academy - tổng hợp 10 năm kinh nghiệm kinh doanh online. Bạn sẽ học cách chọn ngách, xây brand, tạo sản phẩm, marketing đa kênh, tối ưu vận hành và mở rộng quy mô. Kèm theo bộ công cụ và template business plan hoàn chỉnh.',
+      'https://images.unsplash.com/photo-1553729459-afe8f2e2882d?w=800&h=450&fit=crop',
+      'WePower Academy',
+      68868000, 99000000, 4.9, 67, 215, 43200, 72, 'PREMIUM', 'Business', 'VIP'
+    ],
+    [
+      '11',
+      'Business Internet System',
+      'Xây dựng hệ thống kinh doanh internet bài bản từ A đến Z! Khóa học hướng dẫn chi tiết cách tạo dựng business online hoàn chỉnh: website bán hàng, hệ thống email marketing, social media, quảng cáo trả phí, affiliate marketing và passive income. Phù hợp cho người mới bắt đầu muốn có thu nhập online ổn định.',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop',
+      'WePower Academy',
+      8868000, 15000000, 4.8, 156, 876, 28800, 58, '', 'Business', 'Premium'
+    ],
+    [
+      '12',
+      'Wellness To Wealth',
+      'Biến đam mê sức khỏe thành nguồn thu nhập bền vững! Khóa học dành cho ai yêu thích lĩnh vực wellness, fitness, dinh dưỡng muốn xây dựng thương hiệu cá nhân và kinh doanh online. Học cách tạo chương trình coaching, bán khóa học online, xây community và tạo passive income từ kiến thức wellness của bạn.',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=450&fit=crop',
+      'WePower Academy',
+      18868000, 28000000, 4.7, 98, 543, 25200, 48, '', 'Lifestyle', 'Premium'
+    ],
+    [
+      '13',
+      'Unlock Your Power',
+      'Khai phá tiềm năng vô hạn bên trong bạn! Khóa học phát triển bản thân giúp bạn vượt qua rào cản tâm lý, xây dựng tư duy triệu phú, quản lý thời gian hiệu quả và phát triển kỹ năng lãnh đạo. Kết hợp NLP, coaching và mindfulness - đã thay đổi cuộc sống hàng ngàn người. Bắt đầu hành trình thay đổi ngay hôm nay!',
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 3500000, 4.8, 345, 2156, 14400, 36, 'NEW', 'Lifestyle', 'Free'
+    ],
+    [
+      '14',
+      'Design With AI',
+      'Thiết kế đồ họa chuyên nghiệp với AI - nhanh gấp 10 lần! Không cần học Photoshop phức tạp - với MidJourney, DALL-E, Canva AI và các công cụ AI mới nhất, bạn có thể tạo logo, banner, social media post, ảnh sản phẩm chất lượng cao trong vài phút. Phù hợp cho marketer, chủ shop và freelancer thiết kế.',
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=450&fit=crop',
+      'WePower Academy',
+      1868000, 2800000, 4.6, 213, 1789, 12600, 30, '', 'AI', 'Free'
+    ],
+    [
+      '15',
+      'Master Video AI',
+      'Tạo video chuyên nghiệp bằng AI - không cần quay phim, không cần studio! Học cách sử dụng Runway, HeyGen, D-ID, CapCut AI để tạo video marketing, video bán hàng, video giáo dục chất lượng cao. Từ kịch bản AI, giọng đọc AI đến hình ảnh AI - tất cả trong một khóa học. Tiết kiệm hàng trăm triệu chi phí sản xuất video.',
+      'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&h=450&fit=crop',
+      'WePower Academy',
+      868000, 1500000, 4.7, 167, 1098, 10800, 26, 'NEW', 'AI', 'Free'
+    ]
+  ];
+
+  for (var i = 0; i < courses.length; i++) {
+    sheet.appendRow(courses[i]);
+  }
+
+  sheet.autoResizeColumns(1, 15);
+  Logger.log('Đã thêm ' + courses.length + ' khóa học vào tab Courses!');
 }
 
 // ==========================================
