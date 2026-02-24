@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
 
-const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
-const SHEET_NAME = 'Đăng ký';
+const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
+const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -75,10 +75,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Method 1: Google Apps Script (ưu tiên)
+    // Method 1: Google Apps Script via GET (tránh POST redirect issues)
     if (process.env.GOOGLE_SCRIPT_URL) {
       try {
-        const resText = execSync(`curl -sL -X POST -H "Content-Type: application/json" -d '${JSON.stringify({ action: 'login', email, password })}' "${process.env.GOOGLE_SCRIPT_URL}"`, { timeout: 15000, encoding: 'utf-8' });
+        const params = new URLSearchParams({ action: 'login', email, password });
+        const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+        const resText = execSync(`curl -sL "${scriptUrl}"`, { timeout: 15000, encoding: 'utf-8' });
         const data = JSON.parse(resText);
 
         if (data.success) {

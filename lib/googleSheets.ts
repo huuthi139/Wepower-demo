@@ -1,4 +1,4 @@
-const SHEET_ID = '1gfLd8IwgattNDYrluU4GmitZk_IuXcn6OQqRn0hLpjM';
+const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -40,19 +40,19 @@ function parseCSV(csv: string): Record<string, string>[] {
 }
 
 export async function fetchUsers() {
-  const res = await fetch(getSheetUrl('Đăng ký'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }
 
 export async function fetchOrders() {
-  const res = await fetch(getSheetUrl('Đơn hàng'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Orders'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }
 
 export async function fetchCourseVideos() {
-  const res = await fetch(getSheetUrl('Khóa học'), { cache: 'no-store' });
+  const res = await fetch(getSheetUrl('Courses'), { cache: 'no-store' });
   const csv = await res.text();
   return parseCSV(csv);
 }
