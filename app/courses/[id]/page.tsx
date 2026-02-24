@@ -16,7 +16,36 @@ import Image from 'next/image';
 import type { MemberLevel } from '@/lib/mockData';
 
 function isEmbedUrl(url: string): boolean {
-  return /mediadelivery\.net\/(embed|play)/.test(url) || /player\.mediadelivery\.net/.test(url);
+  return /mediadelivery\.net\/(embed|play)/.test(url)
+    || /player\.mediadelivery\.net/.test(url)
+    || /iframe\.mediadelivery\.net/.test(url)
+    || /video\.bunnycdn\.com/.test(url);
+}
+
+// Normalize Bunny embed URL: player.mediadelivery.net → iframe.mediadelivery.net
+function normalizeBunnyEmbedUrl(url: string): string {
+  if (!url) return url;
+  return url.replace(/^(https?:\/\/)player\.mediadelivery\.net/, '$1iframe.mediadelivery.net');
+}
+
+// Backward compat: convert old { videoId, libraryId } to directPlayUrl
+function normalizeChapters(chapters: any[]): Chapter[] {
+  return chapters.map((ch: any) => ({
+    id: ch.id,
+    title: ch.title,
+    lessons: (ch.lessons || []).map((ls: any) => ({
+      id: ls.id,
+      title: ls.title,
+      duration: ls.duration || '',
+      requiredLevel: ls.requiredLevel || 'Free',
+      directPlayUrl: normalizeBunnyEmbedUrl(
+        ls.directPlayUrl ||
+        (ls.videoId && ls.libraryId
+          ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
+          : '')
+      ),
+    })),
+  }));
 }
 
 interface Lesson {
@@ -128,7 +157,7 @@ export default function CourseDetail() {
       try {
         const saved = localStorage.getItem(`wepower-chapters-${params.id}`);
         if (saved) {
-          setChapters(JSON.parse(saved));
+          setChapters(normalizeChapters(JSON.parse(saved)));
         }
       } catch { /* ignore */ }
     }
@@ -644,9 +673,11 @@ export default function CourseDetail() {
                   isEmbedUrl(previewLesson.directPlayUrl) ? (
                     <iframe
                       key={previewLesson.directPlayUrl}
-                      src={previewLesson.directPlayUrl}
-                      className="w-full h-full border-0"
-                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                      src={normalizeBunnyEmbedUrl(previewLesson.directPlayUrl)}
+                      className="w-full h-full"
+                      style={{ border: 'none' }}
+                      loading="lazy"
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                       allowFullScreen
                     />
                   ) : (
@@ -654,6 +685,7 @@ export default function CourseDetail() {
                       key={previewLesson.directPlayUrl}
                       src={previewLesson.directPlayUrl}
                       controls
+                      autoPlay
                       className="w-full h-full"
                       controlsList="nodownload"
                       playsInline

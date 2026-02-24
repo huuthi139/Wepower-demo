@@ -11,7 +11,36 @@ import { formatPrice } from '@/lib/utils';
 
 // Helper: detect if URL is a Bunny Stream embed/player URL
 function isEmbedUrl(url: string): boolean {
-  return /mediadelivery\.net\/(embed|play)/.test(url) || /player\.mediadelivery\.net/.test(url);
+  return /mediadelivery\.net\/(embed|play)/.test(url)
+    || /player\.mediadelivery\.net/.test(url)
+    || /iframe\.mediadelivery\.net/.test(url)
+    || /video\.bunnycdn\.com/.test(url);
+}
+
+// Normalize Bunny embed URL: player.mediadelivery.net → iframe.mediadelivery.net
+function normalizeBunnyEmbedUrl(url: string): string {
+  if (!url) return url;
+  return url.replace(/^(https?:\/\/)player\.mediadelivery\.net/, '$1iframe.mediadelivery.net');
+}
+
+// Backward compat: convert old { videoId, libraryId } to directPlayUrl
+function normalizeChapters(chapters: any[]): Chapter[] {
+  return chapters.map((ch: any) => ({
+    id: ch.id,
+    title: ch.title,
+    lessons: (ch.lessons || []).map((ls: any) => ({
+      id: ls.id,
+      title: ls.title,
+      duration: ls.duration || '',
+      requiredLevel: ls.requiredLevel || 'Free',
+      directPlayUrl: normalizeBunnyEmbedUrl(
+        ls.directPlayUrl ||
+        (ls.videoId && ls.libraryId
+          ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
+          : '')
+      ),
+    })),
+  }));
 }
 
 // Helper: format seconds to MM:SS
@@ -124,7 +153,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(storageKey);
-        if (saved) return JSON.parse(saved);
+        if (saved) return normalizeChapters(JSON.parse(saved));
       } catch { /* ignore */ }
     }
     return initialChapters;
@@ -154,8 +183,9 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   // Auto-detect video duration when URL changes
   const handleUrlChange = useCallback((url: string) => {
-    setLessonDirectPlayUrl(url);
-    const trimmed = url.trim();
+    const normalized = normalizeBunnyEmbedUrl(url);
+    setLessonDirectPlayUrl(normalized);
+    const trimmed = normalized.trim();
     if (!trimmed) return;
 
     // For embed URLs, try to extract duration via Bunny API pattern
@@ -925,9 +955,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 {isEmbedUrl(previewVideo.directPlayUrl) ? (
                   <iframe
                     key={previewVideo.directPlayUrl}
-                    src={previewVideo.directPlayUrl}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                    src={normalizeBunnyEmbedUrl(previewVideo.directPlayUrl)}
+                    className="w-full h-full"
+                    style={{ border: 'none' }}
+                    loading="lazy"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                     allowFullScreen
                   />
                 ) : (
@@ -935,6 +967,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                     key={previewVideo.directPlayUrl}
                     src={previewVideo.directPlayUrl}
                     controls
+                    autoPlay
                     className="w-full h-full"
                     controlsList="nodownload"
                   />
