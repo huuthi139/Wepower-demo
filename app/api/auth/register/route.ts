@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { execSync } from 'child_process';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-// Tab "Users" trong Google Sheets
 const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
@@ -55,7 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Method 1: Google Apps Script via GET (tránh POST redirect issues)
+    // Method 1: Google Apps Script via GET
     if (process.env.GOOGLE_SCRIPT_URL) {
       try {
         const params = new URLSearchParams({
@@ -66,8 +64,8 @@ export async function POST(request: Request) {
           phone: phone || '',
         });
         const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
-        const resText = execSync(`curl -sL "${scriptUrl}"`, { timeout: 15000, encoding: 'utf-8' });
-        const data = JSON.parse(resText);
+        const res = await fetch(scriptUrl, { redirect: 'follow' });
+        const data = await res.json();
 
         if (data.success) {
           return NextResponse.json({ success: true, user: data.user });
