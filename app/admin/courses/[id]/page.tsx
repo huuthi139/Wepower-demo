@@ -121,6 +121,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set(['ch-1']));
   const [modal, setModal] = useState<ModalType>({ kind: 'none' });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [previewVideo, setPreviewVideo] = useState<{ videoId: string; libraryId: string; title: string } | null>(null);
 
   // Persist chapters to localStorage
   const saveChapters = useCallback((newChapters: Chapter[]) => {
@@ -455,11 +456,23 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className={`w-7 h-7 rounded flex items-center justify-center flex-shrink-0 ${lesson.videoId ? 'bg-green-500/10' : 'bg-white/5'}`}>
-                            <svg className={`w-3.5 h-3.5 ${lesson.videoId ? 'text-green-400' : 'text-gray-500'}`} fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
+                          {lesson.videoId ? (
+                            <button
+                              onClick={() => setPreviewVideo({ videoId: lesson.videoId, libraryId: lesson.libraryId, title: lesson.title })}
+                              className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 hover:bg-green-500/25 transition-colors cursor-pointer"
+                              title="Xem trước video"
+                            >
+                              <svg className="w-3.5 h-3.5 text-green-400 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-white/5">
+                              <svg className="w-3.5 h-3.5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          )}
                           <div className="min-w-0 flex-1">
                             <div className="text-sm text-white truncate">{lesson.title}</div>
                             <div className="flex items-center gap-3 mt-0.5">
@@ -840,6 +853,39 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               >
                 Xoa bai hoc
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewVideo(null)} />
+          <div className="relative w-full max-w-3xl">
+            <button
+              onClick={() => setPreviewVideo(null)}
+              className="absolute -top-10 right-0 text-white/60 hover:text-white transition-colors text-sm flex items-center gap-2"
+            >
+              Đóng
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="relative aspect-video bg-black">
+                <iframe
+                  src={`https://iframe.mediadelivery.net/embed/${previewVideo.libraryId}/${previewVideo.videoId}?autoplay=false&preload=true`}
+                  loading="lazy"
+                  className="w-full h-full border-0"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <div className="p-4 border-t border-gray-800">
+                <p className="text-white font-semibold">{previewVideo.title}</p>
+                <p className="text-xs text-gray-500 mt-1 font-mono">Video ID: {previewVideo.videoId}</p>
+              </div>
             </div>
           </div>
         </div>
