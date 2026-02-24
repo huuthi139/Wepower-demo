@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
-import { mockCourses, Course } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
+import type { Course } from '@/lib/mockData';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useCart } from '@/contexts/CartContext';
@@ -16,7 +17,8 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { clearCart } = useCart();
-  
+  const { courses: allCourses } = useCourses();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,15 +31,15 @@ function CheckoutContent() {
   // Get courses from URL params
   const singleCourseId = searchParams.get('course');
   const multipleCoursesIds = searchParams.get('courses');
-  
+
   let orderCourses: Course[] = [];
-  
+
   if (singleCourseId) {
-    const course = mockCourses.find(c => c.id === singleCourseId);
+    const course = allCourses.find(c => c.id === singleCourseId);
     if (course) orderCourses = [course];
   } else if (multipleCoursesIds) {
     const ids = multipleCoursesIds.split(',');
-    orderCourses = mockCourses.filter(c => ids.includes(c.id));
+    orderCourses = allCourses.filter(c => ids.includes(c.id));
   }
 
   useEffect(() => {
@@ -235,8 +237,8 @@ function CheckoutContent() {
                 <div className="mt-4 p-4 bg-black rounded-lg border border-gray-800">
                   <p className="text-sm text-gray-400 mb-3">Thông tin chuyển khoản:</p>
                   <div className="space-y-2 text-sm">
-                    <p className="text-white"><strong>Ngân hàng:</strong> Vietcombank</p>
-                    <p className="text-white"><strong>Số tài khoản:</strong> 0123456789</p>
+                    <p className="text-white"><strong>Ngân hàng:</strong> (Liên hệ admin)</p>
+                    <p className="text-white"><strong>Số tài khoản:</strong> (Liên hệ admin)</p>
                     <p className="text-white"><strong>Chủ tài khoản:</strong> WEPOWER ACADEMY</p>
                     <p className="text-white"><strong>Nội dung:</strong> {formData.phone} WEPOWER</p>
                   </div>

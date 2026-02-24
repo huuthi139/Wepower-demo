@@ -6,7 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
-import { mockCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
 import { formatPrice, formatDuration } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,82 +62,12 @@ interface Chapter {
   lessons: Lesson[];
 }
 
-const defaultChapters: Chapter[] = [
-  {
-    id: 'ch-1',
-    title: 'Giới thiệu khóa học',
-    lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-2',
-    title: 'Kiến thức nền tảng',
-    lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-3', title: 'Thực hành bài tập 1', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-4', title: 'Kiểm tra kiến thức chương 1', duration: '10:00', requiredLevel: 'Premium', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-3',
-    title: 'Kỹ thuật nâng cao',
-    lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-3-3', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-4',
-    title: 'Dự án thực hành',
-    lessons: [
-      { id: 'ls-4-1', title: 'Hướng dẫn dự án cuối khóa', duration: '10:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-2', title: 'Thực hành xây dựng dự án', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-3', title: 'Review & phản hồi', duration: '20:00', requiredLevel: 'VIP', directPlayUrl: '' },
-    ],
-  },
-];
+const defaultChapters: Chapter[] = [];
 
 const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
 
-const reviewsData = [
-  {
-    id: 1,
-    name: 'Nguyễn Minh Tuấn',
-    avatar: 'T',
-    rating: 5,
-    date: '2 tuần trước',
-    comment: 'Khóa học rất chất lượng! Giảng viên giảng dạy dễ hiểu, nội dung thực tế và áp dụng được ngay. Tôi đã áp dụng thành công vào công việc.',
-  },
-  {
-    id: 2,
-    name: 'Trần Thu Hà',
-    avatar: 'H',
-    rating: 5,
-    date: '1 tháng trước',
-    comment: 'Đáng đồng tiền bát gạo. Nội dung khóa học rất phong phú, có nhiều bài tập thực hành giúp hiểu sâu hơn.',
-  },
-  {
-    id: 3,
-    name: 'Lê Văn Đức',
-    avatar: 'D',
-    rating: 4,
-    date: '1 tháng trước',
-    comment: 'Khóa học tốt, tuy nhiên mong có thêm nhiều case study thực tế hơn. Nhìn chung rất hài lòng với chất lượng giảng dạy.',
-  },
-  {
-    id: 4,
-    name: 'Phạm Thị Lan',
-    avatar: 'L',
-    rating: 5,
-    date: '2 tháng trước',
-    comment: 'Tuyệt vời! Sau khi hoàn thành khóa học, tôi đã tự tin hơn rất nhiều. Cảm ơn WePower Academy!',
-  },
-];
+// TODO: Fetch reviews from Google Sheets when review system is implemented
+const reviewsData: { id: number; name: string; avatar: string; rating: number; date: string; comment: string }[] = [];
 
 export default function CourseDetail() {
   const params = useParams();
@@ -145,6 +75,7 @@ export default function CourseDetail() {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { courses } = useCourses();
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
@@ -163,7 +94,7 @@ export default function CourseDetail() {
     }
   }, [params.id]);
 
-  const course = mockCourses.find(c => c.id === params.id);
+  const course = courses.find(c => c.id === params.id);
 
   if (!course) {
     return (
@@ -202,7 +133,7 @@ export default function CourseDetail() {
     );
   };
 
-  const relatedCourses = mockCourses
+  const relatedCourses = courses
     .filter(c => c.category === course.category && c.id !== course.id)
     .slice(0, 3);
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { mockCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
 import type { MemberLevel } from '@/lib/mockData';
 import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
@@ -64,44 +64,7 @@ interface Chapter {
   lessons: Lesson[];
 }
 
-const initialChapters: Chapter[] = [
-  {
-    id: 'ch-1',
-    title: 'Chương 1: Giới thiệu và chuẩn bị',
-    lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-2',
-    title: 'Chương 2: Kiến thức nền tảng',
-    lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-3', title: 'Bài tập thực hành cơ bản', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-2-4', title: 'Tổng kết và đánh giá', duration: '10:30', requiredLevel: 'Free', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-3',
-    title: 'Chương 3: Chiến lược nâng cao',
-    lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'Premium', directPlayUrl: '' },
-    ],
-  },
-  {
-    id: 'ch-4',
-    title: 'Chương 4: Dự án thực tế và tổng kết',
-    lessons: [
-      { id: 'ls-4-1', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-2', title: 'Xây dựng dự án cuối khóa', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
-      { id: 'ls-4-3', title: 'Tổng kết và hướng đi tiếp theo', duration: '15:00', requiredLevel: 'Premium', directPlayUrl: '' },
-    ],
-  },
-];
+const initialChapters: Chapter[] = [];
 
 function LevelBadge({ level }: { level: MemberLevel }) {
   return (
@@ -146,7 +109,8 @@ type ModalType =
 export default function CourseContentPage({ params }: { params: { id: string } }) {
   const { id } = params;
 
-  const course = mockCourses.find((c) => c.id === id);
+  const { courses } = useCourses();
+  const course = courses.find((c) => c.id === id);
 
   const storageKey = `wepower-chapters-${id}`;
   const [chapters, setChapters] = useState<Chapter[]>(() => {

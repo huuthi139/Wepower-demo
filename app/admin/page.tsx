@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { mockCourses, Course } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
+import type { Course } from '@/lib/mockData';
 import type { MemberLevel } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
 
@@ -34,162 +35,15 @@ interface Student {
   lastActive: string;
 }
 
-const studentsData: Student[] = [
-  {
-    id: 'S001',
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@gmail.com',
-    phone: '0901234567',
-    memberLevel: 'VIP',
-    enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 65 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 80 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 45 },
-      { courseId: '8', courseName: 'Map To Success', progress: 30 },
-      { courseId: '9', courseName: 'Business Automation Mystery', progress: 15 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 55 },
-      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 20 },
-      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 90 },
-    ],
-    totalSpent: 68000000,
-    joinDate: '15/01/2025',
-    status: 'Active',
-    lastActive: '18/02/2026',
-  },
-  {
-    id: 'S002',
-    name: 'Trần Thị B',
-    email: 'tranthib@gmail.com',
-    phone: '0912345678',
-    memberLevel: 'Premium',
-    enrolledCourses: [
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 60 },
-      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 35 },
-      { courseId: '12', courseName: 'Wellness To Wealth', progress: 10 },
-    ],
-    totalSpent: 12000000,
-    joinDate: '20/03/2025',
-    status: 'Active',
-    lastActive: '18/02/2026',
-  },
-  {
-    id: 'S003',
-    name: 'Lê Văn C',
-    email: 'levanc@gmail.com',
-    phone: '0923456789',
-    memberLevel: 'Premium',
-    enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 70 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 40 },
-    ],
-    totalSpent: 8500000,
-    joinDate: '05/05/2025',
-    status: 'Active',
-    lastActive: '17/02/2026',
-  },
-  {
-    id: 'S004',
-    name: 'Phạm Thị D',
-    email: 'phamthid@gmail.com',
-    phone: '0934567890',
-    memberLevel: 'Free',
-    enrolledCourses: [
-      { courseId: '13', courseName: 'Unlock Your Power', progress: 25 },
-    ],
-    totalSpent: 0,
-    joinDate: '10/08/2025',
-    status: 'Active',
-    lastActive: '16/02/2026',
-  },
-  {
-    id: 'S005',
-    name: 'Hoàng Văn E',
-    email: 'hoangvane@gmail.com',
-    phone: '0945678901',
-    memberLevel: 'Free',
-    enrolledCourses: [
-      { courseId: '14', courseName: 'Design With AI', progress: 50 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 15 },
-    ],
-    totalSpent: 1868000,
-    joinDate: '22/09/2025',
-    status: 'Inactive',
-    lastActive: '01/01/2026',
-  },
-  {
-    id: 'S006',
-    name: 'Đỗ Thị F',
-    email: 'dothif@gmail.com',
-    phone: '0956789012',
-    memberLevel: 'VIP',
-    enrolledCourses: [
-      { courseId: '8', courseName: 'Map To Success', progress: 85 },
-      { courseId: '9', courseName: 'Business Automation Mystery', progress: 60 },
-      { courseId: '10', courseName: 'Bản Đồ Kinh Doanh Triệu Đô', progress: 75 },
-      { courseId: '11', courseName: 'Business Internet System', progress: 40 },
-      { courseId: '15', courseName: 'Master Video AI', progress: 30 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 100 },
-      { courseId: '4', courseName: 'Thiết kế hệ thống chatbot AI', progress: 100 },
-      { courseId: '5', courseName: 'Xây dựng hệ thống thu hút 1000 khách hàng tự động', progress: 95 },
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 100 },
-      { courseId: '7', courseName: 'Tạo ứng dụng với AI', progress: 80 },
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 100 },
-      { courseId: '2', courseName: 'Khởi nghiệp kiếm tiền online với AI', progress: 100 },
-    ],
-    totalSpent: 150000000,
-    joinDate: '01/01/2025',
-    status: 'Active',
-    lastActive: '18/02/2026',
-  },
-  {
-    id: 'S007',
-    name: 'Bùi Văn G',
-    email: 'buivang@gmail.com',
-    phone: '0967890123',
-    memberLevel: 'Premium',
-    enrolledCourses: [
-      { courseId: '6', courseName: 'Khởi nghiệp kiếm tiền với Youtube', progress: 55 },
-      { courseId: '12', courseName: 'Wellness To Wealth', progress: 70 },
-      { courseId: '3', courseName: 'Xây dựng hệ thống Automation với N8N', progress: 30 },
-      { courseId: '14', courseName: 'Design With AI', progress: 90 },
-      { courseId: '13', courseName: 'Unlock Your Power', progress: 100 },
-    ],
-    totalSpent: 25000000,
-    joinDate: '14/06/2025',
-    status: 'Active',
-    lastActive: '15/02/2026',
-  },
-  {
-    id: 'S008',
-    name: 'Vũ Thị H',
-    email: 'vuthih@gmail.com',
-    phone: '0978901234',
-    memberLevel: 'Free',
-    enrolledCourses: [
-      { courseId: '1', courseName: 'Thiết kế website với Wordpress', progress: 40 },
-    ],
-    totalSpent: 868000,
-    joinDate: '30/11/2025',
-    status: 'Active',
-    lastActive: '14/02/2026',
-  },
-];
+// TODO: Fetch students from Google Sheets Users tab
+const studentsData: Student[] = [];
 
 /* ============================================================
    ORDERS DATA
    ============================================================ */
 
-const recentOrders = [
-  { id: 'WP-2026-0001', name: 'Nguyễn Văn A', email: 'nguyenvana@gmail.com', course: 'Business Automation Mystery', amount: 168868000, status: 'Hoàn thành' as const, date: '18/02/2026', method: 'Chuyển khoản' },
-  { id: 'WP-2026-0002', name: 'Trần Thị B', email: 'tranthib@gmail.com', course: 'Marketing Online', amount: 1899000, status: 'Đang chờ' as const, date: '18/02/2026', method: 'MoMo' },
-  { id: 'WP-2026-0003', name: 'Lê Văn C', email: 'levanc@gmail.com', course: 'Thiết kế Website', amount: 868000, status: 'Hoàn thành' as const, date: '17/02/2026', method: 'Thẻ tín dụng' },
-  { id: 'WP-2026-0004', name: 'Phạm Thị D', email: 'phamthid@gmail.com', course: 'Unlock Your Power', amount: 1868000, status: 'Hoàn thành' as const, date: '17/02/2026', method: 'ZaloPay' },
-  { id: 'WP-2026-0005', name: 'Hoàng Văn E', email: 'hoangvane@gmail.com', course: 'Khởi nghiệp kiếm tiền online với AI', amount: 1868000, status: 'Đang xử lý' as const, date: '16/02/2026', method: 'Chuyển khoản' },
-  { id: 'WP-2026-0006', name: 'Đỗ Thị F', email: 'dothif@gmail.com', course: 'Map To Success', amount: 38868000, status: 'Hoàn thành' as const, date: '15/02/2026', method: 'Chuyển khoản' },
-  { id: 'WP-2026-0007', name: 'Bùi Văn G', email: 'buivang@gmail.com', course: 'Design With AI', amount: 1868000, status: 'Hoàn thành' as const, date: '14/02/2026', method: 'MoMo' },
-];
+// TODO: Fetch orders from Google Sheets Orders tab
+const recentOrders: { id: string; name: string; email: string; course: string; amount: number; status: 'Hoàn thành' | 'Đang chờ' | 'Đang xử lý'; date: string; method: string }[] = [];
 
 /* ============================================================
    INLINE COMPONENTS
@@ -257,7 +111,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   // ------- Course CRUD state -------
-  const [courses, setCourses] = useState<Course[]>(() => [...mockCourses]);
+  const { courses: sheetCourses } = useCourses();
+  const [courses, setCourses] = useState<Course[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [courseForm, setCourseForm] = useState<CourseFormData>(emptyCourseForm);
@@ -269,6 +124,13 @@ export default function AdminDashboard() {
   const [studentFilter, setStudentFilter] = useState<'all' | MemberLevel>('all');
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [showAddCourseModal, setShowAddCourseModal] = useState<string | null>(null); // studentId
+
+  // Sync courses from Google Sheets
+  useEffect(() => {
+    if (sheetCourses.length > 0) {
+      setCourses(sheetCourses);
+    }
+  }, [sheetCourses]);
 
   // ------- Computed values -------
   const totalRevenue = recentOrders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.amount, 0);

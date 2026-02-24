@@ -1,13 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { BannerCarousel } from '@/components/ui/BannerCarousel';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { mockCourses } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
+import { SkeletonCard } from '@/components/ui/SkeletonCard';
 
 export default function Home() {
-  const featuredCourses = mockCourses.slice(0, 6);
+  const { courses, isLoading } = useCourses();
+  const featuredCourses = courses.slice(0, 6);
 
   return (
     <div className="min-h-screen bg-black">
@@ -98,9 +102,13 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
+            {isLoading ? (
+              [...Array(6)].map((_, i) => <SkeletonCard key={i} />)
+            ) : (
+              featuredCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))
+            )}
           </div>
 
           <div className="mt-8 text-center sm:hidden">
@@ -169,63 +177,6 @@ export default function Home() {
                 Truy cập khóa học 24/7 trên mọi thiết bị. Học lúc nào cũng được, ở đâu cũng tiện.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials / Social Proof */}
-      <section className="py-16 border-t border-white/5">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-12">
-            <p className="text-red text-sm font-bold uppercase tracking-wider mb-2">Phản hồi</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Học viên nói gì về chúng tôi
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                name: 'Nguyễn Minh Tuấn',
-                role: 'Marketing Manager',
-                text: 'Khóa học rất chất lượng! Tôi đã áp dụng thành công kiến thức vào công việc thực tế và tăng doanh thu 30%.',
-                avatar: 'T',
-              },
-              {
-                name: 'Trần Thu Hà',
-                role: 'Freelancer',
-                text: 'Nội dung rất phong phú, giảng viên nhiệt tình. Đặc biệt phần thực hành giúp tôi hiểu sâu hơn.',
-                avatar: 'H',
-              },
-              {
-                name: 'Lê Văn Đức',
-                role: 'CEO Startup',
-                text: 'WePower giúp tôi xây dựng hệ thống kinh doanh online hiệu quả. Đầu tư xứng đáng!',
-                avatar: 'D',
-              },
-            ].map((testimonial) => (
-              <div key={testimonial.name} className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-                <div className="flex items-center gap-0.5 mb-4">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <svg key={i} className="w-4 h-4 text-yellow" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                  &ldquo;{testimonial.text}&rdquo;
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-red to-yellow rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{testimonial.avatar}</span>
-                  </div>
-                  <div>
-                    <div className="text-white font-semibold text-sm">{testimonial.name}</div>
-                    <div className="text-gray-500 text-xs">{testimonial.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

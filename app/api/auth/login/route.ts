@@ -136,37 +136,10 @@ export async function POST(request: Request) {
         },
       });
     } catch (csvError) {
-      console.log('[Login] CSV failed, using demo mode. Error:', csvError);
-
-      // Method 3: Demo mode
-      const demoAccounts = [
-        { email: 'admin@wepower.vn', password: '123456', name: 'Admin WePower', role: 'admin' as const, memberLevel: 'VIP' as const, phone: '' },
-        { email: 'user@wepower.vn', password: 'user123', name: 'Học viên Demo', role: 'user' as const, memberLevel: 'Free' as const, phone: '' },
-        { email: 'premium@wepower.vn', password: 'premium123', name: 'Học viên Premium', role: 'user' as const, memberLevel: 'Premium' as const, phone: '' },
-        { email: 'vip@wepower.vn', password: 'vip123', name: 'Học viên VIP', role: 'user' as const, memberLevel: 'VIP' as const, phone: '' },
-      ];
-
-      const demoUser = demoAccounts.find(
-        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-
-      if (demoUser) {
-        return NextResponse.json({
-          success: true,
-          user: {
-            name: demoUser.name,
-            email: demoUser.email,
-            phone: demoUser.phone,
-            role: demoUser.role,
-            memberLevel: demoUser.memberLevel,
-          },
-          mode: 'demo',
-        });
-      }
-
+      console.error('[Login] CSV failed:', csvError);
       return NextResponse.json(
-        { success: false, error: 'Email hoặc mật khẩu không đúng' },
-        { status: 401 }
+        { success: false, error: 'Không thể kết nối đến hệ thống. Vui lòng thử lại sau.' },
+        { status: 503 }
       );
     }
   } catch (error) {

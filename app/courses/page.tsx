@@ -8,7 +8,7 @@ import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { AdvancedFilters, FilterState } from '@/components/ui/AdvancedFilters';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { mockCourses, categories } from '@/lib/mockData';
+import { useCourses } from '@/contexts/CoursesContext';
 
 export default function CoursesPage() {
   return (
@@ -30,6 +30,7 @@ export default function CoursesPage() {
 
 function Courses() {
   const searchParams = useSearchParams();
+  const { courses, categories, isLoading: coursesLoading } = useCourses();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [isLoading, setIsLoading] = useState(true);
@@ -46,16 +47,20 @@ function Courses() {
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  // Simulate loading for better UX
+  // Loading state
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [selectedCategory, searchQuery, advancedFilters]);
+    if (coursesLoading) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [coursesLoading, selectedCategory, searchQuery, advancedFilters]);
 
-  const filteredCourses = mockCourses.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
