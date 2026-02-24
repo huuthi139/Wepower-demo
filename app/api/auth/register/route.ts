@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-// Tab "Đăng ký" trong Google Sheets
-const SHEET_NAME = 'Đăng ký';
+// Tab "Users" trong Google Sheets
+const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;

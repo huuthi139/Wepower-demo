@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-const SHEET_NAME = 'Đăng ký';
+const SHEET_NAME = 'Users';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;

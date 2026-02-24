@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-const SHEET_NAME = 'Đơn hàng';
+const SHEET_NAME = 'Orders';
 
 export async function POST(request: Request) {
   try {
