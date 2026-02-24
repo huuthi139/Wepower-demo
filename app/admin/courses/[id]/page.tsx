@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { mockCourses } from '@/lib/mockData';
 import type { MemberLevel } from '@/lib/mockData';
@@ -103,8 +103,8 @@ type ModalType =
   | { kind: 'editLesson'; chapterId: string; lessonId: string }
   | { kind: 'deleteLesson'; chapterId: string; lessonId: string };
 
-export default function CourseContentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function CourseContentPage({ params }: { params: { id: string } }) {
+  const { id } = params;
 
   const course = mockCourses.find((c) => c.id === id);
 

@@ -229,18 +229,18 @@
       <h1>Đăng nhập</h1>
       <p class="subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.</p>
 
-      <form id="login-form">
+      <form id="login-form" method="POST" action="/api/auth/login-form">
         <div id="error-box" class="error-box"></div>
         <div id="success-box" class="success-box"></div>
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input id="email" type="email" placeholder="example@email.com" autocomplete="email" required />
+          <input id="email" name="email" type="email" placeholder="example@email.com" autocomplete="email" required />
         </div>
 
         <div class="form-group">
           <label for="password">Mật khẩu</label>
-          <input id="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" required />
+          <input id="password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" required />
         </div>
 
         <div class="row">
@@ -280,66 +280,13 @@
   </div>
 
   <script>
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var errorBox = document.getElementById('error-box');
-      var successBox = document.getElementById('success-box');
-      var submitBtn = document.getElementById('submit-btn');
-
-      errorBox.style.display = 'none';
-      successBox.style.display = 'none';
-
-      if (!email || !password) {
-        errorBox.textContent = 'Vui lòng nhập email và mật khẩu';
-        errorBox.style.display = 'block';
-        return;
-      }
-
-      if (password.length < 6) {
-        errorBox.textContent = 'Mật khẩu phải có ít nhất 6 ký tự';
-        errorBox.style.display = 'block';
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...';
-
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, password: password })
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data.success && data.user) {
-          try {
-            localStorage.setItem('wepower-user', JSON.stringify(data.user));
-          } catch(e) {}
-
-          successBox.textContent = 'Đăng nhập thành công! Đang chuyển hướng...';
-          successBox.style.display = 'block';
-
-          setTimeout(function() {
-            window.location.href = '/dashboard';
-          }, 500);
-        } else {
-          errorBox.textContent = data.error || 'Đăng nhập thất bại';
-          errorBox.style.display = 'block';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Đăng nhập';
-        }
-      })
-      .catch(function(err) {
-        console.error('Login error:', err);
-        errorBox.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
-        errorBox.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Đăng nhập';
-      });
-    });
+    // Show error from URL params (from form POST redirect)
+    var p = new URLSearchParams(window.location.search);
+    var err = p.get('error');
+    if (err) {
+      var b = document.getElementById('error-box');
+      if (b) { b.textContent = err; b.style.display = 'block'; }
+    }
   </script>
 </body>
 </html>
