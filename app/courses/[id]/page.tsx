@@ -20,8 +20,7 @@ interface Lesson {
   title: string;
   duration: string;
   requiredLevel: MemberLevel;
-  videoId: string;
-  libraryId: string;
+  directPlayUrl: string;
 }
 
 interface Chapter {
@@ -35,37 +34,37 @@ const defaultChapters: Chapter[] = [
     id: 'ch-1',
     title: 'Giới thiệu khóa học',
     lessons: [
-      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', videoId: '', libraryId: '' },
-      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', videoId: '', libraryId: '' },
-      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', videoId: '', libraryId: '' },
+      { id: 'ls-1-1', title: 'Tổng quan về khóa học', duration: '05:30', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-2', title: 'Cách học hiệu quả nhất', duration: '08:15', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-1-3', title: 'Chuẩn bị công cụ cần thiết', duration: '12:00', requiredLevel: 'Free', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-2',
     title: 'Kiến thức nền tảng',
     lessons: [
-      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', videoId: '', libraryId: '' },
-      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
-      { id: 'ls-2-3', title: 'Thực hành bài tập 1', duration: '18:45', requiredLevel: 'Premium', videoId: '', libraryId: '' },
-      { id: 'ls-2-4', title: 'Kiểm tra kiến thức chương 1', duration: '10:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
+      { id: 'ls-2-1', title: 'Hiểu rõ các khái niệm cơ bản', duration: '15:20', requiredLevel: 'Free', directPlayUrl: '' },
+      { id: 'ls-2-2', title: 'Phân tích case study thực tế', duration: '20:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-3', title: 'Thực hành bài tập 1', duration: '18:45', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-2-4', title: 'Kiểm tra kiến thức chương 1', duration: '10:00', requiredLevel: 'Premium', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-3',
     title: 'Kỹ thuật nâng cao',
     lessons: [
-      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', videoId: '', libraryId: '' },
-      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'VIP', videoId: '', libraryId: '' },
-      { id: 'ls-3-3', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-3-1', title: 'Chiến lược chuyên sâu', duration: '25:00', requiredLevel: 'Premium', directPlayUrl: '' },
+      { id: 'ls-3-2', title: 'Tối ưu hóa quy trình', duration: '22:30', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-3-3', title: 'Phân tích dữ liệu thực tế', duration: '30:00', requiredLevel: 'VIP', directPlayUrl: '' },
     ],
   },
   {
     id: 'ch-4',
     title: 'Dự án thực hành',
     lessons: [
-      { id: 'ls-4-1', title: 'Hướng dẫn dự án cuối khóa', duration: '10:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
-      { id: 'ls-4-2', title: 'Thực hành xây dựng dự án', duration: '45:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
-      { id: 'ls-4-3', title: 'Review & phản hồi', duration: '20:00', requiredLevel: 'VIP', videoId: '', libraryId: '' },
+      { id: 'ls-4-1', title: 'Hướng dẫn dự án cuối khóa', duration: '10:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-2', title: 'Thực hành xây dựng dự án', duration: '45:00', requiredLevel: 'VIP', directPlayUrl: '' },
+      { id: 'ls-4-3', title: 'Review & phản hồi', duration: '20:00', requiredLevel: 'VIP', directPlayUrl: '' },
     ],
   },
 ];
@@ -116,7 +115,7 @@ export default function CourseDetail() {
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
-  const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string; videoId: string; libraryId: string } | null>(null);
+  const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string; directPlayUrl: string } | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
 
   // Load chapters from localStorage (shared with admin)
@@ -408,14 +407,14 @@ export default function CourseDetail() {
                                   </svg>
                                 ) : (
                                   <button
-                                    onClick={() => setPreviewLesson({ name: lesson.title, sectionTitle: section.title, videoId: lesson.videoId, libraryId: lesson.libraryId })}
-                                    disabled={!lesson.videoId}
+                                    onClick={() => setPreviewLesson({ name: lesson.title, sectionTitle: section.title, directPlayUrl: lesson.directPlayUrl })}
+                                    disabled={!lesson.directPlayUrl}
                                     className={`w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-colors ${
-                                      lesson.videoId
+                                      lesson.directPlayUrl
                                         ? 'bg-red/20 hover:bg-red/40 text-red cursor-pointer'
                                         : 'bg-white/5 text-gray-600 cursor-not-allowed'
                                     }`}
-                                    title={lesson.videoId ? 'Xem trước' : 'Chưa có video'}
+                                    title={lesson.directPlayUrl ? 'Xem trước' : 'Chưa có video'}
                                   >
                                     <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                       <path d="M8 5v14l11-7z" />
@@ -635,16 +634,16 @@ export default function CourseDetail() {
               </svg>
             </button>
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              {/* Bunny Stream Player */}
+              {/* Video Player */}
               <div className="relative aspect-video bg-black">
-                {previewLesson.videoId && previewLesson.libraryId ? (
-                  <iframe
-                    key={previewLesson.videoId}
-                    src={`https://iframe.mediadelivery.net/embed/${previewLesson.libraryId}/${previewLesson.videoId}?autoplay=false&preload=true`}
-                    loading="lazy"
-                    className="w-full h-full border-0"
-                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                    allowFullScreen
+                {previewLesson.directPlayUrl ? (
+                  <video
+                    key={previewLesson.directPlayUrl}
+                    src={previewLesson.directPlayUrl}
+                    controls
+                    className="w-full h-full"
+                    controlsList="nodownload"
+                    playsInline
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
