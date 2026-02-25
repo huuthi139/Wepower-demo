@@ -141,13 +141,17 @@ export async function GET() {
         const originalPrice = cols[COL.ORIGINAL_PRICE] ? Number(cols[COL.ORIGINAL_PRICE]?.replace(/,/g, '')) : undefined;
         const rating = Number(cols[COL.RATING]?.replace(',', '.')) || 0;
 
-        // Use real stats from chapters if available, otherwise 0
+        // Use real stats from chapters if available, fallback to Courses sheet values
         const realStats = chapterStats[id];
-        const lessonsCount = realStats ? realStats.lessonsCount : 0;
-        const duration = realStats ? realStats.duration : 0;
+        const sheetLessons = Number(cols[COL.LESSONS_COUNT]) || 0;
+        const sheetDuration = Number(cols[COL.DURATION]) || 0;
+        const sheetEnrollments = Number(cols[COL.ENROLLMENTS_COUNT]?.replace(/,/g, '')) || 0;
 
-        // Use real enrollment count from orders
-        const enrollmentsCount = enrollmentCounts[id] || 0;
+        const lessonsCount = realStats && realStats.lessonsCount > 0 ? realStats.lessonsCount : sheetLessons;
+        const duration = realStats && realStats.duration > 0 ? realStats.duration : sheetDuration;
+
+        // Use real enrollment count from orders, fallback to Courses sheet value
+        const enrollmentsCount = enrollmentCounts[id] || sheetEnrollments;
 
         return {
           id,

@@ -134,6 +134,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [dragOverTarget, setDragOverTarget] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
 
   const [apiSaving, setApiSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Save to localStorage + API
   const persistToStorage = useCallback((data: Chapter[]) => {
@@ -142,19 +143,31 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     } catch { /* ignore */ }
   }, [storageKey]);
 
-  // Save to backend API
+  // Save to backend API with verification
   const persistToApi = useCallback(async (data: Chapter[]) => {
     setApiSaving(true);
+    setSaveError(null);
     try {
-      await fetch(`/api/chapters/${id}`, {
+      const res = await fetch(`/api/chapters/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chapters: data }),
       });
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2500);
+      const result = await res.json();
+      if (result.success) {
+        const totalLessons = data.reduce((sum, ch) => sum + ch.lessons.length, 0);
+        const savedMsg = result.verified
+          ? `Đã lưu ${result.savedLessonsCount}/${totalLessons} bài học`
+          : 'Đã lưu (chưa xác minh)';
+        setSaveStatus('saved');
+        setSaveError(result.verified && result.savedLessonsCount !== totalLessons ? `Cảnh báo: chỉ lưu được ${result.savedLessonsCount}/${totalLessons} bài` : null);
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      } else {
+        setSaveError(result.error || 'Lưu thất bại');
+      }
     } catch (err) {
       console.error('Failed to save chapters to API:', err);
+      setSaveError('Lỗi kết nối - không thể lưu lên server');
     } finally {
       setApiSaving(false);
     }
@@ -479,41 +492,48 @@ export default function CourseContentPage({ params }: { params: { id: string } }
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleSave}
-              disabled={apiSaving}
-              className={`inline-flex items-center gap-2 h-10 px-5 rounded-lg font-bold text-sm transition-all duration-200 ${
-                saveStatus === 'saved'
-                  ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                  : apiSaving
-                    ? 'bg-teal/50 text-white/50 cursor-wait'
-                    : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
-              }`}
-            >
-              {apiSaving ? (
-                <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Đang lưu...
-                </>
-              ) : saveStatus === 'saved' ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Đã lưu
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                  Lưu
-                </>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleSave}
+                disabled={apiSaving}
+                className={`inline-flex items-center gap-2 h-10 px-5 rounded-lg font-bold text-sm transition-all duration-200 ${
+                  saveError
+                    ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                    : saveStatus === 'saved'
+                      ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                      : apiSaving
+                        ? 'bg-teal/50 text-white/50 cursor-wait'
+                        : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
+                }`}
+              >
+                {apiSaving ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang lưu...
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Đã lưu
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    Lưu
+                  </>
+                )}
+              </button>
+              {saveError && (
+                <p className="text-red-400 text-xs max-w-[200px] text-right">{saveError}</p>
               )}
-            </button>
+            </div>
             <Link href="/admin?tab=courses">
               <Button variant="ghost" size="sm">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
