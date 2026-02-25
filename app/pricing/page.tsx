@@ -75,11 +75,11 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       {/* Hero Section */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-dark">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Chọn gói phù hợp với bạn
@@ -91,21 +91,21 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="pb-20 bg-black">
+      <section className="pb-20 bg-dark">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`relative bg-black border-2 rounded-xl p-8 ${
+                className={`relative bg-dark border-2 rounded-xl p-8 ${
                   plan.popular
-                    ? 'border-red shadow-glow-red scale-105'
+                    ? 'border-teal shadow-glow-teal scale-105'
                     : 'border-white/10 hover:border-white/30'
                 } transition-all`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red text-white px-4 py-1 rounded-full text-sm font-bold">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-teal text-white px-4 py-1 rounded-full text-sm font-bold">
                     PHỔ BIẾN NHẤT
                   </div>
                 )}
@@ -134,7 +134,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="text-white/70">{feature}</span>
@@ -153,7 +153,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-black border-t border-white/10">
+      <section className="py-20 bg-dark border-t border-white/10">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold text-white mb-12 text-center">
@@ -162,10 +162,10 @@ export default function PricingPage() {
 
             <div className="space-y-4">
               {faqs.map((faq, i) => (
-                <details key={i} className="bg-black border border-white/10 rounded-lg group">
+                <details key={i} className="bg-dark border border-white/10 rounded-lg group">
                   <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5">
                     <span className="font-bold text-white pr-8">{faq.q}</span>
-                    <svg className="w-5 h-5 text-yellow flex-shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-gold flex-shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
@@ -180,7 +180,7 @@ export default function PricingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-black border-t border-white/10">
+      <section className="py-20 bg-dark border-t border-white/10">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Vẫn còn câu hỏi?

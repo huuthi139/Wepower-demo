@@ -21,7 +21,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex flex-col">
+      <div className="min-h-screen bg-dark flex flex-col">
         <Header />
 
         <div className="flex-1 container mx-auto px-4 py-20">
@@ -53,7 +53,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="min-h-screen bg-dark flex flex-col">
       <Header />
 
       <div className="flex-1 container mx-auto px-4 py-8">
@@ -67,7 +67,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="bg-black border-2 border-white/10 rounded-xl p-4 hover:border-red/30 transition-all"
+                className="bg-dark border-2 border-white/10 rounded-xl p-4 hover:border-teal/30 transition-all"
               >
                 <div className="flex gap-4">
                   {/* Thumbnail */}
@@ -85,7 +85,7 @@ export default function CartPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <Link href={`/courses/${item.id}`}>
-                      <h3 className="text-lg font-bold text-white mb-1 hover:text-red transition-colors line-clamp-1">
+                      <h3 className="text-lg font-bold text-white mb-1 hover:text-teal transition-colors line-clamp-1">
                         {item.title}
                       </h3>
                     </Link>
@@ -115,7 +115,7 @@ export default function CartPage() {
 
                       {/* Price */}
                       <div className="flex-1 text-right">
-                        <div className="text-xl font-bold text-yellow">
+                        <div className="text-xl font-bold text-gold">
                           {formatPrice(item.price * item.quantity)}
                         </div>
                         {item.quantity > 1 && (
@@ -128,7 +128,7 @@ export default function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-white/60 hover:text-red transition-colors p-2"
+                        className="text-white/60 hover:text-teal transition-colors p-2"
                         aria-label="Xóa khỏi giỏ hàng"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +144,7 @@ export default function CartPage() {
             {/* Clear Cart Button */}
             <button
               onClick={clearCart}
-              className="text-white/60 hover:text-red transition-colors text-sm font-medium"
+              className="text-white/60 hover:text-teal transition-colors text-sm font-medium"
             >
               Xóa tất cả khóa học
             </button>
@@ -152,7 +152,7 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-black border-2 border-white/10 rounded-xl p-6 sticky top-24">
+            <div className="bg-dark border-2 border-white/10 rounded-xl p-6 sticky top-24">
               <h2 className="text-xl font-bold text-white mb-6">Tổng đơn hàng</h2>
 
               {/* Summary Items */}
@@ -163,12 +163,12 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-white/60">
                   <span>Giảm giá</span>
-                  <span className="text-yellow font-bold">0₫</span>
+                  <span className="text-gold font-bold">0₫</span>
                 </div>
                 <div className="border-t border-white/10 pt-3">
                   <div className="flex justify-between">
                     <span className="text-white font-bold">Tổng cộng</span>
-                    <span className="text-2xl font-bold text-yellow">{formatPrice(totalPrice)}</span>
+                    <span className="text-2xl font-bold text-gold">{formatPrice(totalPrice)}</span>
                   </div>
                 </div>
               </div>
@@ -194,7 +194,7 @@ export default function CartPage() {
                   <input
                     type="text"
                     placeholder="Nhập mã"
-                    className="flex-1 bg-white/5 border-2 border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-red transition-colors"
+                    className="flex-1 bg-white/5 border-2 border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-teal transition-colors"
                   />
                   <Button variant="accent" size="md">
                     Áp dụng
@@ -205,19 +205,19 @@ export default function CartPage() {
               {/* Benefits */}
               <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
                 <div className="flex items-start gap-2 text-sm text-white/60">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span>Truy cập khóa học trọn đời</span>
                 </div>
                 <div className="flex items-start gap-2 text-sm text-white/60">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span>Chứng chỉ khi hoàn thành</span>
                 </div>
                 <div className="flex items-start gap-2 text-sm text-white/60">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span>Hỗ trợ 24/7</span>

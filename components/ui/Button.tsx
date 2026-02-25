@@ -3,21 +3,21 @@ import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none',
+  'inline-flex items-center justify-center rounded-full font-bold transition-all duration-300 ease-smooth-bounce disabled:opacity-50 disabled:pointer-events-none tracking-wide',
   {
     variants: {
       variant: {
-        primary: 'bg-red text-white hover:shadow-glow-red hover:scale-105 active:scale-100',
-        secondary: 'border-2 border-white bg-transparent text-white hover:bg-white hover:text-black',
-        ghost: 'bg-transparent text-white/70 hover:text-white',
-        accent: 'bg-yellow text-black hover:shadow-glow-yellow hover:scale-105',
-        outline: 'border-2 border-red text-red hover:bg-red hover:text-white',
+        primary: 'bg-teal text-dark hover:shadow-glow-teal hover:scale-105 active:scale-100',
+        secondary: 'border border-teal/40 bg-transparent text-teal hover:bg-teal/10 hover:border-teal',
+        ghost: 'bg-transparent text-white/70 hover:text-teal',
+        accent: 'bg-gold text-dark hover:shadow-glow-gold hover:scale-105',
+        outline: 'border border-gold/40 text-gold hover:bg-gold/10 hover:border-gold',
       },
       size: {
-        sm: 'h-9 px-4 text-sm',
-        md: 'h-11 px-6 text-base',
-        lg: 'h-12 px-8 text-lg',
-        xl: 'h-16 px-10 text-xl',
+        sm: 'h-9 px-5 text-xs uppercase tracking-wider',
+        md: 'h-11 px-6 text-sm',
+        lg: 'h-12 px-8 text-base',
+        xl: 'h-14 px-10 text-lg',
       },
     },
     defaultVariants: {

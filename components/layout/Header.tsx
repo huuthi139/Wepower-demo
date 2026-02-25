@@ -30,12 +30,12 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-red/20">
+    <header className="sticky top-0 z-50 bg-dark/95 backdrop-blur-md border-b border-white/[0.06]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0">
-            <span className="text-2xl font-bold text-red tracking-wider">WEPOWER</span>
+            <span className="text-2xl font-bold text-gold tracking-wider">WEPOWER</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -50,7 +50,7 @@ export function Header() {
               Cộng Đồng
             </Link>
             {user?.role === 'admin' && (
-              <Link href="/admin" className="text-red hover:text-red/80 transition-colors font-medium">
+              <Link href="/admin" className="text-teal hover:text-teal/80 transition-colors font-medium">
                 Admin
               </Link>
             )}
@@ -64,7 +64,7 @@ export function Header() {
                 placeholder="Tìm khóa học..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 px-4 pl-9 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                className="w-full h-9 px-4 pl-9 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
               />
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -92,7 +92,7 @@ export function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-teal text-dark text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                   {totalItems}
                 </span>
               )}
@@ -102,7 +102,7 @@ export function Header() {
               <>
                 {/* User Info */}
                 <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <div className="w-8 h-8 bg-red rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-bold">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="hidden xl:block">
@@ -146,7 +146,7 @@ export function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-teal text-dark text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
@@ -171,7 +171,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-red/20 animate-slideDown">
+          <div className="lg:hidden py-4 border-t border-white/[0.06] animate-slideDown">
             <nav className="flex flex-col gap-4">
               {/* Mobile Search */}
               <form onSubmit={handleSearch} className="md:hidden">
@@ -181,7 +181,7 @@ export function Header() {
                     placeholder="Tìm khóa học..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-10 px-4 pl-10 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                    className="w-full h-10 px-4 pl-10 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                   />
                   <svg
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -195,7 +195,7 @@ export function Header() {
               {/* User info on mobile */}
               {user && (
                 <div className="flex items-center gap-3 py-2">
-                  <div className="w-10 h-10 bg-red rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-teal rounded-full flex items-center justify-center">
                     <span className="text-white font-bold">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div>
@@ -229,7 +229,7 @@ export function Header() {
               {user?.role === 'admin' && (
                 <Link
                   href="/admin"
-                  className="text-red hover:text-red/80 transition-colors py-2 font-medium"
+                  className="text-teal hover:text-teal/80 transition-colors py-2 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Admin
@@ -244,7 +244,7 @@ export function Header() {
                 {language === 'vi' ? '🇻🇳 Tiếng Việt' : '🇬🇧 English'}
               </button>
 
-              <div className="flex flex-col gap-2 pt-4 border-t border-red/20">
+              <div className="flex flex-col gap-2 pt-4 border-t border-white/[0.06]">
                 {user ? (
                   <>
                     <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>

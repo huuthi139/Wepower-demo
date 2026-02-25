@@ -11,7 +11,7 @@ const bannerSlides = [
     description: 'Học cách tận dụng AI để tăng doanh số và tối ưu quy trình kinh doanh',
     ctaText: 'Khám phá ngay',
     ctaLink: '/courses/2',
-    bgGradient: 'from-red/80 to-yellow/60',
+    bgGradient: 'from-purple/60 via-teal/30 to-dark',
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ const bannerSlides = [
     description: 'Khóa học toàn diện về tạo video AI cho Affiliate Marketing',
     ctaText: 'Đăng ký học',
     ctaLink: '/courses/13',
-    bgGradient: 'from-yellow/80 to-red/60',
+    bgGradient: 'from-gold/40 via-purple/20 to-dark',
   },
   {
     id: 3,
@@ -27,7 +27,7 @@ const bannerSlides = [
     description: 'Chiến lược quảng cáo hiệu quả trên Shopee và Facebook',
     ctaText: 'Xem chi tiết',
     ctaLink: '/courses/6',
-    bgGradient: 'from-red/70 to-black/80',
+    bgGradient: 'from-teal/40 via-dark to-purple/30',
   },
 ];
 
@@ -73,7 +73,7 @@ export function BannerCarousel() {
                 {slide.description}
               </p>
               <Link href={slide.ctaLink}>
-                <Button variant="secondary" size="xl" className="bg-white text-black hover:bg-white/90 animate-fade-in">
+                <Button variant="primary" size="xl" className="animate-fade-in">
                   {slide.ctaText} →
                 </Button>
               </Link>
@@ -85,7 +85,7 @@ export function BannerCarousel() {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-dark/70 hover:bg-dark/90 border border-white/10 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
         aria-label="Previous slide"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@ export function BannerCarousel() {
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-dark/70 hover:bg-dark/90 border border-white/10 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
         aria-label="Next slide"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

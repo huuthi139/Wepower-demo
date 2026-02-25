@@ -19,7 +19,7 @@ export default function MyCourses() {
   const recommendedCourses = courses.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -40,11 +40,11 @@ export default function MyCourses() {
             <div className="text-sm text-gray-400">Tổng khóa học</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-yellow mb-1">{inProgressCourses.length}</div>
+            <div className="text-3xl font-bold text-gold mb-1">{inProgressCourses.length}</div>
             <div className="text-sm text-gray-400">Đang học</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-red mb-1">{completedCourses.length}</div>
+            <div className="text-3xl font-bold text-teal mb-1">{completedCourses.length}</div>
             <div className="text-sm text-gray-400">Đã hoàn thành</div>
           </div>
         </div>

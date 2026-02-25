@@ -13,7 +13,7 @@ import { useCourses } from '@/contexts/CoursesContext';
 export default function CoursesPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-dark">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -112,7 +112,7 @@ function Courses() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -134,7 +134,7 @@ function Courses() {
               placeholder="Tìm kiếm khóa học, giảng viên..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 px-4 pl-12 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+              className="w-full h-12 px-4 pl-12 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
             />
             <svg
               className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500"
@@ -163,8 +163,8 @@ function Courses() {
                 onClick={() => setSelectedCategory(category.slug)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   selectedCategory === category.slug
-                    ? 'bg-red text-white shadow-glow-red'
-                    : 'bg-gray-900 text-gray-400 border border-gray-800 hover:border-gray-700'
+                    ? 'bg-teal text-dark shadow-glow-teal'
+                    : 'bg-white/[0.03] text-gray-400 border border-white/[0.06] hover:border-white/[0.12]'
                 }`}
               >
                 {category.name}
@@ -191,7 +191,7 @@ function Courses() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red"
+              className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-teal"
             >
               <option value="popular">Phổ biến nhất</option>
               <option value="newest">Mới nhất</option>
@@ -217,7 +217,7 @@ function Courses() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-white/[0.03] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -236,14 +236,14 @@ function Courses() {
         )}
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-red to-yellow rounded-2xl p-6 md:p-8 text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-3">
+        <div className="bg-gradient-to-r from-teal/20 via-purple/10 to-gold/20 border border-teal/20 rounded-2xl p-6 md:p-8 text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
             Không tìm thấy khóa học phù hợp?
           </h2>
-          <p className="text-black/80 mb-5 max-w-2xl mx-auto">
+          <p className="text-gray-300 mb-5 max-w-2xl mx-auto">
             Đề xuất khóa học mà bạn muốn học. Chúng tôi sẽ làm việc với các chuyên gia để tạo nội dung chất lượng cao.
           </p>
-          <Button variant="secondary" size="lg" className="bg-black text-white hover:bg-gray-900">
+          <Button variant="primary" size="lg">
             Đề xuất khóa học
           </Button>
         </div>

@@ -19,20 +19,20 @@ export function Toast({ message, type = 'success', onClose, duration = 3000 }: T
   }, [duration, onClose]);
 
   const bgColor = {
-    success: 'bg-yellow',
-    error: 'bg-red',
+    success: 'bg-teal',
+    error: 'bg-royal-red',
     info: 'bg-white',
   }[type];
 
   const textColor = {
-    success: 'text-black',
+    success: 'text-dark',
     error: 'text-white',
-    info: 'text-black',
+    info: 'text-dark',
   }[type];
 
   return (
     <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
-      <div className={`${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-glow-red flex items-center gap-3 min-w-[300px]`}>
+      <div className={`${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-glow-teal flex items-center gap-3 min-w-[300px]`}>
         <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {type === 'success' && (
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
