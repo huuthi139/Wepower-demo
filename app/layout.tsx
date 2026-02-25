@@ -6,8 +6,8 @@ import { CoursesProvider } from '@/contexts/CoursesContext';
 import { ToastProvider } from '@/providers/ToastProvider';
 
 export const metadata: Metadata = {
-  title: "WePower Academy - Kinh nghiệm thực chiến, Kiến thức chuyên sâu",
-  description: "Nền tảng chia sẻ kiến thức và kinh nghiệm về kinh doanh, marketing, digital product.",
+  title: "Wepower Elearning",
+  description: "Nền tảng học tập trực tuyến",
 };
 
 export default function RootLayout({

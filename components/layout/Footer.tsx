@@ -32,7 +32,7 @@ export function Footer() {
               <span className="text-2xl font-bold text-gold tracking-wider">WEPOWER</span>
             </Link>
             <p className="text-white/60 text-sm mb-4">
-              Nền tảng học tập trực tuyến hàng đầu Việt Nam
+              Nền tảng học tập trực tuyến
             </p>
 
             {/* Contact Info */}
