@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useCourses } from '@/contexts/CoursesContext';
 import type { MemberLevel } from '@/lib/mockData';
@@ -126,6 +126,12 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [modal, setModal] = useState<ModalType>({ kind: 'none' });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [previewVideo, setPreviewVideo] = useState<{ directPlayUrl: string; title: string } | null>(null);
+
+  // Drag & drop state for reordering lessons
+  const dragItem = useRef<{ chapterId: string; lessonIndex: number } | null>(null);
+  const dragOverItem = useRef<{ chapterId: string; lessonIndex: number } | null>(null);
+  const [draggingLesson, setDraggingLesson] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
 
   // Persist chapters to localStorage
   const saveChapters = useCallback((newChapters: Chapter[]) => {
@@ -354,6 +360,54 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     setModal({ kind: 'none' });
   };
 
+  // ---- Drag & Drop handlers for lesson reordering ----
+  const handleLessonDragStart = (chapterId: string, lessonIndex: number) => {
+    dragItem.current = { chapterId, lessonIndex };
+    setDraggingLesson({ chapterId, lessonIndex });
+  };
+
+  const handleLessonDragOver = (e: React.DragEvent, chapterId: string, lessonIndex: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    // Only allow reorder within the same chapter
+    if (dragItem.current && dragItem.current.chapterId === chapterId) {
+      dragOverItem.current = { chapterId, lessonIndex };
+      setDragOverTarget({ chapterId, lessonIndex });
+    }
+  };
+
+  const handleLessonDrop = (e: React.DragEvent, chapterId: string) => {
+    e.preventDefault();
+    if (!dragItem.current || !dragOverItem.current) return;
+    if (dragItem.current.chapterId !== chapterId) return;
+    if (dragItem.current.lessonIndex === dragOverItem.current.lessonIndex) return;
+
+    const fromIndex = dragItem.current.lessonIndex;
+    const toIndex = dragOverItem.current.lessonIndex;
+
+    saveChapters(
+      chapters.map((ch) => {
+        if (ch.id !== chapterId) return ch;
+        const newLessons = [...ch.lessons];
+        const [moved] = newLessons.splice(fromIndex, 1);
+        newLessons.splice(toIndex, 0, moved);
+        return { ...ch, lessons: newLessons };
+      })
+    );
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setDraggingLesson(null);
+    setDragOverTarget(null);
+  };
+
+  const handleLessonDragEnd = () => {
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setDraggingLesson(null);
+    setDragOverTarget(null);
+  };
+
   const totalLessons = chapters.reduce((sum, ch) => sum + ch.lessons.length, 0);
 
   // Helper to get names for delete confirmation
@@ -504,14 +558,34 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                       </div>
                     )}
 
-                    {chapter.lessons.map((lesson, lessonIndex) => (
+                    {chapter.lessons.map((lesson, lessonIndex) => {
+                      const isDragging = draggingLesson?.chapterId === chapter.id && draggingLesson?.lessonIndex === lessonIndex;
+                      const isDragOver = dragOverTarget?.chapterId === chapter.id && dragOverTarget?.lessonIndex === lessonIndex && draggingLesson?.chapterId === chapter.id && draggingLesson?.lessonIndex !== lessonIndex;
+                      return (
                       <div
                         key={lesson.id}
-                        className={`flex items-center justify-between px-4 md:px-5 py-3 hover:bg-white/[0.02] transition-colors ${
+                        draggable
+                        onDragStart={() => handleLessonDragStart(chapter.id, lessonIndex)}
+                        onDragOver={(e) => handleLessonDragOver(e, chapter.id, lessonIndex)}
+                        onDrop={(e) => handleLessonDrop(e, chapter.id)}
+                        onDragEnd={handleLessonDragEnd}
+                        className={`flex items-center justify-between px-4 md:px-5 py-3 transition-all ${
                           lessonIndex < chapter.lessons.length - 1 ? 'border-b border-white/[0.06]/50' : ''
-                        }`}
+                        } ${isDragging ? 'opacity-40 bg-teal/5' : 'hover:bg-white/[0.02]'} ${isDragOver ? 'border-t-2 !border-t-teal' : ''}`}
+                        style={{ cursor: 'grab' }}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {/* Drag Handle */}
+                          <div className="flex-shrink-0 text-gray-600 hover:text-gray-400 transition-colors" title="Kéo để sắp xếp">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="9" cy="5" r="1.5" />
+                              <circle cx="15" cy="5" r="1.5" />
+                              <circle cx="9" cy="12" r="1.5" />
+                              <circle cx="15" cy="12" r="1.5" />
+                              <circle cx="9" cy="19" r="1.5" />
+                              <circle cx="15" cy="19" r="1.5" />
+                            </svg>
+                          </div>
                           {lesson.directPlayUrl ? (
                             <button
                               onClick={() => setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
@@ -563,7 +637,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Add Lesson Button */}
                     <div className="p-3 border-t border-white/[0.06]">
