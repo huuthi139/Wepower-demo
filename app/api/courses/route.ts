@@ -62,7 +62,8 @@ function parseDurationToSeconds(duration: string): number {
 }
 
 // Fetch chapter stats from Apps Script with timeout
-async function fetchChapterStats(timeoutMs = 5000): Promise<Record<string, { lessonsCount: number; duration: number }>> {
+// Handles chunked data: courseId → {_chunks: [...]} → resolve chunks
+async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { lessonsCount: number; duration: number }>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -75,8 +76,30 @@ async function fetchChapterStats(timeoutMs = 5000): Promise<Record<string, { les
     const data = await res.json();
     if (data.success && data.data) {
       const stats: Record<string, { lessonsCount: number; duration: number }> = {};
-      for (const [courseId, chapters] of Object.entries(data.data)) {
-        const chapterArr = chapters as any[];
+      const allData = data.data as Record<string, any>;
+
+      for (const [courseId, chapters] of Object.entries(allData)) {
+        // Skip chunk/part entries (they have __ in the ID)
+        if (courseId.includes('__')) continue;
+
+        let chapterArr: any[];
+
+        // Check if this is a chunk index
+        if (chapters && (chapters as any)._chunks) {
+          // Resolve chunks from allData
+          chapterArr = [];
+          for (const chunkId of (chapters as any)._chunks) {
+            const chunkData = allData[chunkId];
+            if (Array.isArray(chunkData)) {
+              chapterArr.push(...chunkData);
+            }
+          }
+        } else if (Array.isArray(chapters)) {
+          chapterArr = chapters;
+        } else {
+          continue;
+        }
+
         let totalLessons = 0;
         let totalDuration = 0;
         for (const ch of chapterArr) {
