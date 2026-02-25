@@ -135,8 +135,10 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const [apiSaving, setApiSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [serverSynced, setServerSynced] = useState<boolean | null>(null); // null=checking, true=synced, false=not synced
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Save to localStorage + API
+  // Save to localStorage
   const persistToStorage = useCallback((data: Chapter[]) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(data));
@@ -155,19 +157,21 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       });
       const result = await res.json();
       if (result.success) {
-        const totalLessons = data.reduce((sum, ch) => sum + ch.lessons.length, 0);
-        const savedMsg = result.verified
-          ? `Đã lưu ${result.savedLessonsCount}/${totalLessons} bài học`
-          : 'Đã lưu (chưa xác minh)';
         setSaveStatus('saved');
-        setSaveError(result.verified && result.savedLessonsCount !== totalLessons ? `Cảnh báo: chỉ lưu được ${result.savedLessonsCount}/${totalLessons} bài` : null);
+        setServerSynced(true);
+        setHasUnsavedChanges(false);
+        if (result.verified && result.savedLessonsCount !== data.reduce((s: number, ch: Chapter) => s + ch.lessons.length, 0)) {
+          setSaveError(`Cảnh báo: server chỉ lưu được ${result.savedLessonsCount} bài`);
+        }
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
-        setSaveError(result.error || 'Lưu thất bại');
+        setSaveError(result.error || 'Lưu thất bại - thử lại');
+        setServerSynced(false);
       }
     } catch (err) {
       console.error('Failed to save chapters to API:', err);
       setSaveError('Lỗi kết nối - không thể lưu lên server');
+      setServerSynced(false);
     } finally {
       setApiSaving(false);
     }
@@ -177,6 +181,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const updateChapters = useCallback((newChapters: Chapter[]) => {
     setChapters(newChapters);
     persistToStorage(newChapters);
+    setHasUnsavedChanges(true);
+    setServerSynced(false);
   }, [persistToStorage]);
 
   // Manual save: persist to both localStorage and API
@@ -187,6 +193,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   // Load chapters from API on mount (sync from backend)
   useEffect(() => {
+    setServerSynced(null); // checking
     fetch(`/api/chapters/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -194,9 +201,17 @@ export default function CourseContentPage({ params }: { params: { id: string } }
           const normalized = normalizeChapters(data.chapters);
           setChapters(normalized);
           localStorage.setItem(storageKey, JSON.stringify(normalized));
+          setServerSynced(true);
+          setHasUnsavedChanges(false);
+        } else {
+          // Server has no data - check if we have local data
+          setServerSynced(chapters.length === 0);
+          setHasUnsavedChanges(chapters.length > 0);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setServerSynced(false);
+      });
   }, [id, storageKey]);
 
   // Form states
@@ -532,6 +547,12 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               </button>
               {saveError && (
                 <p className="text-red-400 text-xs max-w-[200px] text-right">{saveError}</p>
+              )}
+              {!saveError && hasUnsavedChanges && (
+                <p className="text-yellow-400 text-xs">Chưa lưu lên server - bấm Lưu!</p>
+              )}
+              {serverSynced === null && (
+                <p className="text-gray-500 text-xs">Đang kiểm tra server...</p>
               )}
             </div>
             <Link href="/admin?tab=courses">
