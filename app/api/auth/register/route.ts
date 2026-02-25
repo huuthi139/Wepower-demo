@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Users';
+const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -54,30 +55,29 @@ export async function POST(request: Request) {
     }
 
     // Method 1: Google Apps Script via GET
-    if (process.env.GOOGLE_SCRIPT_URL) {
-      try {
-        const params = new URLSearchParams({
-          action: 'register',
-          name,
-          email,
-          password,
-          phone: phone || '',
-        });
-        const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
-        const res = await fetch(scriptUrl, { redirect: 'follow' });
-        const data = await res.json();
+    const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    try {
+      const params = new URLSearchParams({
+        action: 'register',
+        name,
+        email,
+        password,
+        phone: phone || '',
+      });
+      const fullUrl = `${scriptUrl}?${params.toString()}`;
+      const res = await fetch(fullUrl, { redirect: 'follow' });
+      const data = await res.json();
 
-        if (data.success) {
-          return NextResponse.json({ success: true, user: data.user });
-        }
-
-        return NextResponse.json(
-          { success: false, error: data.error || 'Đăng ký thất bại' },
-          { status: data.error?.includes('đã được sử dụng') ? 409 : 400 }
-        );
-      } catch (err) {
-        console.error('Apps Script register error:', err);
+      if (data.success) {
+        return NextResponse.json({ success: true, user: data.user });
       }
+
+      return NextResponse.json(
+        { success: false, error: data.error || 'Đăng ký thất bại' },
+        { status: data.error?.includes('đã được sử dụng') ? 409 : 400 }
+      );
+    } catch (err) {
+      console.error('Apps Script register error:', err);
     }
 
     // Method 2: Check email via CSV + write via Sheets API

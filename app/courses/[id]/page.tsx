@@ -82,16 +82,33 @@ export default function CourseDetail() {
   const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string; directPlayUrl: string } | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
 
-  // Load chapters from localStorage (shared with admin)
+  // Load chapters from API, fallback to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && params.id) {
+    let cancelled = false;
+    const cid = params.id as string;
+    // Try localStorage first for instant display
+    if (typeof window !== 'undefined' && cid) {
       try {
-        const saved = localStorage.getItem(`wepower-chapters-${params.id}`);
+        const saved = localStorage.getItem(`wepower-chapters-${cid}`);
         if (saved) {
           setChapters(normalizeChapters(JSON.parse(saved)));
         }
       } catch { /* ignore */ }
     }
+    // Then fetch from API for latest data
+    if (cid) {
+      fetch(`/api/chapters/${cid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!cancelled && data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
+            const normalized = normalizeChapters(data.chapters);
+            setChapters(normalized);
+            try { localStorage.setItem(`wepower-chapters-${cid}`, JSON.stringify(normalized)); } catch {}
+          }
+        })
+        .catch(() => {});
+    }
+    return () => { cancelled = true; };
   }, [params.id]);
 
   const course = courses.find(c => c.id === params.id);

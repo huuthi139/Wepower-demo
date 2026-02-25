@@ -2,19 +2,20 @@ import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Orders';
+const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
 export async function POST(request: Request) {
   try {
     const { rowData, orderId } = await request.json();
 
     // Method 1: Google Apps Script via GET
-    if (process.env.GOOGLE_SCRIPT_URL) {
-      try {
-        const params = new URLSearchParams({
-          action: 'appendOrder',
-          rowData: JSON.stringify(rowData),
-        });
-        const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+    const gsScriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    try {
+      const params = new URLSearchParams({
+        action: 'appendOrder',
+        rowData: JSON.stringify(rowData),
+      });
+      const scriptUrl = `${gsScriptUrl}?${params.toString()}`;
         const res = await fetch(scriptUrl, { redirect: 'follow' });
         const data = await res.json();
 
@@ -25,7 +26,6 @@ export async function POST(request: Request) {
         console.error('Apps Script order error:', err);
         // Fall through to other methods
       }
-    }
 
     // Method 2: Google Sheets API
     if (process.env.GOOGLE_SHEETS_API_KEY) {
