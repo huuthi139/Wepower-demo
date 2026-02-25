@@ -36,6 +36,7 @@ function normalizeChapters(chapters: any[]): Chapter[] {
           ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
           : '')
       ),
+      thumbnail: ls.thumbnail || '',
     })),
   }));
 }
@@ -46,6 +47,7 @@ interface Lesson {
   duration: string;
   requiredLevel: MemberLevel;
   directPlayUrl: string;
+  thumbnail?: string;
 }
 
 interface Chapter {
