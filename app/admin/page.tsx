@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
@@ -112,12 +112,14 @@ export default function AdminDashboard() {
 
   // ------- Course CRUD state -------
   const { courses: sheetCourses } = useCourses();
+  const COURSES_STORAGE_KEY = 'wepower-admin-courses';
   const [courses, setCourses] = useState<Course[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [courseForm, setCourseForm] = useState<CourseFormData>(emptyCourseForm);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
 
   // ------- Students state -------
   const [students, setStudents] = useState<Student[]>(() => [...studentsData]);
@@ -125,8 +127,41 @@ export default function AdminDashboard() {
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [showAddCourseModal, setShowAddCourseModal] = useState<string | null>(null); // studentId
 
-  // Sync courses from Google Sheets
+  // Save courses to localStorage
+  const persistCourses = useCallback((data: Course[]) => {
+    try {
+      localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(data));
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch { /* ignore */ }
+  }, []);
+
+  // Update courses state + auto-save
+  const updateCourses = useCallback((updater: (prev: Course[]) => Course[]) => {
+    setCourses(prev => {
+      const next = updater(prev);
+      persistCourses(next);
+      return next;
+    });
+  }, [persistCourses]);
+
+  // Manual save (for the "Lưu" button)
+  const handleManualSave = useCallback(() => {
+    persistCourses(courses);
+  }, [persistCourses, courses]);
+
+  // Sync courses: load from localStorage first, fallback to Google Sheets
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(COURSES_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCourses(parsed);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
     if (sheetCourses.length > 0) {
       setCourses(sheetCourses);
     }
@@ -193,7 +228,7 @@ export default function AdminDashboard() {
 
     if (editingCourse) {
       // Update existing course
-      setCourses(prev =>
+      updateCourses(prev =>
         prev.map(c =>
           c.id === editingCourse.id
             ? {
@@ -228,7 +263,7 @@ export default function AdminDashboard() {
         isFree: courseForm.price === 0,
         memberLevel: 'Free',
       };
-      setCourses(prev => [...prev, newCourse]);
+      updateCourses(prev => [...prev, newCourse]);
     }
 
     setShowCourseModal(false);
@@ -243,7 +278,7 @@ export default function AdminDashboard() {
 
   const handleDeleteCourse = () => {
     if (!deletingCourse) return;
-    setCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
+    updateCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
     setShowDeleteModal(false);
     setDeletingCourse(null);
   };
@@ -290,14 +325,40 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Dashboard học viên
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleManualSave}
+              className={`inline-flex items-center gap-2 h-10 px-5 rounded-lg font-bold text-sm transition-all duration-200 ${
+                saveStatus === 'saved'
+                  ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                  : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
+              }`}
+            >
+              {saveStatus === 'saved' ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Đã lưu
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Lưu
+                </>
+              )}
+            </button>
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Dashboard học viên
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Tabs */}
