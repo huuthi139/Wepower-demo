@@ -133,25 +133,58 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [draggingLesson, setDraggingLesson] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
 
-  // Save to localStorage — used by both auto-save and manual button
+  const [apiSaving, setApiSaving] = useState(false);
+
+  // Save to localStorage + API
   const persistToStorage = useCallback((data: Chapter[]) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(data));
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2500);
     } catch { /* ignore */ }
   }, [storageKey]);
 
-  // Auto-save: update state + persist immediately
+  // Save to backend API
+  const persistToApi = useCallback(async (data: Chapter[]) => {
+    setApiSaving(true);
+    try {
+      await fetch(`/api/chapters/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chapters: data }),
+      });
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (err) {
+      console.error('Failed to save chapters to API:', err);
+    } finally {
+      setApiSaving(false);
+    }
+  }, [id]);
+
+  // Auto-save: update state + persist to localStorage only (fast)
   const updateChapters = useCallback((newChapters: Chapter[]) => {
     setChapters(newChapters);
     persistToStorage(newChapters);
   }, [persistToStorage]);
 
-  // Manual save: persist current state (for the "Lưu" button)
+  // Manual save: persist to both localStorage and API
   const handleSave = useCallback(() => {
     persistToStorage(chapters);
-  }, [persistToStorage, chapters]);
+    persistToApi(chapters);
+  }, [persistToStorage, persistToApi, chapters]);
+
+  // Load chapters from API on mount (sync from backend)
+  useEffect(() => {
+    fetch(`/api/chapters/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
+          const normalized = normalizeChapters(data.chapters);
+          setChapters(normalized);
+          localStorage.setItem(storageKey, JSON.stringify(normalized));
+        }
+      })
+      .catch(() => {});
+  }, [id, storageKey]);
 
   // Form states
   const [chapterTitle, setChapterTitle] = useState('');
@@ -448,13 +481,24 @@ export default function CourseContentPage({ params }: { params: { id: string } }
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
+              disabled={apiSaving}
               className={`inline-flex items-center gap-2 h-10 px-5 rounded-lg font-bold text-sm transition-all duration-200 ${
                 saveStatus === 'saved'
                   ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                  : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
+                  : apiSaving
+                    ? 'bg-teal/50 text-white/50 cursor-wait'
+                    : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
               }`}
             >
-              {saveStatus === 'saved' ? (
+              {apiSaving ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang lưu...
+                </>
+              ) : saveStatus === 'saved' ? (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

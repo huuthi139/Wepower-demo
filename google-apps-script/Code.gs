@@ -22,6 +22,7 @@
  * - Users:   Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
  * - Orders:  Thời gian | Mã đơn hàng | Tên khách hàng | Email | SĐT | Khóa học | Mã khóa học | Tổng tiền | PTTT | Trạng thái | Mã GD
  * - Courses: ID | Title | Description | Thumbnail | Instructor | Price | OriginalPrice | Rating | ReviewsCount | EnrollmentsCount | Duration | LessonsCount | Badge | Category | MemberLevel
+ * - Chapters: CourseId | ChaptersJSON
  */
 
 var SPREADSHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
@@ -61,6 +62,15 @@ function setup() {
     Logger.log('Tab Courses đã tạo');
   }
 
+  // Tab Chapters (nếu chưa có)
+  var chapters = ss.getSheetByName('Chapters');
+  if (!chapters) {
+    chapters = ss.insertSheet('Chapters');
+    chapters.appendRow(['CourseId', 'ChaptersJSON']);
+    formatHeader_(chapters, 2, '#e8a84a');
+    Logger.log('Tab Chapters đã tạo');
+  }
+
   Logger.log('Setup hoàn tất!');
 }
 
@@ -72,7 +82,7 @@ function doGet(e) {
     var action = (e.parameter.action || '').trim();
 
     if (!action) {
-      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'deleteUser'] });
+      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters'] });
     }
 
     switch (action) {
@@ -93,6 +103,15 @@ function doGet(e) {
 
       case 'deleteUser':
         return jsonResponse_(handleDeleteUser_(e.parameter));
+
+      case 'saveChapters':
+        return jsonResponse_(handleSaveChapters_(e.parameter));
+
+      case 'getChapters':
+        return jsonResponse_(handleGetChapters_(e.parameter));
+
+      case 'getAllChapters':
+        return jsonResponse_(handleGetAllChapters_());
 
       default:
         return jsonResponse_({ success: false, error: 'Unknown action: ' + action });
@@ -118,6 +137,9 @@ function doPost(e) {
       case 'getUsers':    return jsonResponse_(handleGetUsers_());
       case 'updateUserLevel': return jsonResponse_(handleUpdateUserLevel_(data));
       case 'deleteUser':  return jsonResponse_(handleDeleteUser_(data));
+      case 'saveChapters': return jsonResponse_(handleSaveChapters_(data));
+      case 'getChapters': return jsonResponse_(handleGetChapters_(data));
+      case 'getAllChapters': return jsonResponse_(handleGetAllChapters_());
       case 'setup':       setup(); return jsonResponse_({ success: true, message: 'Setup done' });
       default: return jsonResponse_({ success: false, error: 'Unknown action: ' + action });
     }
@@ -324,6 +346,94 @@ function handleDeleteUser_(data) {
   }
 
   return { success: false, error: 'Không tìm thấy user: ' + email };
+}
+
+// ==========================================
+// SAVE CHAPTERS (lưu chapters JSON cho 1 khóa học)
+// ==========================================
+function handleSaveChapters_(data) {
+  var courseId = (data.courseId || '').toString().trim();
+  var chaptersJson = data.chaptersJson || '[]';
+
+  if (!courseId) return { success: false, error: 'Thiếu courseId' };
+
+  // Nếu chaptersJson là object/array thì stringify
+  if (typeof chaptersJson !== 'string') {
+    chaptersJson = JSON.stringify(chaptersJson);
+  }
+
+  var sheet = getSheet_('Chapters');
+  if (!sheet) {
+    // Tạo tab nếu chưa có
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = ss.insertSheet('Chapters');
+    sheet.appendRow(['CourseId', 'ChaptersJSON']);
+    formatHeader_(sheet, 2, '#e8a84a');
+  }
+
+  var rows = sheet.getDataRange().getValues();
+
+  // Tìm row có courseId trùng để update
+  for (var i = 1; i < rows.length; i++) {
+    if ((rows[i][0] || '').toString().trim() === courseId) {
+      sheet.getRange(i + 1, 2).setValue(chaptersJson);
+      return { success: true, message: 'Đã cập nhật chapters cho khóa học ' + courseId };
+    }
+  }
+
+  // Chưa có → thêm mới
+  sheet.appendRow([courseId, chaptersJson]);
+  return { success: true, message: 'Đã lưu chapters cho khóa học ' + courseId };
+}
+
+// ==========================================
+// GET CHAPTERS (lấy chapters JSON cho 1 khóa học)
+// ==========================================
+function handleGetChapters_(data) {
+  var courseId = (data.courseId || '').toString().trim();
+  if (!courseId) return { success: false, error: 'Thiếu courseId' };
+
+  var sheet = getSheet_('Chapters');
+  if (!sheet) return { success: true, chapters: [] };
+
+  var rows = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < rows.length; i++) {
+    if ((rows[i][0] || '').toString().trim() === courseId) {
+      try {
+        var chapters = JSON.parse(rows[i][1] || '[]');
+        return { success: true, chapters: chapters };
+      } catch (err) {
+        return { success: true, chapters: [] };
+      }
+    }
+  }
+
+  return { success: true, chapters: [] };
+}
+
+// ==========================================
+// GET ALL CHAPTERS (lấy tất cả chapters - cho tính stats)
+// ==========================================
+function handleGetAllChapters_() {
+  var sheet = getSheet_('Chapters');
+  if (!sheet) return { success: true, data: {} };
+
+  var rows = sheet.getDataRange().getValues();
+  var result = {};
+
+  for (var i = 1; i < rows.length; i++) {
+    var courseId = (rows[i][0] || '').toString().trim();
+    if (courseId) {
+      try {
+        result[courseId] = JSON.parse(rows[i][1] || '[]');
+      } catch (err) {
+        result[courseId] = [];
+      }
+    }
+  }
+
+  return { success: true, data: result };
 }
 
 // ==========================================

@@ -87,8 +87,10 @@ export default function LearnPage() {
   const [commentText, setCommentText] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Load chapters from localStorage (shared with admin)
+  // Load chapters from API, fallback to localStorage
   useEffect(() => {
+    let cancelled = false;
+    // Try localStorage first for instant display
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(`wepower-chapters-${courseId}`);
@@ -97,6 +99,18 @@ export default function LearnPage() {
         }
       } catch { /* ignore */ }
     }
+    // Then fetch from API for latest data
+    fetch(`/api/chapters/${courseId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
+          const normalized = normalizeChapters(data.chapters);
+          setChapters(normalized);
+          try { localStorage.setItem(`wepower-chapters-${courseId}`, JSON.stringify(normalized)); } catch {}
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [courseId]);
 
   // Select first playable lesson on load
