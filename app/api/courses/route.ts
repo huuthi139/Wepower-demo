@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic - không cache static lúc build
+export const dynamic = 'force-dynamic';
+
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
