@@ -133,15 +133,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [draggingLesson, setDraggingLesson] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
 
-  // Persist chapters to localStorage
-  const saveChapters = useCallback((newChapters: Chapter[]) => {
-    setChapters(newChapters);
+  // Save to localStorage — used by both auto-save and manual button
+  const persistToStorage = useCallback((data: Chapter[]) => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(newChapters));
+      localStorage.setItem(storageKey, JSON.stringify(data));
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => setSaveStatus('idle'), 2500);
     } catch { /* ignore */ }
   }, [storageKey]);
+
+  // Auto-save: update state + persist immediately
+  const updateChapters = useCallback((newChapters: Chapter[]) => {
+    setChapters(newChapters);
+    persistToStorage(newChapters);
+  }, [persistToStorage]);
+
+  // Manual save: persist current state (for the "Lưu" button)
+  const handleSave = useCallback(() => {
+    persistToStorage(chapters);
+  }, [persistToStorage, chapters]);
 
   // Form states
   const [chapterTitle, setChapterTitle] = useState('');
@@ -264,13 +274,13 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       title: chapterTitle.trim(),
       lessons: [],
     };
-    saveChapters([...chapters, newChapter]);
+    updateChapters([...chapters, newChapter]);
     setModal({ kind: 'none' });
   };
 
   const handleEditChapter = () => {
     if (modal.kind !== 'editChapter' || !chapterTitle.trim()) return;
-    saveChapters(
+    updateChapters(
       chapters.map((ch) => (ch.id === modal.chapterId ? { ...ch, title: chapterTitle.trim() } : ch))
     );
     setModal({ kind: 'none' });
@@ -278,7 +288,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const handleDeleteChapter = () => {
     if (modal.kind !== 'deleteChapter') return;
-    saveChapters(chapters.filter((ch) => ch.id !== modal.chapterId));
+    updateChapters(chapters.filter((ch) => ch.id !== modal.chapterId));
     setExpandedChapters((prev) => {
       const next = new Set(prev);
       next.delete(modal.chapterId);
@@ -321,7 +331,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       requiredLevel: lessonLevel,
       directPlayUrl: lessonDirectPlayUrl.trim(),
     };
-    saveChapters(
+    updateChapters(
       chapters.map((ch) =>
         ch.id === modal.chapterId ? { ...ch, lessons: [...ch.lessons, newLesson] } : ch
       )
@@ -331,7 +341,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const handleEditLesson = () => {
     if (modal.kind !== 'editLesson' || !lessonTitle.trim()) return;
-    saveChapters(
+    updateChapters(
       chapters.map((ch) =>
         ch.id === modal.chapterId
           ? {
@@ -350,7 +360,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   const handleDeleteLesson = () => {
     if (modal.kind !== 'deleteLesson') return;
-    saveChapters(
+    updateChapters(
       chapters.map((ch) =>
         ch.id === modal.chapterId
           ? { ...ch, lessons: ch.lessons.filter((ls) => ls.id !== modal.lessonId) }
@@ -385,7 +395,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     const fromIndex = dragItem.current.lessonIndex;
     const toIndex = dragOverItem.current.lessonIndex;
 
-    saveChapters(
+    updateChapters(
       chapters.map((ch) => {
         if (ch.id !== chapterId) return ch;
         const newLessons = [...ch.lessons];
@@ -429,30 +439,46 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               </svg>
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
-                {saveStatus === 'saved' && (
-                  <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Đã lưu
-                  </span>
-                )}
-              </div>
+              <h1 className="text-xl md:text-2xl font-bold text-white">{course.title}</h1>
               <p className="text-sm text-gray-400 mt-1">
                 {course.instructor} &middot; {chapters.length} chương &middot; {totalLessons} bài học &middot; {formatPrice(course.price)}
               </p>
             </div>
           </div>
-          <Link href="/admin?tab=courses">
-            <Button variant="ghost" size="sm">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Quay lại
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSave}
+              className={`inline-flex items-center gap-2 h-10 px-5 rounded-lg font-bold text-sm transition-all duration-200 ${
+                saveStatus === 'saved'
+                  ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                  : 'bg-teal text-white hover:bg-teal/80 shadow-lg shadow-teal/20'
+              }`}
+            >
+              {saveStatus === 'saved' ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Đã lưu
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Lưu
+                </>
+              )}
+            </button>
+            <Link href="/admin?tab=courses">
+              <Button variant="ghost" size="sm">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Quay lại
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats bar */}
