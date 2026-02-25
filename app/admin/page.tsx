@@ -35,8 +35,14 @@ interface Student {
   lastActive: string;
 }
 
-// TODO: Fetch students from Google Sheets Users tab
-const studentsData: Student[] = [];
+// Google Sheets user row from API
+interface SheetUser {
+  Email: string;
+  Role: string;
+  'Tên': string;
+  Level: string;
+  Phone: string;
+}
 
 /* ============================================================
    ORDERS DATA
@@ -122,10 +128,42 @@ export default function AdminDashboard() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
 
   // ------- Students state -------
-  const [students, setStudents] = useState<Student[]>(() => [...studentsData]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentFilter, setStudentFilter] = useState<'all' | MemberLevel>('all');
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [showAddCourseModal, setShowAddCourseModal] = useState<string | null>(null); // studentId
+
+  // Fetch students from Google Sheets
+  useEffect(() => {
+    async function fetchStudents() {
+      setStudentsLoading(true);
+      try {
+        const res = await fetch('/api/auth/users', { cache: 'no-store' });
+        const data = await res.json();
+        if (data.success && data.users) {
+          const mapped: Student[] = data.users.map((u: SheetUser, i: number) => ({
+            id: `user-${i + 1}`,
+            name: u['Tên'] || u.Email?.split('@')[0] || 'N/A',
+            email: u.Email || '',
+            phone: u.Phone || '',
+            memberLevel: (['Free', 'Premium', 'VIP'].includes(u.Level) ? u.Level : 'Free') as MemberLevel,
+            enrolledCourses: [],
+            totalSpent: 0,
+            joinDate: '-',
+            status: 'Active' as const,
+            lastActive: '-',
+          }));
+          setStudents(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch students:', err);
+      } finally {
+        setStudentsLoading(false);
+      }
+    }
+    fetchStudents();
+  }, []);
 
   // Save courses to localStorage
   const persistCourses = useCallback((data: Course[]) => {
@@ -612,14 +650,17 @@ export default function AdminDashboard() {
                     studentFilter === f ? 'bg-teal text-white' : 'bg-white/5 text-gray-400 hover:text-white'
                   }`}
                 >
-                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${studentsData.filter(s => s.memberLevel === f).length})`}
+                  {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${students.filter(s => s.memberLevel === f).length})`}
                 </button>
               ))}
             </div>
 
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
               <div className="p-6 border-b border-white/[0.06]">
-                <h3 className="text-lg font-bold text-white">Học viên ({filteredStudents.length})</h3>
+                <h3 className="text-lg font-bold text-white">
+                  Học viên ({filteredStudents.length})
+                  {studentsLoading && <span className="text-sm text-gray-400 font-normal ml-2 animate-pulse">Đang tải...</span>}
+                </h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
