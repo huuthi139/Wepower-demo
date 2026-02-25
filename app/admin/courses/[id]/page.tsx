@@ -133,6 +133,12 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [draggingLesson, setDraggingLesson] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<{ chapterId: string; lessonIndex: number } | null>(null);
 
+  // Drag & drop state for reordering chapters
+  const dragChapter = useRef<number | null>(null);
+  const dragOverChapter = useRef<number | null>(null);
+  const [draggingChapterIndex, setDraggingChapterIndex] = useState<number | null>(null);
+  const [dragOverChapterIndex, setDragOverChapterIndex] = useState<number | null>(null);
+
   const [apiSaving, setApiSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [serverSynced, setServerSynced] = useState<boolean | null>(null); // null=checking, true=synced, false=not synced
@@ -479,6 +485,48 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     setDragOverTarget(null);
   };
 
+  // ---- Drag & Drop handlers for chapter reordering ----
+  const handleChapterDragStart = (e: React.DragEvent, chapterIndex: number) => {
+    dragChapter.current = chapterIndex;
+    setDraggingChapterIndex(chapterIndex);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleChapterDragOver = (e: React.DragEvent, chapterIndex: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragChapter.current !== null) {
+      dragOverChapter.current = chapterIndex;
+      setDragOverChapterIndex(chapterIndex);
+    }
+  };
+
+  const handleChapterDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragChapter.current === null || dragOverChapter.current === null) return;
+    if (dragChapter.current === dragOverChapter.current) return;
+
+    const fromIndex = dragChapter.current;
+    const toIndex = dragOverChapter.current;
+
+    const newChapters = [...chapters];
+    const [moved] = newChapters.splice(fromIndex, 1);
+    newChapters.splice(toIndex, 0, moved);
+    updateChapters(newChapters);
+
+    dragChapter.current = null;
+    dragOverChapter.current = null;
+    setDraggingChapterIndex(null);
+    setDragOverChapterIndex(null);
+  };
+
+  const handleChapterDragEnd = () => {
+    dragChapter.current = null;
+    dragOverChapter.current = null;
+    setDraggingChapterIndex(null);
+    setDragOverChapterIndex(null);
+  };
+
   const totalLessons = chapters.reduce((sum, ch) => sum + ch.lessons.length, 0);
 
   // Helper to get names for delete confirmation
@@ -615,10 +663,36 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
           {chapters.map((chapter, chapterIndex) => {
             const isExpanded = expandedChapters.has(chapter.id);
+            const isChapterDragging = draggingChapterIndex === chapterIndex;
+            const isChapterDragOver = dragOverChapterIndex === chapterIndex && draggingChapterIndex !== null && draggingChapterIndex !== chapterIndex;
             return (
-              <div key={chapter.id} className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div
+                key={chapter.id}
+                onDragOver={(e) => handleChapterDragOver(e, chapterIndex)}
+                onDrop={handleChapterDrop}
+                className={`bg-white/[0.03] border rounded-xl overflow-hidden transition-all ${
+                  isChapterDragging ? 'opacity-40 border-teal/30 bg-teal/5' : 'border-white/[0.06]'
+                } ${isChapterDragOver ? 'border-t-2 !border-t-teal' : ''}`}
+              >
                 {/* Chapter Header */}
                 <div className="flex items-center justify-between p-4 md:p-5">
+                  {/* Drag Handle for Chapter */}
+                  <div
+                    draggable
+                    onDragStart={(e) => handleChapterDragStart(e, chapterIndex)}
+                    onDragEnd={handleChapterDragEnd}
+                    className="flex-shrink-0 text-gray-600 hover:text-gray-400 transition-colors mr-2 cursor-grab active:cursor-grabbing"
+                    title="Kéo để sắp xếp chương"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="9" cy="5" r="1.5" />
+                      <circle cx="15" cy="5" r="1.5" />
+                      <circle cx="9" cy="12" r="1.5" />
+                      <circle cx="15" cy="12" r="1.5" />
+                      <circle cx="9" cy="19" r="1.5" />
+                      <circle cx="15" cy="19" r="1.5" />
+                    </svg>
+                  </div>
                   <button
                     onClick={() => toggleChapter(chapter.id)}
                     className="flex items-center gap-3 flex-1 text-left min-w-0"
