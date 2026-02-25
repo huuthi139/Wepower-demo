@@ -370,14 +370,12 @@ function seedCourses() {
 
   if (!sheet) {
     sheet = ss.insertSheet('Courses');
-    sheet.appendRow(['ID', 'Title', 'Description', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
-    formatHeader_(sheet, 15, '#4a9e4a');
   }
 
-  // Xóa data cũ (giữ header)
-  if (sheet.getLastRow() > 1) {
-    sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clear();
-  }
+  // Xóa TOÀN BỘ sheet (kể cả header cũ) rồi tạo lại
+  sheet.clear();
+  sheet.appendRow(['ID', 'Title', 'Description', 'Thumbnail', 'Instructor', 'Price', 'OriginalPrice', 'Rating', 'ReviewsCount', 'EnrollmentsCount', 'Duration', 'LessonsCount', 'Badge', 'Category', 'MemberLevel']);
+  formatHeader_(sheet, 15, '#4a9e4a');
 
   // Dữ liệu: [ID, Title, Description, Thumbnail, Instructor, Price, OriginalPrice, Rating, ReviewsCount, EnrollmentsCount, Duration, LessonsCount, Badge, Category, MemberLevel]
   var courses = [

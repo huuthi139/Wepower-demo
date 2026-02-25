@@ -121,10 +121,10 @@ export default function LearnPage() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
           <p className="text-white text-xl mb-4">Không tìm thấy khóa học</p>
-          <Link href="/courses" className="text-red hover:underline">Quay lại</Link>
+          <Link href="/courses" className="text-teal hover:underline">Quay lại</Link>
         </div>
       </div>
     );
@@ -188,7 +188,7 @@ export default function LearnPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Top Header Bar */}
-      <header className="bg-black border-b border-white/10 flex-shrink-0">
+      <header className="bg-dark border-b border-white/10 flex-shrink-0">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-4">
             <Link href={`/courses/${courseId}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
@@ -198,7 +198,7 @@ export default function LearnPage() {
               <span className="text-sm hidden sm:inline">Quay lại</span>
             </Link>
             <div className="h-6 w-px bg-white/10 hidden sm:block" />
-            <Link href="/" className="text-red font-black text-lg tracking-wider hidden sm:block">
+            <Link href="/" className="text-teal font-black text-lg tracking-wider hidden sm:block">
               WEPOWER
             </Link>
           </div>
@@ -210,13 +210,13 @@ export default function LearnPage() {
           <div className="flex items-center gap-3">
             {user && (
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-red rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{user.name.charAt(0)}</span>
                 </div>
                 <div className="hidden md:block">
                   <p className="text-white text-xs font-medium">{user.name}</p>
                   <span className={`text-[10px] font-bold ${
-                    userLevel === 'VIP' ? 'text-yellow' : userLevel === 'Premium' ? 'text-red' : 'text-gray-400'
+                    userLevel === 'VIP' ? 'text-gold' : userLevel === 'Premium' ? 'text-teal' : 'text-gray-400'
                   }`}>
                     {userLevel}
                   </span>
@@ -232,7 +232,7 @@ export default function LearnPage() {
         {/* Video Area */}
         <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? '' : ''}`}>
           {/* Video Player */}
-          <div className="relative bg-black">
+          <div className="relative bg-dark">
             <div className="aspect-video w-full max-h-[calc(100vh-280px)]">
               {currentLesson?.directPlayUrl ? (
                 isEmbedUrl(currentLesson.directPlayUrl) ? (
@@ -251,13 +251,13 @@ export default function LearnPage() {
                     src={currentLesson.directPlayUrl}
                     controls
                     autoPlay
-                    className="w-full h-full bg-black"
+                    className="w-full h-full bg-dark"
                     controlsList="nodownload"
                     playsInline
                   />
                 )
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                <div className="w-full h-full flex items-center justify-center bg-white/[0.03]">
                   <div className="text-center">
                     <svg className="w-16 h-16 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -291,9 +291,9 @@ export default function LearnPage() {
                   {currentLesson && (
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                       currentLesson.requiredLevel === 'VIP'
-                        ? 'bg-gradient-to-r from-yellow/20 to-amber-500/20 text-yellow border border-yellow/30'
+                        ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-gold border border-gold/30'
                         : currentLesson.requiredLevel === 'Premium'
-                          ? 'bg-red/10 text-red border border-red/20'
+                          ? 'bg-teal/10 text-teal border border-teal/20'
                           : 'bg-green-500/10 text-green-400 border border-green-500/20'
                     }`}>
                       {currentLesson.requiredLevel === 'Free' ? 'FREE' : currentLesson.requiredLevel.toUpperCase()}
@@ -344,20 +344,20 @@ export default function LearnPage() {
               <button
                 onClick={() => setActiveTab('curriculum')}
                 className={`py-3 text-sm font-semibold relative transition-colors ${
-                  activeTab === 'curriculum' ? 'text-red' : 'text-gray-400 hover:text-white'
+                  activeTab === 'curriculum' ? 'text-teal' : 'text-gray-400 hover:text-white'
                 }`}
               >
                 Danh mục
-                {activeTab === 'curriculum' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red" />}
+                {activeTab === 'curriculum' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal" />}
               </button>
               <button
                 onClick={() => setActiveTab('comments')}
                 className={`py-3 text-sm font-semibold relative transition-colors ${
-                  activeTab === 'comments' ? 'text-red' : 'text-gray-400 hover:text-white'
+                  activeTab === 'comments' ? 'text-teal' : 'text-gray-400 hover:text-white'
                 }`}
               >
                 Bình luận ({mockComments.length})
-                {activeTab === 'comments' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red" />}
+                {activeTab === 'comments' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal" />}
               </button>
             </div>
           </div>
@@ -392,11 +392,11 @@ export default function LearnPage() {
                                 onClick={() => selectLesson(lesson, chapter)}
                                 disabled={isLocked}
                                 className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
-                                  isActive ? 'bg-red/10 border-l-2 border-red' : 'hover:bg-white/5'
+                                  isActive ? 'bg-teal/10 border-l-2 border-teal' : 'hover:bg-white/5'
                                 } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                  isActive ? 'bg-red text-white' : 'bg-white/10 text-gray-400'
+                                  isActive ? 'bg-teal text-white' : 'bg-white/10 text-gray-400'
                                 }`}>
                                   {isLocked ? (
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,7 +405,7 @@ export default function LearnPage() {
                                   ) : (i + 1)}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className={`text-sm truncate ${isActive ? 'text-red font-semibold' : 'text-white'}`}>{lesson.title}</p>
+                                  <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <span className="text-xs text-gray-500">{lesson.duration}</span>
                                     <LevelBadgeSmall level={lesson.requiredLevel} />
@@ -433,7 +433,7 @@ export default function LearnPage() {
                 {/* Comment Input */}
                 {user ? (
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-red rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 bg-teal rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-xs font-bold">{user.name.charAt(0)}</span>
                     </div>
                     <div className="flex-1">
@@ -442,12 +442,12 @@ export default function LearnPage() {
                         onChange={(e) => setCommentText(e.target.value)}
                         placeholder="Viết bình luận..."
                         rows={2}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red transition-colors resize-none"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal transition-colors resize-none"
                       />
                       <div className="flex justify-end mt-2">
                         <button
                           disabled={!commentText.trim()}
-                          className="px-4 py-2 bg-red text-white text-sm font-bold rounded-lg hover:bg-red/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="px-4 py-2 bg-teal text-white text-sm font-bold rounded-lg hover:bg-teal/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           Gửi bình luận
                         </button>
@@ -457,7 +457,7 @@ export default function LearnPage() {
                 ) : (
                   <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-center">
                     <p className="text-gray-400 text-sm mb-2">Đăng nhập để bình luận</p>
-                    <Link href="/login" className="text-red text-sm font-semibold hover:underline">Đăng nhập</Link>
+                    <Link href="/login" className="text-teal text-sm font-semibold hover:underline">Đăng nhập</Link>
                   </div>
                 )}
 
@@ -475,7 +475,7 @@ export default function LearnPage() {
                         </div>
                         <p className="text-gray-300 text-sm leading-relaxed">{comment.text}</p>
                         <div className="flex items-center gap-4 mt-2">
-                          <button className="flex items-center gap-1 text-gray-500 hover:text-red text-xs transition-colors">
+                          <button className="flex items-center gap-1 text-gray-500 hover:text-teal text-xs transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
@@ -543,14 +543,14 @@ export default function LearnPage() {
                         disabled={isLocked}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-white/5 ${
                           isActive
-                            ? 'bg-red/10 border-l-2 border-l-red'
+                            ? 'bg-teal/10 border-l-2 border-l-red'
                             : 'hover:bg-white/5'
                         } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         {/* Lesson Number / Play indicator */}
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                           isActive
-                            ? 'bg-red text-white'
+                            ? 'bg-teal text-white'
                             : isLocked
                               ? 'bg-white/5 text-gray-600'
                               : lesson.directPlayUrl
@@ -572,7 +572,7 @@ export default function LearnPage() {
 
                         {/* Lesson Info */}
                         <div className="min-w-0 flex-1">
-                          <p className={`text-sm truncate ${isActive ? 'text-red font-semibold' : 'text-white'}`}>
+                          <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>
                             {lesson.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
@@ -592,7 +592,7 @@ export default function LearnPage() {
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
-            <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
+            <div className="absolute inset-0 bg-dark/60" onClick={() => setSidebarOpen(false)} />
             <aside className="absolute right-0 top-0 bottom-0 w-80 bg-[#111] border-l border-white/10 flex flex-col overflow-hidden">
               <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                 <div>
@@ -637,11 +637,11 @@ export default function LearnPage() {
                             onClick={() => { selectLesson(lesson, chapter); setSidebarOpen(false); }}
                             disabled={isLocked}
                             className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-white/5 ${
-                              isActive ? 'bg-red/10 border-l-2 border-l-red' : 'hover:bg-white/5'
+                              isActive ? 'bg-teal/10 border-l-2 border-l-red' : 'hover:bg-white/5'
                             } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                              isActive ? 'bg-red text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.directPlayUrl ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
+                              isActive ? 'bg-teal text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.directPlayUrl ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
                             }`}>
                               {isLocked ? (
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -654,7 +654,7 @@ export default function LearnPage() {
                               ) : String(lessonNum).padStart(2, '0')}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className={`text-sm truncate ${isActive ? 'text-red font-semibold' : 'text-white'}`}>{lesson.title}</p>
+                              <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-gray-500">{lesson.duration}</span>
                                 <LevelBadgeSmall level={lesson.requiredLevel} />
@@ -679,9 +679,9 @@ function LevelBadgeSmall({ level }: { level: MemberLevel }) {
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
       level === 'VIP'
-        ? 'bg-yellow/10 text-yellow'
+        ? 'bg-gold/10 text-gold'
         : level === 'Premium'
-          ? 'bg-red/10 text-red'
+          ? 'bg-teal/10 text-teal'
           : 'bg-green-500/10 text-green-400'
     }`}>
       {level === 'Free' ? 'FREE' : level.toUpperCase()}

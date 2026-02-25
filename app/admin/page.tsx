@@ -52,8 +52,8 @@ const recentOrders: { id: string; name: string; email: string; course: string; a
 function LevelBadge({ level }: { level: MemberLevel }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-      level === 'VIP' ? 'bg-gradient-to-r from-yellow/20 to-amber-500/20 text-yellow border border-yellow/30' :
-      level === 'Premium' ? 'bg-red/10 text-red border border-red/20' :
+      level === 'VIP' ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-gold border border-gold/30' :
+      level === 'Premium' ? 'bg-teal/10 text-teal border border-teal/20' :
       'bg-white/5 text-gray-400 border border-white/10'
     }`}>
       {level === 'VIP' && (
@@ -75,8 +75,8 @@ function Modal({ open, onClose, children }: { open: boolean; onClose: () => void
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         {children}
       </div>
     </div>
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -278,7 +278,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-red rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-teal rounded-xl flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -308,12 +308,12 @@ export default function AdminDashboard() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold transition-colors relative whitespace-nowrap ${
-                  activeTab === tab.key ? 'text-red' : 'text-gray-400 hover:text-white'
+                  activeTab === tab.key ? 'text-teal' : 'text-gray-400 hover:text-white'
                 }`}
               >
                 {tab.icon}
                 {tab.label}
-                {activeTab === tab.key && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red" />}
+                {activeTab === tab.key && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal" />}
               </button>
             ))}
           </div>
@@ -324,9 +324,9 @@ export default function AdminDashboard() {
           <div className="space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <div className="bg-gradient-to-br from-red/20 to-red/5 border border-red/20 rounded-xl p-5">
-                <div className="w-10 h-10 bg-red/20 rounded-lg flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-teal/20 to-red/5 border border-teal/20 rounded-xl p-5">
+                <div className="w-10 h-10 bg-teal/20 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -334,9 +334,9 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-400">Doanh thu</p>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow/20 to-yellow/5 border border-yellow/20 rounded-xl p-5">
-                <div className="w-10 h-10 bg-yellow/20 rounded-lg flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/20 rounded-xl p-5">
+                <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Member Level Distribution */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
               <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
               <div className="space-y-4">
                 <div>
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
                     <span className="text-sm text-white font-bold">{Math.round(vipCount / students.length * 100)}%</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow to-amber-500 rounded-full" style={{ width: `${vipCount / students.length * 100}%` }} />
+                    <div className="h-full bg-gradient-to-r from-gold to-amber-500 rounded-full" style={{ width: `${vipCount / students.length * 100}%` }} />
                   </div>
                 </div>
                 <div>
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
                     <span className="text-sm text-white font-bold">{Math.round(premiumCount / students.length * 100)}%</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-red rounded-full" style={{ width: `${premiumCount / students.length * 100}%` }} />
+                    <div className="h-full bg-teal rounded-full" style={{ width: `${premiumCount / students.length * 100}%` }} />
                   </div>
                 </div>
                 <div>
@@ -409,15 +409,15 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Orders (overview) */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
                 <h3 className="text-lg font-bold text-white">Đơn hàng gần đây</h3>
-                <button onClick={() => setActiveTab('orders')} className="text-sm text-red hover:underline">Xem tất cả</button>
+                <button onClick={() => setActiveTab('orders')} className="text-sm text-teal hover:underline">Xem tất cả</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-white/[0.06]">
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Mã đơn</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khách hàng</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khóa học</th>
@@ -427,19 +427,19 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {recentOrders.slice(0, 5).map(order => (
-                      <tr key={order.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
+                      <tr key={order.id} className="border-b border-white/[0.06]/50 hover:bg-white/[0.02]">
                         <td className="p-4 text-sm text-white font-mono">{order.id}</td>
                         <td className="p-4">
                           <div className="text-sm text-white">{order.name}</div>
                           <div className="text-xs text-gray-500">{order.email}</div>
                         </td>
                         <td className="p-4 text-sm text-gray-300 max-w-[200px] truncate">{order.course}</td>
-                        <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(order.amount)}</td>
+                        <td className="p-4 text-sm text-gold font-semibold">{formatPrice(order.amount)}</td>
                         <td className="p-4">
                           <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
                             order.status === 'Hoàn thành' ? 'bg-green-500/10 text-green-400' :
-                            order.status === 'Đang chờ' ? 'bg-yellow/10 text-yellow' :
-                            'bg-red/10 text-red'
+                            order.status === 'Đang chờ' ? 'bg-gold/10 text-gold' :
+                            'bg-teal/10 text-teal'
                           }`}>{order.status}</span>
                         </td>
                       </tr>
@@ -454,12 +454,12 @@ export default function AdminDashboard() {
         {/* ============ COURSES TAB (CRUD) ============ */}
         {activeTab === 'courses' && (
           <div className="space-y-6">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
                 <h3 className="text-lg font-bold text-white">Tất cả khóa học ({courses.length})</h3>
                 <button
                   onClick={openAddCourse}
-                  className="flex items-center gap-2 bg-red hover:bg-red/80 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-2 bg-teal hover:bg-teal/80 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-white/[0.06]">
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên khóa học</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Giá</th>
@@ -482,15 +482,15 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {courses.map(course => (
-                      <tr key={course.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
+                      <tr key={course.id} className="border-b border-white/[0.06]/50 hover:bg-white/[0.02]">
                         <td className="p-4 text-sm text-gray-400 font-mono">#{course.id}</td>
                         <td className="p-4">
-                          <Link href={`/admin/courses/${course.id}`} className="text-sm text-white font-medium hover:text-red transition-colors">
+                          <Link href={`/admin/courses/${course.id}`} className="text-sm text-white font-medium hover:text-teal transition-colors">
                             {course.title}
                           </Link>
                           <div className="text-xs text-gray-500 mt-0.5">{course.category}</div>
                         </td>
-                        <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(course.price)}</td>
+                        <td className="p-4 text-sm text-gold font-semibold">{formatPrice(course.price)}</td>
                         <td className="p-4 text-sm text-white">{course.enrollmentsCount.toLocaleString()}</td>
                         <td className="p-4 text-sm text-gray-400">{course.lessonsCount}</td>
                         <td className="p-4 text-sm text-gray-400">{formatDuration(course.duration)}</td>
@@ -509,7 +509,7 @@ export default function AdminDashboard() {
                             {/* Delete button */}
                             <button
                               onClick={() => openDeleteCourse(course)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red/20 text-gray-400 hover:text-red transition-colors"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-teal/20 text-gray-400 hover:text-teal transition-colors"
                               title="Xóa"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
                   key={f}
                   onClick={() => setStudentFilter(f)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    studentFilter === f ? 'bg-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
+                    studentFilter === f ? 'bg-teal text-white' : 'bg-white/5 text-gray-400 hover:text-white'
                   }`}
                 >
                   {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${studentsData.filter(s => s.memberLevel === f).length})`}
@@ -556,14 +556,14 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="p-6 border-b border-gray-800">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="p-6 border-b border-white/[0.06]">
                 <h3 className="text-lg font-bold text-white">Học viên ({filteredStudents.length})</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-white/[0.06]">
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase w-8"></th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">ID</th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Học viên</th>
@@ -582,7 +582,7 @@ export default function AdminDashboard() {
                       return (
                         <Fragment key={student.id}>
                           <tr
-                            className="border-b border-gray-800/50 hover:bg-white/[0.02] cursor-pointer"
+                            className="border-b border-white/[0.06]/50 hover:bg-white/[0.02] cursor-pointer"
                             onClick={() => setExpandedStudent(isExpanded ? null : student.id)}
                           >
                             <td className="p-4 text-center">
@@ -599,8 +599,8 @@ export default function AdminDashboard() {
                             <td className="p-4">
                               <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  student.memberLevel === 'VIP' ? 'bg-gradient-to-br from-yellow to-amber-500' :
-                                  student.memberLevel === 'Premium' ? 'bg-red' : 'bg-gray-600'
+                                  student.memberLevel === 'VIP' ? 'bg-gradient-to-br from-gold to-amber-500' :
+                                  student.memberLevel === 'Premium' ? 'bg-teal' : 'bg-gray-600'
                                 }`}>
                                   <span className="text-white text-xs font-bold">{student.name.charAt(0)}</span>
                                 </div>
@@ -613,7 +613,7 @@ export default function AdminDashboard() {
                             <td className="p-4 text-sm text-gray-400">{student.phone}</td>
                             <td className="p-4"><LevelBadge level={student.memberLevel} /></td>
                             <td className="p-4 text-sm text-white font-semibold">{student.enrolledCourses.length}</td>
-                            <td className="p-4 text-sm text-yellow font-semibold">
+                            <td className="p-4 text-sm text-gold font-semibold">
                               {student.totalSpent === 0 ? '-' : formatPrice(student.totalSpent)}
                             </td>
                             <td className="p-4 text-sm text-gray-400">{student.joinDate}</td>
@@ -628,14 +628,14 @@ export default function AdminDashboard() {
                           {isExpanded && (
                             <tr>
                               <td colSpan={9} className="p-0">
-                                <div className="bg-black/40 border-t border-gray-800/50 px-8 py-4">
+                                <div className="bg-dark/40 border-t border-white/[0.06]/50 px-8 py-4">
                                   <div className="flex items-center justify-between mb-3">
                                     <div className="text-xs font-semibold text-gray-400 uppercase">
                                       Khóa học đã đăng ký ({student.enrolledCourses.length})
                                     </div>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setShowAddCourseModal(student.id); }}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red hover:bg-red/80 text-white text-xs font-semibold rounded-lg transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-teal hover:bg-teal/80 text-white text-xs font-semibold rounded-lg transition-colors"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -647,7 +647,7 @@ export default function AdminDashboard() {
                                     {student.enrolledCourses.map(ec => (
                                       <div
                                         key={ec.courseId}
-                                        className="flex items-center justify-between bg-white/[0.03] border border-gray-800/50 rounded-lg px-4 py-3 group"
+                                        className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06]/50 rounded-lg px-4 py-3 group"
                                       >
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                           <div className="w-6 h-6 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
@@ -663,7 +663,7 @@ export default function AdminDashboard() {
                                               <div
                                                 className={`h-full rounded-full ${
                                                   ec.progress === 100 ? 'bg-green-500' :
-                                                  ec.progress >= 50 ? 'bg-yellow' : 'bg-red'
+                                                  ec.progress >= 50 ? 'bg-gold' : 'bg-teal'
                                                 }`}
                                                 style={{ width: `${ec.progress}%` }}
                                               />
@@ -672,7 +672,7 @@ export default function AdminDashboard() {
                                           </div>
                                           <button
                                             onClick={(e) => { e.stopPropagation(); handleRemoveCourse(student.id, ec.courseId); }}
-                                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-red bg-red/10 hover:bg-red/20 text-xs font-semibold transition-all"
+                                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-teal bg-teal/10 hover:bg-teal/20 text-xs font-semibold transition-all"
                                           >
                                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -704,14 +704,14 @@ export default function AdminDashboard() {
 
         {/* ============ ORDERS TAB ============ */}
         {activeTab === 'orders' && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-white/[0.06]">
               <h3 className="text-lg font-bold text-white">Đơn hàng ({recentOrders.length})</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-800">
+                  <tr className="border-b border-white/[0.06]">
                     <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Mã đơn</th>
                     <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khách hàng</th>
                     <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khóa học</th>
@@ -723,20 +723,20 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {recentOrders.map(order => (
-                    <tr key={order.id} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
+                    <tr key={order.id} className="border-b border-white/[0.06]/50 hover:bg-white/[0.02]">
                       <td className="p-4 text-sm text-white font-mono">{order.id}</td>
                       <td className="p-4">
                         <div className="text-sm text-white">{order.name}</div>
                         <div className="text-xs text-gray-500">{order.email}</div>
                       </td>
                       <td className="p-4 text-sm text-gray-300 max-w-[200px] truncate">{order.course}</td>
-                      <td className="p-4 text-sm text-yellow font-semibold">{formatPrice(order.amount)}</td>
+                      <td className="p-4 text-sm text-gold font-semibold">{formatPrice(order.amount)}</td>
                       <td className="p-4 text-sm text-gray-400">{order.method}</td>
                       <td className="p-4">
                         <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
                           order.status === 'Hoàn thành' ? 'bg-green-500/10 text-green-400' :
-                          order.status === 'Đang chờ' ? 'bg-yellow/10 text-yellow' :
-                          'bg-red/10 text-red'
+                          order.status === 'Đang chờ' ? 'bg-gold/10 text-gold' :
+                          'bg-teal/10 text-teal'
                         }`}>{order.status}</span>
                       </td>
                       <td className="p-4 text-sm text-gray-400">{order.date}</td>
@@ -775,7 +775,7 @@ export default function AdminDashboard() {
                 value={courseForm.title}
                 onChange={e => setCourseForm(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Nhập tên khóa học..."
-                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal transition-colors"
               />
             </div>
 
@@ -787,7 +787,7 @@ export default function AdminDashboard() {
                 value={courseForm.instructor}
                 onChange={e => setCourseForm(prev => ({ ...prev, instructor: e.target.value }))}
                 placeholder="Nhập tên giảng viên..."
-                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal transition-colors"
               />
             </div>
 
@@ -799,7 +799,7 @@ export default function AdminDashboard() {
                 value={courseForm.category}
                 onChange={e => setCourseForm(prev => ({ ...prev, category: e.target.value }))}
                 placeholder="VD: AI, Business, Marketing..."
-                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal transition-colors"
               />
             </div>
 
@@ -812,7 +812,7 @@ export default function AdminDashboard() {
                 onChange={e => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
                 placeholder="0"
                 min={0}
-                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal transition-colors"
               />
             </div>
 
@@ -825,13 +825,13 @@ export default function AdminDashboard() {
                 onChange={e => setCourseForm(prev => ({ ...prev, lessonsCount: Number(e.target.value) }))}
                 placeholder="0"
                 min={0}
-                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-colors"
+                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal transition-colors"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-800">
+          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/[0.06]">
             <button
               onClick={() => { setShowCourseModal(false); setEditingCourse(null); }}
               className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors"
@@ -841,7 +841,7 @@ export default function AdminDashboard() {
             <button
               onClick={handleSaveCourse}
               disabled={!courseForm.title.trim() || !courseForm.category.trim()}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-teal text-white text-sm font-semibold hover:bg-teal/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingCourse ? 'Cập nhật' : 'Thêm mới'}
             </button>
@@ -853,8 +853,8 @@ export default function AdminDashboard() {
       <Modal open={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeletingCourse(null); }}>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-red/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-teal/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
@@ -865,11 +865,11 @@ export default function AdminDashboard() {
           </div>
 
           {deletingCourse && (
-            <div className="bg-black/50 border border-gray-800 rounded-lg p-4 mb-6">
+            <div className="bg-dark/50 border border-white/[0.06] rounded-lg p-4 mb-6">
               <div className="text-sm text-white font-medium">{deletingCourse.title}</div>
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-xs text-gray-500">{deletingCourse.enrollmentsCount.toLocaleString()} học viên</span>
-                <span className="text-xs text-yellow">{formatPrice(deletingCourse.price)}</span>
+                <span className="text-xs text-gold">{formatPrice(deletingCourse.price)}</span>
               </div>
             </div>
           )}
@@ -887,7 +887,7 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={handleDeleteCourse}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/80 transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-teal text-white text-sm font-semibold hover:bg-teal/80 transition-colors"
             >
               Xóa khóa học
             </button>
@@ -923,7 +923,7 @@ export default function AdminDashboard() {
                     <button
                       key={c.id}
                       onClick={() => handleAddCourseToStudent(student.id, c.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.03] border border-gray-800 rounded-lg hover:border-red/50 hover:bg-red/5 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:border-teal/50 hover:bg-teal/5 transition-colors text-left"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white font-medium truncate">{c.title}</div>

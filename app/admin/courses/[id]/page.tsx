@@ -71,9 +71,9 @@ function LevelBadge({ level }: { level: MemberLevel }) {
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
         level === 'VIP'
-          ? 'bg-gradient-to-r from-yellow/20 to-amber-500/20 text-yellow border border-yellow/30'
+          ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-gold border border-gold/30'
           : level === 'Premium'
-            ? 'bg-red/10 text-red border border-red/20'
+            ? 'bg-teal/10 text-teal border border-teal/20'
             : 'bg-white/5 text-gray-400 border border-white/10'
       }`}
     >
@@ -202,10 +202,10 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-dark">
         <Header />
         <div className="container mx-auto px-4 py-20 text-center">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 max-w-lg mx-auto">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-12 max-w-lg mx-auto">
             <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -362,14 +362,14 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     chapters.find((c) => c.id === chapterId)?.lessons.find((l) => l.id === lessonId)?.title ?? '';
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
         {/* Course Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-red rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-teal rounded-xl flex items-center justify-center flex-shrink-0">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
@@ -403,21 +403,21 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
         {/* Stats bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
             <div className="text-2xl font-bold text-white">{chapters.length}</div>
             <p className="text-xs text-gray-400 mt-1">Chuong</p>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
             <div className="text-2xl font-bold text-white">{totalLessons}</div>
             <p className="text-xs text-gray-400 mt-1">Bai hoc</p>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div className="text-2xl font-bold text-yellow">{course.enrollmentsCount.toLocaleString()}</div>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+            <div className="text-2xl font-bold text-gold">{course.enrollmentsCount.toLocaleString()}</div>
             <p className="text-xs text-gray-400 mt-1">Hoc vien</p>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
             <div className="flex items-center gap-1">
-              <svg className="w-5 h-5 text-yellow" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
               <span className="text-2xl font-bold text-white">{course.rating}</span>
@@ -440,7 +440,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
         {/* Chapters Accordion */}
         <div className="space-y-4">
           {chapters.length === 0 && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-12 text-center">
               <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
@@ -451,7 +451,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
           {chapters.map((chapter, chapterIndex) => {
             const isExpanded = expandedChapters.has(chapter.id);
             return (
-              <div key={chapter.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div key={chapter.id} className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
                 {/* Chapter Header */}
                 <div className="flex items-center justify-between p-4 md:p-5">
                   <button
@@ -485,7 +485,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                     </button>
                     <button
                       onClick={() => openDeleteChapter(chapter.id)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red hover:bg-red/5 transition-colors"
+                      className="p-2 rounded-lg text-gray-400 hover:text-teal hover:bg-teal/5 transition-colors"
                       title="Xoa chuong"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -497,7 +497,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
                 {/* Lessons List (expanded) */}
                 {isExpanded && (
-                  <div className="border-t border-gray-800">
+                  <div className="border-t border-white/[0.06]">
                     {chapter.lessons.length === 0 && (
                       <div className="p-6 text-center">
                         <p className="text-sm text-gray-500">Chua co bai hoc nao trong chuong nay.</p>
@@ -508,7 +508,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                       <div
                         key={lesson.id}
                         className={`flex items-center justify-between px-4 md:px-5 py-3 hover:bg-white/[0.02] transition-colors ${
-                          lessonIndex < chapter.lessons.length - 1 ? 'border-b border-gray-800/50' : ''
+                          lessonIndex < chapter.lessons.length - 1 ? 'border-b border-white/[0.06]/50' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -537,7 +537,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                               {lesson.directPlayUrl ? (
                                 <span className="text-xs text-green-400">Đã có video</span>
                               ) : (
-                                <span className="text-xs text-yellow">Chưa có video</span>
+                                <span className="text-xs text-gold">Chưa có video</span>
                               )}
                             </div>
                           </div>
@@ -554,7 +554,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                           </button>
                           <button
                             onClick={() => openDeleteLesson(chapter.id, lesson.id)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red hover:bg-red/5 transition-colors"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-teal hover:bg-teal/5 transition-colors"
                             title="Xoa bai hoc"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -566,10 +566,10 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                     ))}
 
                     {/* Add Lesson Button */}
-                    <div className="p-3 border-t border-gray-800">
+                    <div className="p-3 border-t border-white/[0.06]">
                       <button
                         onClick={() => openAddLesson(chapter.id)}
-                        className="flex items-center gap-2 text-sm text-red hover:text-white transition-colors w-full justify-center py-2 rounded-lg hover:bg-white/5"
+                        className="flex items-center gap-2 text-sm text-teal hover:text-white transition-colors w-full justify-center py-2 rounded-lg hover:bg-white/5"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -590,8 +590,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Add Chapter Modal */}
       {modal.kind === 'addChapter' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-white mb-4">Them chuong moi</h3>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-400 mb-2">Tieu de chuong</label>
@@ -600,7 +600,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 value={chapterTitle}
                 onChange={(e) => setChapterTitle(e.target.value)}
                 placeholder="Vd: Chuong 1: Gioi thieu"
-                className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddChapter();
@@ -622,8 +622,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Edit Chapter Modal */}
       {modal.kind === 'editChapter' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-white mb-4">Chinh sua chuong</h3>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-400 mb-2">Tieu de chuong</label>
@@ -632,7 +632,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 value={chapterTitle}
                 onChange={(e) => setChapterTitle(e.target.value)}
                 placeholder="Nhap tieu de chuong"
-                className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleEditChapter();
@@ -654,11 +654,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Delete Chapter Confirmation Modal */}
       {modal.kind === 'deleteChapter' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
@@ -682,7 +682,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               </Button>
               <button
                 onClick={handleDeleteChapter}
-                className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 h-9 px-4 text-sm bg-red text-white hover:bg-red/80"
+                className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 h-9 px-4 text-sm bg-teal text-white hover:bg-teal/80"
               >
                 Xoa chuong
               </button>
@@ -694,8 +694,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Add Lesson Modal */}
       {modal.kind === 'addLesson' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-white mb-1">Thêm bài học mới</h3>
             <p className="text-sm text-gray-400 mb-4">
               Vào chương: {getChapterTitle(modal.chapterId)}
@@ -708,7 +708,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   value={lessonTitle}
                   onChange={(e) => setLessonTitle(e.target.value)}
                   placeholder="VD: Giới thiệu tổng quan"
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                   autoFocus
                 />
               </div>
@@ -726,7 +726,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   value={lessonDirectPlayUrl}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="Dán link video URL vào đây"
-                  className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                  className="w-full h-10 px-3 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors font-mono"
                 />
                 <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
               </div>
@@ -743,7 +743,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                     value={lessonDuration}
                     onChange={(e) => setLessonDuration(e.target.value)}
                     placeholder="Tự động hoặc VD: 10:30"
-                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                   />
                 </div>
                 <div>
@@ -751,11 +751,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   <select
                     value={lessonLevel}
                     onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
-                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-teal transition-colors appearance-none cursor-pointer"
                   >
-                    <option value="Free" className="bg-gray-900 text-white">Free</option>
-                    <option value="Premium" className="bg-gray-900 text-white">Premium</option>
-                    <option value="VIP" className="bg-gray-900 text-white">VIP</option>
+                    <option value="Free" className="bg-white/[0.03] text-white">Free</option>
+                    <option value="Premium" className="bg-white/[0.03] text-white">Premium</option>
+                    <option value="VIP" className="bg-white/[0.03] text-white">VIP</option>
                   </select>
                 </div>
               </div>
@@ -780,8 +780,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Edit Lesson Modal */}
       {modal.kind === 'editLesson' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-white mb-1">Chỉnh sửa bài học</h3>
             <p className="text-sm text-gray-400 mb-4">
               Trong chương: {getChapterTitle(modal.chapterId)}
@@ -794,7 +794,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   value={lessonTitle}
                   onChange={(e) => setLessonTitle(e.target.value)}
                   placeholder="Nhập tiêu đề bài học"
-                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                  className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                   autoFocus
                 />
               </div>
@@ -812,7 +812,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   value={lessonDirectPlayUrl}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="Dán link video URL vào đây"
-                  className="w-full h-10 px-3 bg-black/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red transition-colors font-mono"
+                  className="w-full h-10 px-3 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors font-mono"
                 />
                 <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
               </div>
@@ -829,7 +829,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                     value={lessonDuration}
                     onChange={(e) => setLessonDuration(e.target.value)}
                     placeholder="Tự động hoặc VD: 10:30"
-                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red transition-colors"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
                   />
                 </div>
                 <div>
@@ -837,11 +837,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   <select
                     value={lessonLevel}
                     onChange={(e) => setLessonLevel(e.target.value as MemberLevel)}
-                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red transition-colors appearance-none cursor-pointer"
+                    className="w-full h-11 px-4 bg-white/5 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-teal transition-colors appearance-none cursor-pointer"
                   >
-                    <option value="Free" className="bg-gray-900 text-white">Free</option>
-                    <option value="Premium" className="bg-gray-900 text-white">Premium</option>
-                    <option value="VIP" className="bg-gray-900 text-white">VIP</option>
+                    <option value="Free" className="bg-white/[0.03] text-white">Free</option>
+                    <option value="Premium" className="bg-white/[0.03] text-white">Premium</option>
+                    <option value="VIP" className="bg-white/[0.03] text-white">VIP</option>
                   </select>
                 </div>
               </div>
@@ -866,11 +866,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Delete Lesson Confirmation Modal */}
       {modal.kind === 'deleteLesson' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
-          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setModal({ kind: 'none' })} />
+          <div className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
@@ -891,7 +891,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               </Button>
               <button
                 onClick={handleDeleteLesson}
-                className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 h-9 px-4 text-sm bg-red text-white hover:bg-red/80"
+                className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 h-9 px-4 text-sm bg-teal text-white hover:bg-teal/80"
               >
                 Xoa bai hoc
               </button>
@@ -903,7 +903,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       {/* Video Preview Modal */}
       {previewVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewVideo(null)} />
+          <div className="absolute inset-0 bg-dark/80 backdrop-blur-sm" onClick={() => setPreviewVideo(null)} />
           <div className="relative w-full max-w-3xl">
             <button
               onClick={() => setPreviewVideo(null)}
@@ -914,8 +914,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="relative aspect-video bg-black">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="relative aspect-video bg-dark">
                 {isEmbedUrl(previewVideo.directPlayUrl) ? (
                   <iframe
                     key={previewVideo.directPlayUrl}
@@ -937,7 +937,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   />
                 )}
               </div>
-              <div className="p-4 border-t border-gray-800">
+              <div className="p-4 border-t border-white/[0.06]">
                 <p className="text-white font-semibold">{previewVideo.title}</p>
               </div>
             </div>

@@ -63,7 +63,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+    <div className="min-h-screen bg-dark flex items-center justify-center px-4">
       {/* Fallback: redirect to static login if React doesn't hydrate within 2s */}
       <script dangerouslySetInnerHTML={{ __html: `
         (function() {
@@ -80,11 +80,11 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex justify-center mb-8">
-          <span className="text-4xl font-bold text-red tracking-wider">WEPOWER</span>
+          <span className="text-4xl font-bold text-teal tracking-wider">WEPOWER</span>
         </Link>
 
         {/* Login Card */}
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
+        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-8">
           <h1 className="text-3xl font-bold text-white mb-2 text-center">Đăng nhập</h1>
           <p className="text-gray-400 text-center mb-8">
             Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.
@@ -94,7 +94,7 @@ export default function Login() {
             {/* Error display for both React and fallback */}
             <div
               id="login-error"
-              className="p-3 bg-red/10 border border-red/20 rounded-lg text-red text-sm text-center"
+              className="p-3 bg-teal/10 border border-teal/20 rounded-lg text-teal text-sm text-center"
               style={{ display: errors.general ? 'block' : 'none' }}
             >
               {errors.general || ''}
@@ -111,13 +111,13 @@ export default function Login() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.email ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.email ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="example@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red">{errors.email}</p>
+                <p className="mt-1 text-sm text-teal">{errors.email}</p>
               )}
             </div>
 
@@ -132,13 +132,13 @@ export default function Login() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.password ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.password ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red">{errors.password}</p>
+                <p className="mt-1 text-sm text-teal">{errors.password}</p>
               )}
             </div>
 
@@ -149,14 +149,14 @@ export default function Login() {
                   type="checkbox"
                   checked={formData.remember}
                   onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-800 bg-black text-red focus:ring-red focus:ring-offset-0"
+                  className="w-4 h-4 rounded border-white/[0.06] bg-dark text-teal focus:ring-teal focus:ring-offset-0"
                 />
                 <span className="text-sm text-gray-400">Ghi nhớ đăng nhập</span>
               </label>
               <button
                 type="button"
                 onClick={() => showToast('Tính năng đang phát triển', 'info')}
-                className="text-sm text-red hover:text-red/80 transition-colors"
+                className="text-sm text-teal hover:text-teal/80 transition-colors"
               >
                 Quên mật khẩu?
               </button>
@@ -186,10 +186,10 @@ export default function Login() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-800"></div>
+              <div className="w-full border-t border-white/[0.06]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gray-900 text-gray-400">Hoặc đăng nhập với</span>
+              <span className="px-4 bg-white/[0.03] text-gray-400">Hoặc đăng nhập với</span>
             </div>
           </div>
 
@@ -215,7 +215,7 @@ export default function Login() {
           {/* Sign Up Link */}
           <p className="text-center text-gray-400 text-sm">
             Chưa có tài khoản?{' '}
-            <Link href="/register" className="text-red hover:text-red/80 font-semibold transition-colors">
+            <Link href="/register" className="text-teal hover:text-teal/80 font-semibold transition-colors">
               Đăng ký ngay
             </Link>
           </p>

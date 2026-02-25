@@ -81,15 +81,15 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-dark flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex justify-center mb-8">
-          <span className="text-4xl font-bold text-red tracking-wider">WEPOWER</span>
+          <span className="text-4xl font-bold text-teal tracking-wider">WEPOWER</span>
         </Link>
 
         {/* Register Card */}
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
+        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-8">
           <h1 className="text-3xl font-bold text-white mb-2 text-center">Đăng ký</h1>
           <p className="text-gray-400 text-center mb-8">
             Tạo tài khoản để bắt đầu hành trình học tập của bạn
@@ -97,7 +97,7 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {errors.general && (
-              <div className="p-3 bg-red/10 border border-red/20 rounded-lg text-red text-sm text-center">
+              <div className="p-3 bg-teal/10 border border-teal/20 rounded-lg text-teal text-sm text-center">
                 {errors.general}
               </div>
             )}
@@ -111,13 +111,13 @@ export default function Register() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.name ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.name ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="Nguyễn Văn A"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red">{errors.name}</p>
+                <p className="mt-1 text-sm text-teal">{errors.name}</p>
               )}
             </div>
 
@@ -131,13 +131,13 @@ export default function Register() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.email ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.email ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="example@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red">{errors.email}</p>
+                <p className="mt-1 text-sm text-teal">{errors.email}</p>
               )}
             </div>
 
@@ -151,13 +151,13 @@ export default function Register() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.password ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.password ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red">{errors.password}</p>
+                <p className="mt-1 text-sm text-teal">{errors.password}</p>
               )}
             </div>
 
@@ -171,13 +171,13 @@ export default function Register() {
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.confirmPassword ? 'border-red' : 'border-gray-800 focus:border-red'
+                className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                  errors.confirmPassword ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red">{errors.confirmPassword}</p>
+                <p className="mt-1 text-sm text-teal">{errors.confirmPassword}</p>
               )}
             </div>
 
@@ -188,21 +188,21 @@ export default function Register() {
                   type="checkbox"
                   checked={formData.agree}
                   onChange={(e) => setFormData({ ...formData, agree: e.target.checked })}
-                  className="w-4 h-4 mt-1 rounded border-gray-800 bg-black text-red focus:ring-red focus:ring-offset-0"
+                  className="w-4 h-4 mt-1 rounded border-white/[0.06] bg-dark text-teal focus:ring-teal focus:ring-offset-0"
                 />
                 <span className="text-sm text-gray-400">
                   Tôi đồng ý với{' '}
-                  <a href="#" className="text-red hover:text-red/80">
+                  <a href="#" className="text-teal hover:text-teal/80">
                     Điều khoản dịch vụ
                   </a>{' '}
                   và{' '}
-                  <a href="#" className="text-red hover:text-red/80">
+                  <a href="#" className="text-teal hover:text-teal/80">
                     Chính sách bảo mật
                   </a>
                 </span>
               </label>
               {errors.agree && (
-                <p className="mt-1 text-sm text-red">{errors.agree}</p>
+                <p className="mt-1 text-sm text-teal">{errors.agree}</p>
               )}
             </div>
 
@@ -229,10 +229,10 @@ export default function Register() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-800"></div>
+              <div className="w-full border-t border-white/[0.06]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gray-900 text-gray-400">Hoặc đăng ký với</span>
+              <span className="px-4 bg-white/[0.03] text-gray-400">Hoặc đăng ký với</span>
             </div>
           </div>
 
@@ -258,7 +258,7 @@ export default function Register() {
           {/* Login Link */}
           <p className="text-center text-gray-400 text-sm">
             Đã có tài khoản?{' '}
-            <Link href="/login" className="text-red hover:text-red/80 font-semibold transition-colors">
+            <Link href="/login" className="text-teal hover:text-teal/80 font-semibold transition-colors">
               Đăng nhập ngay
             </Link>
           </p>

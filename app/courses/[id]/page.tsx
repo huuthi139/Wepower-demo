@@ -98,10 +98,10 @@ export default function CourseDetail() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-dark">
         <Header />
         <div className="container mx-auto px-4 py-20 text-center">
-          <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-white/[0.03] rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -140,7 +140,7 @@ export default function CourseDetail() {
   const totalLessons = chapters.reduce((sum, section) => sum + section.lessons.length, 0);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       {/* Breadcrumb */}
@@ -162,9 +162,9 @@ export default function CourseDetail() {
             <div className="mb-6">
               {course.badge && (
                 <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold mb-3 ${
-                  course.badge === 'BESTSELLER' ? 'bg-yellow text-black' :
-                  course.badge === 'NEW' ? 'bg-red text-white' :
-                  'bg-yellow text-black'
+                  course.badge === 'BESTSELLER' ? 'bg-gold text-black' :
+                  course.badge === 'NEW' ? 'bg-teal text-white' :
+                  'bg-gold text-black'
                 }`}>
                   {course.badge}
                 </span>
@@ -172,8 +172,8 @@ export default function CourseDetail() {
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{course.title}</h1>
               {/* Member Level Required */}
               <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold mb-4 ${
-                course.memberLevel === 'VIP' ? 'bg-gradient-to-r from-yellow/20 to-amber-500/20 text-yellow border border-yellow/30' :
-                course.memberLevel === 'Premium' ? 'bg-red/10 text-red border border-red/20' :
+                course.memberLevel === 'VIP' ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-gold border border-gold/30' :
+                course.memberLevel === 'Premium' ? 'bg-teal/10 text-teal border border-teal/20' :
                 'bg-white/5 text-gray-300 border border-white/10'
               }`}>
                 {course.memberLevel === 'VIP' && (
@@ -195,7 +195,7 @@ export default function CourseDetail() {
               {/* Meta info */}
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4 text-yellow" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 text-gold" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                   <span className="font-bold text-white">{course.rating}</span>
@@ -217,8 +217,8 @@ export default function CourseDetail() {
                 className="object-cover"
                 priority
               />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center cursor-pointer" onClick={() => router.push(`/learn/${course.id}`)}>
-                <div className="w-16 h-16 bg-red rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-glow-red">
+              <div className="absolute inset-0 bg-dark/30 flex items-center justify-center cursor-pointer" onClick={() => router.push(`/learn/${course.id}`)}>
+                <div className="w-16 h-16 bg-teal rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-glow-teal">
                   <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
@@ -235,13 +235,13 @@ export default function CourseDetail() {
                     onClick={() => setActiveTab(tab)}
                     className={`pb-4 text-sm font-semibold transition-colors relative ${
                       activeTab === tab
-                        ? 'text-red'
+                        ? 'text-teal'
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     {tab === 'overview' ? 'Tổng quan' : tab === 'curriculum' ? 'Nội dung' : 'Đánh giá'}
                     {activeTab === tab && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal" />
                     )}
                   </button>
                 ))}
@@ -264,7 +264,7 @@ export default function CourseDetail() {
                       'Nhận chứng chỉ hoàn thành khóa học',
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
-                        <svg className="w-5 h-5 text-red flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-teal flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         <span className="text-gray-300 text-sm">{item}</span>
@@ -328,7 +328,7 @@ export default function CourseDetail() {
                         ? []
                         : chapters.map((_, i) => i)
                     )}
-                    className="text-red text-sm font-semibold hover:underline"
+                    className="text-teal text-sm font-semibold hover:underline"
                   >
                     {expandedSections.length === chapters.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả'}
                   </button>
@@ -378,7 +378,7 @@ export default function CourseDetail() {
                                     disabled={!lesson.directPlayUrl}
                                     className={`w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-colors ${
                                       lesson.directPlayUrl
-                                        ? 'bg-red/20 hover:bg-red/40 text-red cursor-pointer'
+                                        ? 'bg-teal/20 hover:bg-teal/40 text-teal cursor-pointer'
                                         : 'bg-white/5 text-gray-600 cursor-not-allowed'
                                     }`}
                                     title={lesson.directPlayUrl ? 'Xem trước' : 'Chưa có video'}
@@ -392,9 +392,9 @@ export default function CourseDetail() {
                                 {/* Level badge - always show */}
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${
                                   lesson.requiredLevel === 'VIP'
-                                    ? 'bg-gradient-to-r from-yellow/10 to-amber-500/10 text-yellow border border-yellow/30'
+                                    ? 'bg-gradient-to-r from-gold/10 to-amber-500/10 text-gold border border-gold/30'
                                     : lesson.requiredLevel === 'Premium'
-                                      ? 'bg-red/10 text-red border border-red/20'
+                                      ? 'bg-teal/10 text-teal border border-teal/20'
                                       : 'bg-white/5 text-gray-400 border border-white/10'
                                 }`}>
                                   {lesson.requiredLevel}
@@ -421,12 +421,12 @@ export default function CourseDetail() {
                 {/* Rating Summary */}
                 <div className="flex flex-col sm:flex-row gap-8 p-6 bg-white/5 rounded-xl">
                   <div className="text-center sm:min-w-[120px]">
-                    <div className="text-5xl font-bold text-yellow mb-1">{course.rating}</div>
+                    <div className="text-5xl font-bold text-gold mb-1">{course.rating}</div>
                     <div className="flex items-center justify-center gap-0.5 mb-1">
                       {[1, 2, 3, 4, 5].map(star => (
                         <svg
                           key={star}
-                          className={`w-5 h-5 ${star <= Math.round(course.rating) ? 'text-yellow' : 'text-gray-600'}`}
+                          className={`w-5 h-5 ${star <= Math.round(course.rating) ? 'text-gold' : 'text-gray-600'}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -445,7 +445,7 @@ export default function CourseDetail() {
                           <span className="text-sm text-gray-400 w-12">{star} sao</span>
                           <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-yellow rounded-full"
+                              className="h-full bg-gold rounded-full"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
@@ -460,7 +460,7 @@ export default function CourseDetail() {
                 {reviewsData.map(review => (
                   <div key={review.id} className="p-6 bg-white/5 rounded-xl border border-white/10">
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-red rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-teal rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold">{review.avatar}</span>
                       </div>
                       <div className="flex-1">
@@ -472,7 +472,7 @@ export default function CourseDetail() {
                           {[1, 2, 3, 4, 5].map(star => (
                             <svg
                               key={star}
-                              className={`w-4 h-4 ${star <= review.rating ? 'text-yellow' : 'text-gray-600'}`}
+                              className={`w-4 h-4 ${star <= review.rating ? 'text-gold' : 'text-gray-600'}`}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -492,14 +492,14 @@ export default function CourseDetail() {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+              <div className="bg-white/[0.03] rounded-xl p-6 border border-white/[0.06]">
                 {/* Price */}
                 <div className="mb-4">
-                  <div className="text-3xl font-bold text-yellow">{formatPrice(course.price)}</div>
+                  <div className="text-3xl font-bold text-gold">{formatPrice(course.price)}</div>
                   {course.originalPrice && (
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-gray-500 line-through text-sm">{formatPrice(course.originalPrice)}</span>
-                      <span className="text-red text-sm font-semibold">
+                      <span className="text-teal text-sm font-semibold">
                         -{Math.round((1 - course.price / course.originalPrice) * 100)}%
                       </span>
                     </div>
@@ -526,7 +526,7 @@ export default function CourseDetail() {
                 <p className="text-center text-gray-500 text-xs mt-3">Đảm bảo hoàn tiền trong 7 ngày</p>
 
                 {/* Course includes */}
-                <div className="mt-6 pt-6 border-t border-gray-800">
+                <div className="mt-6 pt-6 border-t border-white/[0.06]">
                   <h4 className="font-semibold text-white mb-4">Khóa học bao gồm:</h4>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-sm text-gray-400">
@@ -588,7 +588,7 @@ export default function CourseDetail() {
       {/* Video Preview Modal */}
       {previewLesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewLesson(null)} />
+          <div className="absolute inset-0 bg-dark/80 backdrop-blur-sm" onClick={() => setPreviewLesson(null)} />
           <div className="relative w-full max-w-3xl">
             {/* Close button */}
             <button
@@ -600,9 +600,9 @@ export default function CourseDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
               {/* Video Player */}
-              <div className="relative aspect-video bg-black">
+              <div className="relative aspect-video bg-dark">
                 {previewLesson.directPlayUrl ? (
                   isEmbedUrl(previewLesson.directPlayUrl) ? (
                     <iframe
@@ -632,7 +632,7 @@ export default function CourseDetail() {
                 )}
               </div>
               {/* Lesson info */}
-              <div className="p-4 border-t border-gray-800">
+              <div className="p-4 border-t border-white/[0.06]">
                 <p className="text-xs text-gray-500 mb-1">{previewLesson.sectionTitle}</p>
                 <p className="text-white font-semibold">{previewLesson.name}</p>
               </div>

@@ -12,8 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const levelColors: Record<string, { bg: string; text: string; border: string }> = {
   Free: { bg: 'bg-white/10', text: 'text-gray-300', border: 'border-white/20' },
-  Premium: { bg: 'bg-red/10', text: 'text-red', border: 'border-red/30' },
-  VIP: { bg: 'bg-gradient-to-r from-yellow/10 to-amber-500/10', text: 'text-yellow', border: 'border-yellow/30' },
+  Premium: { bg: 'bg-teal/10', text: 'text-teal', border: 'border-teal/30' },
+  VIP: { bg: 'bg-gradient-to-r from-gold/10 to-amber-500/10', text: 'text-gold', border: 'border-gold/30' },
 };
 
 export default function Dashboard() {
@@ -28,9 +28,9 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
-          <svg className="w-10 h-10 animate-spin text-red mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 animate-spin text-teal mx-auto mb-4" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -47,7 +47,7 @@ export default function Dashboard() {
   const colors = levelColors[user.memberLevel] || levelColors.Free;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -65,11 +65,11 @@ export default function Dashboard() {
           <div className={`flex items-center gap-3 ${colors.bg} border ${colors.border} rounded-xl px-5 py-3`}>
             <div className={`w-12 h-12 bg-white/10 border ${colors.border} rounded-full flex items-center justify-center`}>
               {user.memberLevel === 'VIP' ? (
-                <svg className="w-6 h-6 text-yellow" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-6 h-6 text-gold" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
               ) : user.memberLevel === 'Premium' ? (
-                <svg className="w-6 h-6 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               ) : (
@@ -87,7 +87,7 @@ export default function Dashboard() {
               </p>
               {user.memberLevel === 'Free' && user.role !== 'admin' && (
                 <p className="text-[10px] text-gray-500 mt-0.5">
-                  <Link href="/pricing" className="text-red hover:underline">Nâng cấp Premium</Link>
+                  <Link href="/pricing" className="text-teal hover:underline">Nâng cấp Premium</Link>
                 </p>
               )}
             </div>
@@ -96,9 +96,9 @@ export default function Dashboard() {
 
         {/* Admin Quick Link */}
         {user.role === 'admin' && (
-          <div className="mb-8 p-4 bg-red/10 border border-red/20 rounded-xl flex items-center justify-between">
+          <div className="mb-8 p-4 bg-teal/10 border border-teal/20 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-teal rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -120,7 +120,7 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {/* Courses Enrolled */}
-          <div className="bg-red rounded-xl p-6 hover:shadow-glow-red transition-all">
+          <div className="bg-teal rounded-xl p-6 hover:shadow-glow-teal transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,9 +133,9 @@ export default function Dashboard() {
           </div>
 
           {/* Hours Learned */}
-          <div className="bg-yellow rounded-xl p-6 hover:shadow-glow-yellow transition-all">
+          <div className="bg-gold rounded-xl p-6 hover:shadow-glow-gold transition-all">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-black/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-dark/20 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -146,7 +146,7 @@ export default function Dashboard() {
           </div>
 
           {/* Certificates */}
-          <div className="bg-black border-2 border-white/10 rounded-xl p-6 hover:border-red transition-all">
+          <div className="bg-dark border-2 border-white/10 rounded-xl p-6 hover:border-teal transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,10 +159,10 @@ export default function Dashboard() {
           </div>
 
           {/* Current Streak */}
-          <div className="bg-black border-2 border-white/10 rounded-xl p-6 hover:border-yellow transition-all">
+          <div className="bg-dark border-2 border-white/10 rounded-xl p-6 hover:border-gold transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
                 </svg>
@@ -192,18 +192,18 @@ export default function Dashboard() {
         {/* Learning Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
           {/* Weekly Activity Chart */}
-          <div className="bg-black border-2 border-white/10 rounded-xl p-6">
+          <div className="bg-dark border-2 border-white/10 rounded-xl p-6">
             <h3 className="text-xl font-bold text-white mb-6">Hoạt động tuần này</h3>
             <div className="space-y-4">
               {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, index) => {
                 const hours = [2.5, 3.0, 1.5, 4.0, 2.0, 3.5, 1.0][index];
                 const percentage = (hours / 4) * 100;
-                const barColors = ['bg-red', 'bg-yellow', 'bg-white', 'bg-red', 'bg-yellow', 'bg-white', 'bg-red'];
+                const barColors = ['bg-teal', 'bg-gold', 'bg-white', 'bg-teal', 'bg-gold', 'bg-white', 'bg-teal'];
                 return (
                   <div key={day}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-white/60">{day}</span>
-                      <span className="text-sm text-yellow font-bold">{hours}h</span>
+                      <span className="text-sm text-gold font-bold">{hours}h</span>
                     </div>
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                       <div
@@ -218,11 +218,11 @@ export default function Dashboard() {
           </div>
 
           {/* Recent Achievements */}
-          <div className="bg-black border-2 border-white/10 rounded-xl p-6">
+          <div className="bg-dark border-2 border-white/10 rounded-xl p-6">
             <h3 className="text-xl font-bold text-white mb-6">Thành tích gần đây</h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-yellow/20">
-                <div className="w-12 h-12 bg-yellow rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-gold/20">
+                <div className="w-12 h-12 bg-gold rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎯</span>
                 </div>
                 <div className="flex-1">
@@ -231,8 +231,8 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-red/20">
-                <div className="w-12 h-12 bg-red rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-teal/20">
+                <div className="w-12 h-12 bg-teal rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🏆</span>
                 </div>
                 <div className="flex-1">
@@ -255,7 +255,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-black border-2 border-red/30 rounded-xl p-8 text-center hover:border-red hover:shadow-glow-red transition-all">
+        <div className="bg-dark border-2 border-teal/30 rounded-xl p-8 text-center hover:border-teal hover:shadow-glow-teal transition-all">
           <h3 className="text-2xl font-bold text-white mb-4">
             Khám phá thêm khóa học mới
           </h3>

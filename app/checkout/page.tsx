@@ -117,7 +117,7 @@ function CheckoutContent() {
   const totalPrice = subtotal;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -135,7 +135,7 @@ function CheckoutContent() {
           {/* Left Column - Payment Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Information */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+            <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-6">
               <h2 className="text-xl font-bold text-white mb-6">Thông tin khách hàng</h2>
               
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,13 +149,13 @@ function CheckoutContent() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                      errors.name ? 'border-red' : 'border-gray-800 focus:border-red'
+                    className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                      errors.name ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                     }`}
                     placeholder="Nguyễn Văn A"
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red">{errors.name}</p>
+                    <p className="mt-1 text-sm text-teal">{errors.name}</p>
                   )}
                 </div>
 
@@ -169,13 +169,13 @@ function CheckoutContent() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                      errors.email ? 'border-red' : 'border-gray-800 focus:border-red'
+                    className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                      errors.email ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                     }`}
                     placeholder="example@email.com"
                   />
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red">{errors.email}</p>
+                    <p className="mt-1 text-sm text-teal">{errors.email}</p>
                   )}
                 </div>
 
@@ -189,20 +189,20 @@ function CheckoutContent() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className={`w-full px-4 py-3 bg-black border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                      errors.phone ? 'border-red' : 'border-gray-800 focus:border-red'
+                    className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
+                      errors.phone ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
                     }`}
                     placeholder="0123456789"
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red">{errors.phone}</p>
+                    <p className="mt-1 text-sm text-teal">{errors.phone}</p>
                   )}
                 </div>
               </form>
             </div>
 
             {/* Payment Method */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+            <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-6">
               <h2 className="text-xl font-bold text-white mb-6">Phương thức thanh toán</h2>
               
               <div className="space-y-3">
@@ -215,8 +215,8 @@ function CheckoutContent() {
                     key={method.id}
                     className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
                       formData.paymentMethod === method.id
-                        ? 'border-red bg-red/10'
-                        : 'border-gray-800 hover:border-gray-700'
+                        ? 'border-teal bg-teal/10'
+                        : 'border-white/[0.06] hover:border-gray-700'
                     }`}
                   >
                     <input
@@ -225,7 +225,7 @@ function CheckoutContent() {
                       value={method.id}
                       checked={formData.paymentMethod === method.id}
                       onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                      className="w-5 h-5 text-red focus:ring-red focus:ring-offset-0"
+                      className="w-5 h-5 text-teal focus:ring-teal focus:ring-offset-0"
                     />
                     <span className="text-2xl">{method.icon}</span>
                     <span className="text-white font-semibold">{method.name}</span>
@@ -234,7 +234,7 @@ function CheckoutContent() {
               </div>
 
               {formData.paymentMethod === 'bank_transfer' && (
-                <div className="mt-4 p-4 bg-black rounded-lg border border-gray-800">
+                <div className="mt-4 p-4 bg-dark rounded-lg border border-white/[0.06]">
                   <p className="text-sm text-gray-400 mb-3">Thông tin chuyển khoản:</p>
                   <div className="space-y-2 text-sm">
                     <p className="text-white"><strong>Ngân hàng:</strong> (Liên hệ admin)</p>
@@ -276,7 +276,7 @@ function CheckoutContent() {
 
           {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 sticky top-20">
+            <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-6 sticky top-20">
               <h2 className="text-xl font-bold text-white mb-6">Đơn hàng ({orderCourses.length} khóa học)</h2>
 
               {/* Course List */}
@@ -294,14 +294,14 @@ function CheckoutContent() {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-white line-clamp-1">{course.title}</h3>
                       <p className="text-xs text-gray-400">{course.instructor}</p>
-                      <p className="text-sm font-bold text-yellow mt-1">{formatPrice(course.price)}</p>
+                      <p className="text-sm font-bold text-gold mt-1">{formatPrice(course.price)}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Price Breakdown */}
-              <div className="space-y-3 mb-6 pb-6 border-b border-gray-800">
+              <div className="space-y-3 mb-6 pb-6 border-b border-white/[0.06]">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Tạm tính</span>
                   <span className="text-white">{formatPrice(subtotal)}</span>
@@ -309,7 +309,7 @@ function CheckoutContent() {
                 {totalDiscount > 0 && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Giảm giá</span>
-                    <span className="text-red">-{formatPrice(totalDiscount)}</span>
+                    <span className="text-teal">-{formatPrice(totalDiscount)}</span>
                   </div>
                 )}
               </div>
@@ -317,25 +317,25 @@ function CheckoutContent() {
               {/* Total */}
               <div className="flex items-center justify-between mb-6">
                 <span className="text-xl font-bold text-white">Tổng cộng</span>
-                <span className="text-3xl font-bold text-yellow">{formatPrice(totalPrice)}</span>
+                <span className="text-3xl font-bold text-gold">{formatPrice(totalPrice)}</span>
               </div>
 
               {/* Guarantee */}
-              <div className="bg-black rounded-lg p-4 space-y-3">
+              <div className="bg-dark rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   <p className="text-sm text-gray-300">Hoàn tiền 100% trong 7 ngày</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm text-gray-300">Truy cập trọn đời</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm text-gray-300">Chứng chỉ hoàn thành</p>
@@ -354,7 +354,7 @@ function CheckoutContent() {
 export default function Checkout() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-white">Đang tải...</div>
       </div>
     }>
