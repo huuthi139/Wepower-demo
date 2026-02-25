@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Users';
+const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
 function getSheetUrl(sheetName: string): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -70,10 +71,10 @@ export async function POST(request: Request) {
     }
 
     // Method 1: Google Apps Script via GET
-    if (process.env.GOOGLE_SCRIPT_URL) {
-      try {
-        const params = new URLSearchParams({ action: 'login', email, password });
-        const scriptUrl = `${process.env.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+    const gsScriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    try {
+      const params = new URLSearchParams({ action: 'login', email, password });
+      const scriptUrl = `${gsScriptUrl}?${params.toString()}`;
         const res = await fetch(scriptUrl, { redirect: 'follow' });
         const data = await res.json();
 
@@ -92,7 +93,6 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error('Apps Script login error:', err);
       }
-    }
 
     // Method 2: Đọc CSV từ Google Sheets
     try {
