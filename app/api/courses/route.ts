@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
 // Column positions in Google Sheet (0-indexed)
 // Actual data order: ID, Title, Description, Thumbnail, Instructor, Price, OriginalPrice, Rating, ReviewsCount, EnrollmentsCount, Duration, LessonsCount, Badge, Category, MemberLevel
@@ -52,85 +51,14 @@ function parseCSVRows(csv: string): string[][] {
   return lines.slice(1).map(line => parseCSVRow(line));
 }
 
-// Parse duration string "MM:SS" to seconds
-function parseDurationToSeconds(duration: string): number {
-  if (!duration) return 0;
-  const parts = duration.split(':');
-  if (parts.length === 2) {
-    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-  }
-  return parseInt(duration, 10) || 0;
-}
-
-// Fetch real chapter stats from Google Apps Script
-async function fetchChapterStats(): Promise<Record<string, { lessonsCount: number; duration: number }>> {
-  try {
-    const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
-    const qs = new URLSearchParams({ action: 'getAllChapters' });
-    const res = await fetch(`${scriptUrl}?${qs.toString()}`, {
-      redirect: 'follow',
-      cache: 'no-store',
-    });
-    const data = await res.json();
-    if (data.success && data.data) {
-      const stats: Record<string, { lessonsCount: number; duration: number }> = {};
-      for (const [courseId, chapters] of Object.entries(data.data)) {
-        const chapterArr = chapters as any[];
-        let totalLessons = 0;
-        let totalDuration = 0;
-        for (const ch of chapterArr) {
-          const lessons = ch.lessons || [];
-          totalLessons += lessons.length;
-          for (const ls of lessons) {
-            totalDuration += parseDurationToSeconds(ls.duration || '');
-          }
-        }
-        stats[courseId] = { lessonsCount: totalLessons, duration: totalDuration };
-      }
-      return stats;
-    }
-  } catch (err) {
-    console.error('Failed to fetch chapter stats:', err);
-  }
-  return {};
-}
-
-// Fetch real enrollment count from Orders tab
-async function fetchEnrollmentCounts(): Promise<Record<string, number>> {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Orders`;
-    const res = await fetch(url, { cache: 'no-store' });
-    const csv = await res.text();
-    const rows = parseCSVRows(csv);
-    // Orders columns: Thời gian | Mã đơn hàng | Tên khách hàng | Email | SĐT | Khóa học | Mã khóa học (idx 6) | Tổng tiền | PTTT | Trạng thái (idx 9) | Mã GD
-    const counts: Record<string, number> = {};
-    for (const row of rows) {
-      const courseId = (row[6] || '').trim();
-      const status = (row[9] || '').trim();
-      // Count all orders (or only completed ones if status filter is needed)
-      if (courseId) {
-        if (!status || status.toLowerCase().includes('hoàn thành') || status.toLowerCase().includes('hoan thanh') || status === 'completed') {
-          counts[courseId] = (counts[courseId] || 0) + 1;
-        }
-      }
-    }
-    return counts;
-  } catch (err) {
-    console.error('Failed to fetch enrollment counts:', err);
-  }
-  return {};
-}
-
 export async function GET() {
   try {
-    // Fetch courses, chapter stats, and enrollment counts in parallel
-    const [coursesRes, chapterStats, enrollmentCounts] = await Promise.all([
-      fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Courses`, { cache: 'no-store' }),
-      fetchChapterStats(),
-      fetchEnrollmentCounts(),
-    ]);
-
-    const csv = await coursesRes.text();
+    // Single fast fetch from Courses sheet - all stats are already in the sheet
+    const res = await fetch(
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Courses`,
+      { cache: 'no-store' }
+    );
+    const csv = await res.text();
     const rows = parseCSVRows(csv);
 
     const courses = rows
@@ -140,18 +68,6 @@ export async function GET() {
         const price = Number(cols[COL.PRICE]?.replace(/,/g, '')) || 0;
         const originalPrice = cols[COL.ORIGINAL_PRICE] ? Number(cols[COL.ORIGINAL_PRICE]?.replace(/,/g, '')) : undefined;
         const rating = Number(cols[COL.RATING]?.replace(',', '.')) || 0;
-
-        // Use real stats from chapters if available, fallback to Courses sheet values
-        const realStats = chapterStats[id];
-        const sheetLessons = Number(cols[COL.LESSONS_COUNT]) || 0;
-        const sheetDuration = Number(cols[COL.DURATION]) || 0;
-        const sheetEnrollments = Number(cols[COL.ENROLLMENTS_COUNT]?.replace(/,/g, '')) || 0;
-
-        const lessonsCount = realStats && realStats.lessonsCount > 0 ? realStats.lessonsCount : sheetLessons;
-        const duration = realStats && realStats.duration > 0 ? realStats.duration : sheetDuration;
-
-        // Use real enrollment count from orders, fallback to Courses sheet value
-        const enrollmentsCount = enrollmentCounts[id] || sheetEnrollments;
 
         return {
           id,
@@ -163,9 +79,9 @@ export async function GET() {
           originalPrice,
           rating,
           reviewsCount: Number(cols[COL.REVIEWS_COUNT]) || 0,
-          enrollmentsCount,
-          duration,
-          lessonsCount,
+          enrollmentsCount: Number(cols[COL.ENROLLMENTS_COUNT]?.replace(/,/g, '')) || 0,
+          duration: Number(cols[COL.DURATION]) || 0,
+          lessonsCount: Number(cols[COL.LESSONS_COUNT]) || 0,
           isFree: price === 0,
           badge: cols[COL.BADGE] || undefined,
           category: cols[COL.CATEGORY] || '',
