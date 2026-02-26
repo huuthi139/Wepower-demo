@@ -207,7 +207,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       persistToApi(data);
-    }, 3000);
+    }, 60000);
   }, [persistToApi]);
 
   // Clean up timer on unmount
@@ -487,31 +487,68 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const handleLessonDragOver = (e: React.DragEvent, chapterId: string, lessonIndex: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    // Only allow reorder within the same chapter
-    if (dragItem.current && dragItem.current.chapterId === chapterId) {
+    if (dragItem.current) {
       dragOverItem.current = { chapterId, lessonIndex };
       setDragOverTarget({ chapterId, lessonIndex });
     }
   };
 
-  const handleLessonDrop = (e: React.DragEvent, chapterId: string) => {
+  // Allow dropping into an empty chapter
+  const handleEmptyChapterDragOver = (e: React.DragEvent, chapterId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragItem.current) {
+      dragOverItem.current = { chapterId, lessonIndex: 0 };
+      setDragOverTarget({ chapterId, lessonIndex: 0 });
+    }
+  };
+
+  const handleLessonDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (!dragItem.current || !dragOverItem.current) return;
-    if (dragItem.current.chapterId !== chapterId) return;
-    if (dragItem.current.lessonIndex === dragOverItem.current.lessonIndex) return;
 
+    const fromChapter = dragItem.current.chapterId;
     const fromIndex = dragItem.current.lessonIndex;
+    const toChapter = dragOverItem.current.chapterId;
     const toIndex = dragOverItem.current.lessonIndex;
 
-    updateChapters(
-      chapters.map((ch) => {
-        if (ch.id !== chapterId) return ch;
-        const newLessons = [...ch.lessons];
-        const [moved] = newLessons.splice(fromIndex, 1);
-        newLessons.splice(toIndex, 0, moved);
-        return { ...ch, lessons: newLessons };
-      })
-    );
+    if (fromChapter === toChapter && fromIndex === toIndex) {
+      dragItem.current = null; dragOverItem.current = null;
+      setDraggingLesson(null); setDragOverTarget(null);
+      return;
+    }
+
+    if (fromChapter === toChapter) {
+      // Same chapter reorder
+      updateChapters(
+        chapters.map((ch) => {
+          if (ch.id !== fromChapter) return ch;
+          const newLessons = [...ch.lessons];
+          const [moved] = newLessons.splice(fromIndex, 1);
+          newLessons.splice(toIndex, 0, moved);
+          return { ...ch, lessons: newLessons };
+        })
+      );
+    } else {
+      // Cross-chapter move
+      const srcChapter = chapters.find((ch) => ch.id === fromChapter);
+      if (!srcChapter) return;
+      const movedLesson = srcChapter.lessons[fromIndex];
+
+      updateChapters(
+        chapters.map((ch) => {
+          if (ch.id === fromChapter) {
+            return { ...ch, lessons: ch.lessons.filter((_, idx) => idx !== fromIndex) };
+          }
+          if (ch.id === toChapter) {
+            const newLessons = [...ch.lessons];
+            newLessons.splice(toIndex, 0, movedLesson);
+            return { ...ch, lessons: newLessons };
+          }
+          return ch;
+        })
+      );
+    }
 
     dragItem.current = null;
     dragOverItem.current = null;
@@ -638,7 +675,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 <p className="text-red-400 text-xs max-w-[200px] text-right">{saveError}</p>
               )}
               {!saveError && hasUnsavedChanges && !apiSaving && (
-                <p className="text-yellow-400 text-xs">Tự động lưu sau 3 giây...</p>
+                <p className="text-yellow-400 text-xs">Tự động lưu sau 1 phút...</p>
               )}
               {serverSynced === null && (
                 <p className="text-gray-500 text-xs">Đang kiểm tra server...</p>
@@ -779,21 +816,29 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 {isExpanded && (
                   <div className="border-t border-white/[0.06]">
                     {chapter.lessons.length === 0 && (
-                      <div className="p-6 text-center">
-                        <p className="text-sm text-gray-500">Chua co bai hoc nao trong chuong nay.</p>
+                      <div
+                        className={`p-6 text-center transition-colors ${
+                          dragOverTarget?.chapterId === chapter.id && draggingLesson ? 'bg-teal/10 border-2 border-dashed border-teal/40' : ''
+                        }`}
+                        onDragOver={(e) => handleEmptyChapterDragOver(e, chapter.id)}
+                        onDrop={handleLessonDrop}
+                      >
+                        <p className="text-sm text-gray-500">
+                          {draggingLesson ? 'Thả bài học vào đây' : 'Chua co bai hoc nao trong chuong nay.'}
+                        </p>
                       </div>
                     )}
 
                     {chapter.lessons.map((lesson, lessonIndex) => {
                       const isDragging = draggingLesson?.chapterId === chapter.id && draggingLesson?.lessonIndex === lessonIndex;
-                      const isDragOver = dragOverTarget?.chapterId === chapter.id && dragOverTarget?.lessonIndex === lessonIndex && draggingLesson?.chapterId === chapter.id && draggingLesson?.lessonIndex !== lessonIndex;
+                      const isDragOver = dragOverTarget?.chapterId === chapter.id && dragOverTarget?.lessonIndex === lessonIndex && draggingLesson && !(draggingLesson.chapterId === chapter.id && draggingLesson.lessonIndex === lessonIndex);
                       return (
                       <div
                         key={lesson.id}
                         draggable
                         onDragStart={() => handleLessonDragStart(chapter.id, lessonIndex)}
                         onDragOver={(e) => handleLessonDragOver(e, chapter.id, lessonIndex)}
-                        onDrop={(e) => handleLessonDrop(e, chapter.id)}
+                        onDrop={handleLessonDrop}
                         onDragEnd={handleLessonDragEnd}
                         className={`flex items-center justify-between px-4 md:px-5 py-3 transition-all ${
                           lessonIndex < chapter.lessons.length - 1 ? 'border-b border-white/[0.06]/50' : ''

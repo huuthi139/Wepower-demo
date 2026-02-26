@@ -89,9 +89,31 @@ async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { les
 
         let chapterArr: any[];
 
-        // Check if this is a chunk index
-        if (chapters && (chapters as any)._chunks) {
-          // Resolve chunks from allData
+        // New format: { _n: count } – resolve chapter keys from allData
+        if (chapters && (chapters as any)._n !== undefined) {
+          chapterArr = [];
+          const count = (chapters as any)._n as number;
+          for (let i = 0; i < count; i++) {
+            const chData = allData[`${courseId}__${i}`];
+            if (!chData) continue;
+            // Check for lesson parts
+            if (chData._p !== undefined) {
+              const lessons: any[] = [];
+              let meta: any = null;
+              for (let p = 0; p < chData._p; p++) {
+                const partData = allData[`${courseId}__${i}__${p}`];
+                if (Array.isArray(partData) && partData[0]) {
+                  if (!meta) meta = { id: partData[0].id, title: partData[0].title };
+                  lessons.push(...(partData[0].lessons || []));
+                }
+              }
+              if (meta) chapterArr.push({ ...meta, lessons });
+            } else if (Array.isArray(chData)) {
+              chapterArr.push(...chData);
+            }
+          }
+        // Old format: { _chunks: [...] }
+        } else if (chapters && (chapters as any)._chunks) {
           chapterArr = [];
           for (const chunkId of (chapters as any)._chunks) {
             const chunkData = allData[chunkId];
