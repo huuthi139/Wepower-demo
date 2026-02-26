@@ -61,8 +61,7 @@ function parseDurationToSeconds(duration: string): number {
   return parseInt(duration, 10) || 0;
 }
 
-// Fetch chapter stats from Apps Script with timeout
-// Handles chunked data: courseId → {_chunks: [...]} → resolve chunks
+// Fetch chapter stats from pre-computed _stats entries saved alongside chapters
 async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { lessonsCount: number; duration: number }>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -74,62 +73,36 @@ async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { les
       cache: 'no-store',
     });
     const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('json') && !ct.includes('javascript')) {
-      return {};
-    }
+    if (!ct.includes('json') && !ct.includes('javascript')) return {};
     let data: any;
     try { data = await res.json(); } catch { return {}; }
     if (data.success && data.data) {
       const stats: Record<string, { lessonsCount: number; duration: number }> = {};
       const allData = data.data as Record<string, any>;
 
-      for (const [courseId, chapters] of Object.entries(allData)) {
-        // Skip chunk/part entries (they have __ in the ID)
-        if (courseId.includes('__')) continue;
-
-        let chapterArr: any[];
-
-        // New format: { _n: count } – resolve chapter keys from allData
-        if (chapters && (chapters as any)._n !== undefined) {
-          chapterArr = [];
-          const count = (chapters as any)._n as number;
-          for (let i = 0; i < count; i++) {
-            const chData = allData[`${courseId}__${i}`];
-            if (!chData) continue;
-            // Check for lesson parts
-            if (chData._p !== undefined) {
-              const lessons: any[] = [];
-              let meta: any = null;
-              for (let p = 0; p < chData._p; p++) {
-                const partData = allData[`${courseId}__${i}__${p}`];
-                if (Array.isArray(partData) && partData[0]) {
-                  if (!meta) meta = { id: partData[0].id, title: partData[0].title };
-                  lessons.push(...(partData[0].lessons || []));
-                }
-              }
-              if (meta) chapterArr.push({ ...meta, lessons });
-            } else if (Array.isArray(chData)) {
-              chapterArr.push(...chData);
-            }
+      // Read pre-computed stats (saved at "{courseId}_stats" key)
+      for (const [key, value] of Object.entries(allData)) {
+        if (key.endsWith('_stats') && value && typeof value === 'object') {
+          const v = value as any;
+          if (v.lessonsCount !== undefined) {
+            const courseId = key.replace('_stats', '');
+            stats[courseId] = {
+              lessonsCount: Number(v.lessonsCount) || 0,
+              duration: Number(v.duration) || 0,
+            };
           }
-        // Old format: { _chunks: [...] }
-        } else if (chapters && (chapters as any)._chunks) {
-          chapterArr = [];
-          for (const chunkId of (chapters as any)._chunks) {
-            const chunkData = allData[chunkId];
-            if (Array.isArray(chunkData)) {
-              chapterArr.push(...chunkData);
-            }
-          }
-        } else if (Array.isArray(chapters)) {
-          chapterArr = chapters;
-        } else {
-          continue;
         }
+      }
+
+      // Fallback: for courses without _stats, try direct array format
+      for (const [courseId, chapters] of Object.entries(allData)) {
+        if (courseId.includes('__') || courseId.includes('_stats')) continue;
+        if (stats[courseId]) continue; // already have pre-computed stats
+        if (!Array.isArray(chapters)) continue;
 
         let totalLessons = 0;
         let totalDuration = 0;
-        for (const ch of chapterArr) {
+        for (const ch of chapters) {
           const lessons = ch.lessons || [];
           totalLessons += lessons.length;
           for (const ls of lessons) {

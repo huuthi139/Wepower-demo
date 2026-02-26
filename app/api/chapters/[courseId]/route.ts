@@ -263,13 +263,33 @@ export async function POST(
     const result = await saveAllChapters(scriptUrl, courseId, chapters);
 
     if (result.success) {
-      const expectedLessons = chapters.reduce((s: number, ch: any) => s + (ch.lessons?.length || 0), 0);
+      // Pre-compute stats and save alongside chapters
+      let totalLessons = 0;
+      let totalDuration = 0;
+      let totalChapters = chapters.length;
+      for (const ch of chapters) {
+        const lessons = ch.lessons || [];
+        totalLessons += lessons.length;
+        for (const ls of lessons) {
+          const dur = ls.duration || '';
+          const parts = dur.split(':');
+          if (parts.length === 2) {
+            totalDuration += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+          } else {
+            totalDuration += parseInt(dur, 10) || 0;
+          }
+        }
+      }
+      // Save stats as a simple entry (best-effort)
+      const statsJson = JSON.stringify({ lessonsCount: totalLessons, duration: totalDuration, chaptersCount: totalChapters });
+      try { await scriptSave(scriptUrl, `${courseId}_stats`, statsJson); } catch { /* ignore */ }
+
       return NextResponse.json({
         success: true,
         verified: true,
-        savedLessonsCount: expectedLessons,
-        expectedLessonsCount: expectedLessons,
-        message: `Đã lưu ${chapters.length} chương, ${expectedLessons} bài học`,
+        savedLessonsCount: totalLessons,
+        expectedLessonsCount: totalLessons,
+        message: `Đã lưu ${totalChapters} chương, ${totalLessons} bài học`,
       });
     }
 
