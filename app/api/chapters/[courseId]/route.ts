@@ -56,20 +56,50 @@ async function saveChaptersToScript(
     if (chunkUrl.length > MAX_URL_LENGTH) {
       const ch = chapters[i];
       const lessons = ch.lessons || [];
-      const batchSize = Math.max(1, Math.floor(lessons.length * (MAX_URL_LENGTH - 500) / chunkUrl.length));
 
+      // Build URL for each part and verify length before sending
       const lessonChunks: string[] = [];
-      for (let j = 0; j < lessons.length; j += batchSize) {
-        const lessonSlice = lessons.slice(j, j + batchSize);
-        const partId = `${chunkId}_part_${Math.floor(j / batchSize)}`;
-        const partChapter = { ...ch, lessons: lessonSlice };
-        const partJson = JSON.stringify([partChapter]);
-        const partQs = new URLSearchParams({ action: 'saveChapters', courseId: partId, chaptersJson: partJson });
-        const partRes = await fetch(`${scriptUrl}?${partQs.toString()}`, { redirect: 'follow' });
+      let j = 0;
+      let partIndex = 0;
+
+      while (j < lessons.length) {
+        // Start with estimated batch size, then shrink until URL fits
+        let batchSize = Math.max(1, Math.floor(lessons.length * (MAX_URL_LENGTH - 500) / chunkUrl.length));
+
+        let partId = '';
+        let partQs: URLSearchParams;
+        let partUrl = '';
+
+        while (true) {
+          const lessonSlice = lessons.slice(j, j + batchSize);
+          partId = `${chunkId}_p${partIndex}`;
+          const partChapter = { ...ch, lessons: lessonSlice };
+          const partJson = JSON.stringify([partChapter]);
+          partQs = new URLSearchParams({ action: 'saveChapters', courseId: partId, chaptersJson: partJson });
+          partUrl = `${scriptUrl}?${partQs!.toString()}`;
+
+          if (partUrl.length <= MAX_URL_LENGTH || batchSize <= 1) break;
+          // Reduce batch size proportionally
+          batchSize = Math.max(1, Math.floor(batchSize * MAX_URL_LENGTH / partUrl.length * 0.9));
+        }
+
+        // If even 1 lesson is too big, strip non-essential fields to reduce size
+        if (partUrl.length > MAX_URL_LENGTH && batchSize === 1) {
+          const minLesson = { id: lessons[j].id, title: lessons[j].title, duration: lessons[j].duration || '', requiredLevel: lessons[j].requiredLevel || 'Free', directPlayUrl: lessons[j].directPlayUrl || '' };
+          const minChapter = { id: ch.id, title: ch.title, lessons: [minLesson] };
+          const minJson = JSON.stringify([minChapter]);
+          partQs = new URLSearchParams({ action: 'saveChapters', courseId: partId, chaptersJson: minJson });
+          partUrl = `${scriptUrl}?${partQs!.toString()}`;
+        }
+
+        const partRes = await fetch(partUrl, { redirect: 'follow' });
         const partData = await safeJsonParse(partRes);
-        if (!partData?.success) return { success: false, error: `Failed to save part ${partId}` };
+        if (!partData?.success) return { success: false, error: `Chunk ${i} part ${partIndex} quá lớn (${partUrl.length} chars)` };
         lessonChunks.push(partId);
+        j += batchSize;
+        partIndex++;
       }
+
       // Save lesson chunk index for this chapter
       const indexJson = JSON.stringify([{ _lessonChunks: lessonChunks }]);
       const indexQs = new URLSearchParams({ action: 'saveChapters', courseId: chunkId, chaptersJson: indexJson });
