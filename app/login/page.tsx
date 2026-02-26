@@ -94,7 +94,7 @@ export default function Login() {
             {/* Error display for both React and fallback */}
             <div
               id="login-error"
-              className="p-3 bg-teal/10 border border-teal/20 rounded-lg text-teal text-sm text-center"
+              className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center"
               style={{ display: errors.general ? 'block' : 'none' }}
             >
               {errors.general || ''}
@@ -112,12 +112,12 @@ export default function Login() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.email ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.email ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="example@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-teal">{errors.email}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.email}</p>
               )}
             </div>
 
@@ -133,12 +133,12 @@ export default function Login() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.password ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.password ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-teal">{errors.password}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.password}</p>
               )}
             </div>
 

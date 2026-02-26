@@ -97,7 +97,7 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {errors.general && (
-              <div className="p-3 bg-teal/10 border border-teal/20 rounded-lg text-teal text-sm text-center">
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
                 {errors.general}
               </div>
             )}
@@ -112,12 +112,12 @@ export default function Register() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.name ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.name ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="Nguyễn Văn A"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-teal">{errors.name}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
               )}
             </div>
 
@@ -132,12 +132,12 @@ export default function Register() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.email ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.email ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="example@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-teal">{errors.email}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.email}</p>
               )}
             </div>
 
@@ -152,12 +152,12 @@ export default function Register() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.password ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.password ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-teal">{errors.password}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.password}</p>
               )}
             </div>
 
@@ -172,12 +172,12 @@ export default function Register() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className={`w-full px-4 py-3 bg-dark border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-colors ${
-                  errors.confirmPassword ? 'border-teal' : 'border-white/[0.06] focus:border-teal'
+                  errors.confirmPassword ? 'border-red-500/50' : 'border-white/[0.06] focus:border-teal'
                 }`}
                 placeholder="••••••••"
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-teal">{errors.confirmPassword}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
               )}
             </div>
 
@@ -202,7 +202,7 @@ export default function Register() {
                 </span>
               </label>
               {errors.agree && (
-                <p className="mt-1 text-sm text-teal">{errors.agree}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.agree}</p>
               )}
             </div>
 
