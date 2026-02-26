@@ -151,6 +151,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const pendingSave = useRef<Chapter[] | null>(null); // queue next save if one is in progress
+  const serverLessonCount = useRef<number | null>(null); // track server's lesson count to prevent data loss
+  const loadComplete = useRef(true); // whether the last API load was complete
 
   // Save to localStorage
   const persistToStorage = useCallback((data: Chapter[]) => {
@@ -180,20 +182,28 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       // Client-side timeout: 90 seconds (server may process many chunks)
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 90000);
+      // Send expectedLessons so server can reject incomplete saves
+      const totalLessons = data.reduce((s: number, ch: Chapter) => s + ch.lessons.length, 0);
+      const body: any = { chapters: data };
+      if (serverLessonCount.current !== null && serverLessonCount.current > 0) {
+        body.expectedLessons = serverLessonCount.current;
+      }
       const res = await fetch(`/api/chapters/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapters: data }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       clearTimeout(timeout);
       const result = await res.json();
       if (result.success) {
         lastSavedJson.current = currentJson;
+        // Update server lesson count after successful save
+        serverLessonCount.current = totalLessons;
         setSaveStatus('saved');
         setServerSynced(true);
         setHasUnsavedChanges(false);
-        if (result.verified && result.savedLessonsCount !== data.reduce((s: number, ch: Chapter) => s + ch.lessons.length, 0)) {
+        if (result.verified && result.savedLessonsCount !== totalLessons) {
           setSaveError(`Cảnh báo: server chỉ lưu được ${result.savedLessonsCount} bài`);
         }
         setTimeout(() => setSaveStatus('idle'), 3000);
@@ -224,6 +234,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
 
   // Debounced auto-save to API (60 seconds after last change)
   const scheduleAutoSave = useCallback((data: Chapter[]) => {
+    // Don't auto-save if initial load was incomplete (prevents overwriting server data)
+    if (!loadComplete.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       persistToApi(data);
@@ -261,18 +273,35 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       .then(data => {
         if (data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
           const normalized = normalizeChapters(data.chapters);
+          const lessonCount = normalized.reduce((s, ch) => s + ch.lessons.length, 0);
+
+          // Check if the load was complete (no read failures)
+          if (data.complete === false) {
+            // Incomplete load - warn user and disable auto-save
+            loadComplete.current = false;
+            setSaveError(`Cảnh báo: chỉ tải được ${data.loadedChapters}/${data.expectedChapters} chương. Tải lại trang để thử lại.`);
+            // Still show what we got, but track original server count
+            serverLessonCount.current = null; // unknown - don't allow saving
+          } else {
+            loadComplete.current = true;
+            serverLessonCount.current = lessonCount;
+          }
+
           setChapters(normalized);
           localStorage.setItem(storageKey, JSON.stringify(normalized));
           lastSavedJson.current = JSON.stringify(normalized);
-          setServerSynced(true);
+          setServerSynced(data.complete !== false);
           setHasUnsavedChanges(false);
         } else {
           // Server has no data - check if we have local data
+          loadComplete.current = true;
+          serverLessonCount.current = 0;
           setServerSynced(chapters.length === 0);
           setHasUnsavedChanges(chapters.length > 0);
         }
       })
       .catch(() => {
+        loadComplete.current = false;
         setServerSynced(false);
       });
   }, [id, storageKey]);
