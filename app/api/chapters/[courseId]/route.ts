@@ -11,11 +11,15 @@ function getScriptUrl() {
 // ---------------------------------------------------------------------------
 // Google Apps Script GET-based API helpers
 // ---------------------------------------------------------------------------
-// Google Apps Script redirects all requests (302). The redirect URL is longer
-// than the original URL by ~1000-1500 chars. After testing, 2000 chars for
-// the query-string portion is the safe maximum.
+// Google Apps Script enforces a total URL limit of ~6158 chars (GSE).
+// After URL-encoding, a 2000-char raw JSON value expands to ~3500 chars,
+// plus ~200 chars for the base URL and query structure = ~3700 total.
+// Safe well within the 6158 limit.
 // ---------------------------------------------------------------------------
-const MAX_URL = 2000; // max chars for the chaptersJson query-string VALUE
+const MAX_URL = 2000; // max chars for raw JSON value
+const REQUEST_TIMEOUT = 15000; // 15s timeout per request
+const SAVE_RETRIES = 2; // retry failed saves up to 2 times
+const RETRY_DELAY = 1000; // 1s between retries
 
 /** Safe JSON parse – returns null when response is not JSON */
 async function safeParse(res: Response): Promise<any | null> {
@@ -24,22 +28,52 @@ async function safeParse(res: Response): Promise<any | null> {
   try { return await res.json(); } catch { return null; }
 }
 
-/** Low-level: save a single key→value pair via Apps Script */
+/** Create a fetch with timeout */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Low-level: save a single key→value pair via Apps Script (with timeout + retries) */
 async function scriptSave(scriptUrl: string, key: string, value: string): Promise<boolean> {
   const qs = new URLSearchParams({ action: 'saveChapters', courseId: key, chaptersJson: value });
   const url = `${scriptUrl}?${qs.toString()}`;
-  const res = await fetch(url, { redirect: 'follow' });
-  const data = await safeParse(res);
-  return data?.success === true;
+
+  for (let attempt = 0; attempt <= SAVE_RETRIES; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, { redirect: 'follow' });
+      const data = await safeParse(res);
+      if (data?.success === true) return true;
+      // Non-success response – retry
+    } catch {
+      // Timeout or network error – retry
+    }
+    if (attempt < SAVE_RETRIES) {
+      await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
+    }
+  }
+  return false;
 }
 
-/** Low-level: read a single key from Apps Script */
+/** Low-level: read a single key from Apps Script (with timeout) */
 async function scriptRead(scriptUrl: string, key: string): Promise<any> {
   const qs = new URLSearchParams({ action: 'getChapters', courseId: key });
-  const res = await fetch(`${scriptUrl}?${qs.toString()}`, { redirect: 'follow', cache: 'no-store' });
-  const data = await safeParse(res);
-  if (!data?.success) return null;
-  return data.chapters ?? null;
+  try {
+    const res = await fetchWithTimeout(
+      `${scriptUrl}?${qs.toString()}`,
+      { redirect: 'follow', cache: 'no-store' }
+    );
+    const data = await safeParse(res);
+    if (!data?.success) return null;
+    return data.chapters ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** How many chars would the chaptersJson value be for this data? */
@@ -186,9 +220,12 @@ async function readAllChapters(scriptUrl: string, courseId: string): Promise<any
 }
 
 // ---------------------------------------------------------------------------
-// Cleanup old data before saving new data
+// Cleanup old data before saving new data (with time limit)
 // ---------------------------------------------------------------------------
-async function cleanupOldData(scriptUrl: string, courseId: string): Promise<void> {
+async function cleanupOldData(scriptUrl: string, courseId: string, timeLimitMs = 10000): Promise<void> {
+  const start = Date.now();
+  const isTimedOut = () => Date.now() - start > timeLimitMs;
+
   const raw = await scriptRead(scriptUrl, courseId);
   if (!raw) return;
 
@@ -196,30 +233,37 @@ async function cleanupOldData(scriptUrl: string, courseId: string): Promise<void
 
   if (raw._n !== undefined) {
     // New format cleanup
-    for (let i = 0; i < raw._n; i++) {
+    for (let i = 0; i < raw._n && !isTimedOut(); i++) {
       const chData = await scriptRead(scriptUrl, `${courseId}__${i}`);
+      if (isTimedOut()) break;
       if (chData?._p !== undefined) {
-        for (let p = 0; p < chData._p; p++) {
+        for (let p = 0; p < chData._p && !isTimedOut(); p++) {
           await scriptSave(scriptUrl, `${courseId}__${i}__${p}`, empty);
         }
       }
-      await scriptSave(scriptUrl, `${courseId}__${i}`, empty);
+      if (!isTimedOut()) {
+        await scriptSave(scriptUrl, `${courseId}__${i}`, empty);
+      }
     }
   } else if (raw._chunks) {
     // Old format cleanup
     for (const chunkId of raw._chunks) {
+      if (isTimedOut()) break;
       const chunkData = await scriptRead(scriptUrl, chunkId);
       if (chunkData) {
         const arr = Array.isArray(chunkData) ? chunkData : [chunkData];
         for (const ch of arr) {
           if (ch._lessonChunks) {
             for (const partId of ch._lessonChunks) {
+              if (isTimedOut()) break;
               await scriptSave(scriptUrl, partId, empty);
             }
           }
         }
       }
-      await scriptSave(scriptUrl, chunkId, empty);
+      if (!isTimedOut()) {
+        await scriptSave(scriptUrl, chunkId, empty);
+      }
     }
   }
 }
@@ -256,20 +300,40 @@ export async function POST(
     const chapters = body.chapters || [];
     const scriptUrl = getScriptUrl();
 
-    // Clean up old chunks (best-effort, don't fail if cleanup has issues)
-    try { await cleanupOldData(scriptUrl, courseId); } catch { /* ignore */ }
+    // Clean up old chunks (best-effort, time-limited, don't fail if cleanup has issues)
+    try { await cleanupOldData(scriptUrl, courseId, 10000); } catch { /* ignore */ }
 
     // Save
     const result = await saveAllChapters(scriptUrl, courseId, chapters);
 
     if (result.success) {
-      const expectedLessons = chapters.reduce((s: number, ch: any) => s + (ch.lessons?.length || 0), 0);
+      // Pre-compute stats and save alongside chapters
+      let totalLessons = 0;
+      let totalDuration = 0;
+      let totalChapters = chapters.length;
+      for (const ch of chapters) {
+        const lessons = ch.lessons || [];
+        totalLessons += lessons.length;
+        for (const ls of lessons) {
+          const dur = ls.duration || '';
+          const parts = dur.split(':');
+          if (parts.length === 2) {
+            totalDuration += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+          } else {
+            totalDuration += parseInt(dur, 10) || 0;
+          }
+        }
+      }
+      // Save stats as a simple entry (best-effort)
+      const statsJson = JSON.stringify({ lessonsCount: totalLessons, duration: totalDuration, chaptersCount: totalChapters });
+      try { await scriptSave(scriptUrl, `${courseId}_stats`, statsJson); } catch { /* ignore */ }
+
       return NextResponse.json({
         success: true,
         verified: true,
-        savedLessonsCount: expectedLessons,
-        expectedLessonsCount: expectedLessons,
-        message: `Đã lưu ${chapters.length} chương, ${expectedLessons} bài học`,
+        savedLessonsCount: totalLessons,
+        expectedLessonsCount: totalLessons,
+        message: `Đã lưu ${totalChapters} chương, ${totalLessons} bài học`,
       });
     }
 

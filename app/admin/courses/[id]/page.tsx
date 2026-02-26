@@ -150,6 +150,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const lastSavedJson = useRef<string>('');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  const pendingSave = useRef<Chapter[] | null>(null); // queue next save if one is in progress
 
   // Save to localStorage
   const persistToStorage = useCallback((data: Chapter[]) => {
@@ -158,7 +159,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     } catch { /* ignore */ }
   }, [storageKey]);
 
-  // Save to backend API with change detection
+  // Save to backend API with change detection, timeout, and pending queue
   const persistToApi = useCallback(async (data: Chapter[]) => {
     const currentJson = JSON.stringify(data);
     // Skip if nothing changed since last save
@@ -167,17 +168,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       setHasUnsavedChanges(false);
       return;
     }
-    // Skip if already saving
-    if (savingRef.current) return;
+    // If already saving, queue this save for when current one finishes
+    if (savingRef.current) {
+      pendingSave.current = data;
+      return;
+    }
     savingRef.current = true;
     setApiSaving(true);
     setSaveError(null);
     try {
+      // Client-side timeout: 90 seconds (server may process many chunks)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000);
       const res = await fetch(`/api/chapters/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chapters: data }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       const result = await res.json();
       if (result.success) {
         lastSavedJson.current = currentJson;
@@ -192,17 +201,28 @@ export default function CourseContentPage({ params }: { params: { id: string } }
         setSaveError(result.error || 'Lưu thất bại - thử lại');
         setServerSynced(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save chapters to API:', err);
-      setSaveError('Lỗi kết nối - không thể lưu lên server');
+      if (err.name === 'AbortError') {
+        setSaveError('Hết thời gian chờ - nhấn Lưu để thử lại');
+      } else {
+        setSaveError('Lỗi kết nối - không thể lưu lên server');
+      }
       setServerSynced(false);
     } finally {
       setApiSaving(false);
       savingRef.current = false;
+      // Process queued save if any
+      const queued = pendingSave.current;
+      if (queued) {
+        pendingSave.current = null;
+        // Small delay to prevent rapid-fire requests
+        setTimeout(() => persistToApi(queued), 500);
+      }
     }
   }, [id]);
 
-  // Debounced auto-save to API (3 seconds after last change)
+  // Debounced auto-save to API (60 seconds after last change)
   const scheduleAutoSave = useCallback((data: Chapter[]) => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
