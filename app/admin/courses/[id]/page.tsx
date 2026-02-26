@@ -146,6 +146,11 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [serverSynced, setServerSynced] = useState<boolean | null>(null); // null=checking, true=synced, false=not synced
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Track last saved state for change detection
+  const lastSavedJson = useRef<string>('');
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
+
   // Save to localStorage
   const persistToStorage = useCallback((data: Chapter[]) => {
     try {
@@ -153,8 +158,18 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     } catch { /* ignore */ }
   }, [storageKey]);
 
-  // Save to backend API with verification
+  // Save to backend API with change detection
   const persistToApi = useCallback(async (data: Chapter[]) => {
+    const currentJson = JSON.stringify(data);
+    // Skip if nothing changed since last save
+    if (currentJson === lastSavedJson.current) {
+      setServerSynced(true);
+      setHasUnsavedChanges(false);
+      return;
+    }
+    // Skip if already saving
+    if (savingRef.current) return;
+    savingRef.current = true;
     setApiSaving(true);
     setSaveError(null);
     try {
@@ -165,6 +180,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       });
       const result = await res.json();
       if (result.success) {
+        lastSavedJson.current = currentJson;
         setSaveStatus('saved');
         setServerSynced(true);
         setHasUnsavedChanges(false);
@@ -182,19 +198,37 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       setServerSynced(false);
     } finally {
       setApiSaving(false);
+      savingRef.current = false;
     }
   }, [id]);
 
-  // Auto-save: update state + persist to localStorage only (fast)
+  // Debounced auto-save to API (3 seconds after last change)
+  const scheduleAutoSave = useCallback((data: Chapter[]) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      persistToApi(data);
+    }, 3000);
+  }, [persistToApi]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, []);
+
+  // Auto-save: update state + persist to localStorage + schedule API save
   const updateChapters = useCallback((newChapters: Chapter[]) => {
     setChapters(newChapters);
     persistToStorage(newChapters);
     setHasUnsavedChanges(true);
     setServerSynced(false);
-  }, [persistToStorage]);
+    scheduleAutoSave(newChapters);
+  }, [persistToStorage, scheduleAutoSave]);
 
-  // Manual save: persist to both localStorage and API
+  // Manual save: persist to both localStorage and API immediately
   const handleSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     persistToStorage(chapters);
     persistToApi(chapters);
   }, [persistToStorage, persistToApi, chapters]);
@@ -209,6 +243,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
           const normalized = normalizeChapters(data.chapters);
           setChapters(normalized);
           localStorage.setItem(storageKey, JSON.stringify(normalized));
+          lastSavedJson.current = JSON.stringify(normalized);
           setServerSynced(true);
           setHasUnsavedChanges(false);
         } else {
@@ -602,8 +637,8 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               {saveError && (
                 <p className="text-red-400 text-xs max-w-[200px] text-right">{saveError}</p>
               )}
-              {!saveError && hasUnsavedChanges && (
-                <p className="text-yellow-400 text-xs">Chưa lưu lên server - bấm Lưu!</p>
+              {!saveError && hasUnsavedChanges && !apiSaving && (
+                <p className="text-yellow-400 text-xs">Tự động lưu sau 3 giây...</p>
               )}
               {serverSynced === null && (
                 <p className="text-gray-500 text-xs">Đang kiểm tra server...</p>

@@ -9,7 +9,8 @@ function getScriptUrl() {
 }
 
 // Max safe URL length for Google Apps Script
-const MAX_URL_LENGTH = 7000;
+// Must be conservative: Google's 302 redirect adds ~1500 chars overhead
+const MAX_URL_LENGTH = 4000;
 
 // Safe JSON parse from a fetch response - returns null if not JSON
 async function safeJsonParse(res: Response): Promise<any | null> {
