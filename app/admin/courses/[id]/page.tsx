@@ -39,6 +39,7 @@ function normalizeChapters(chapters: any[]): Chapter[] {
           ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
           : '')
       ),
+      thumbnail: ls.thumbnail || '',
     })),
   }));
 }
@@ -56,6 +57,7 @@ interface Lesson {
   duration: string;
   requiredLevel: MemberLevel;
   directPlayUrl: string;
+  thumbnail?: string;
 }
 
 interface Chapter {
@@ -226,6 +228,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
   const [lessonDuration, setLessonDuration] = useState('');
   const [lessonLevel, setLessonLevel] = useState<MemberLevel>('Free');
   const [lessonDirectPlayUrl, setLessonDirectPlayUrl] = useState('');
+  const [lessonThumbnail, setLessonThumbnail] = useState('');
   const [durationLoading, setDurationLoading] = useState(false);
 
   // Auto-detect video duration when URL changes
@@ -370,6 +373,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
     setLessonDuration('');
     setLessonLevel('Free');
     setLessonDirectPlayUrl('');
+    setLessonThumbnail('');
     setModal({ kind: 'addLesson', chapterId });
   };
 
@@ -381,6 +385,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       setLessonDuration(lesson.duration);
       setLessonLevel(lesson.requiredLevel);
       setLessonDirectPlayUrl(lesson.directPlayUrl);
+      setLessonThumbnail(lesson.thumbnail || '');
       setModal({ kind: 'editLesson', chapterId, lessonId });
     }
   };
@@ -397,6 +402,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       duration: lessonDuration.trim(),
       requiredLevel: lessonLevel,
       directPlayUrl: lessonDirectPlayUrl.trim(),
+      thumbnail: lessonThumbnail.trim(),
     };
     updateChapters(
       chapters.map((ch) =>
@@ -415,7 +421,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
               ...ch,
               lessons: ch.lessons.map((ls) =>
                 ls.id === modal.lessonId
-                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel, directPlayUrl: lessonDirectPlayUrl.trim() }
+                  ? { ...ls, title: lessonTitle.trim(), duration: lessonDuration.trim(), requiredLevel: lessonLevel, directPlayUrl: lessonDirectPlayUrl.trim(), thumbnail: lessonThumbnail.trim() }
                   : ls
               ),
             }
@@ -771,7 +777,28 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                               <circle cx="15" cy="19" r="1.5" />
                             </svg>
                           </div>
-                          {lesson.directPlayUrl ? (
+                          {lesson.thumbnail ? (
+                            <button
+                              onClick={() => lesson.directPlayUrl && setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
+                              className="w-10 h-7 rounded overflow-hidden flex-shrink-0 relative group"
+                              title={lesson.directPlayUrl ? 'Xem trước video' : 'Thumbnail'}
+                              style={{ cursor: lesson.directPlayUrl ? 'pointer' : 'default' }}
+                            >
+                              <img
+                                src={lesson.thumbnail}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                              {lesson.directPlayUrl && (
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <svg className="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+                          ) : lesson.directPlayUrl ? (
                             <button
                               onClick={() => setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
                               className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 hover:bg-green-500/25 transition-colors cursor-pointer"
@@ -797,6 +824,9 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                                 <span className="text-xs text-green-400">Đã có video</span>
                               ) : (
                                 <span className="text-xs text-gold">Chưa có video</span>
+                              )}
+                              {lesson.thumbnail && (
+                                <span className="text-xs text-purple-400">Có thumbnail</span>
                               )}
                             </div>
                           </div>
@@ -990,6 +1020,35 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 />
                 <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Thumbnail
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={lessonThumbnail}
+                  onChange={(e) => setLessonThumbnail(e.target.value)}
+                  placeholder="Dán link ảnh thumbnail vào đây"
+                  className="w-full h-10 px-3 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-600 mt-1">URL ảnh đại diện cho video (JPG, PNG, WebP)</p>
+                {lessonThumbnail.trim() && (
+                  <div className="mt-2 relative rounded-lg overflow-hidden border border-white/10 bg-dark/50" style={{ maxWidth: '200px' }}>
+                    <img
+                      src={lessonThumbnail.trim()}
+                      alt="Thumbnail preview"
+                      className="w-full aspect-video object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
+                    />
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
@@ -1075,6 +1134,35 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                   className="w-full h-10 px-3 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors font-mono"
                 />
                 <p className="text-xs text-gray-600 mt-1">Hỗ trợ: Bunny Stream embed URL hoặc direct video URL (.mp4)</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Thumbnail
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={lessonThumbnail}
+                  onChange={(e) => setLessonThumbnail(e.target.value)}
+                  placeholder="Dán link ảnh thumbnail vào đây"
+                  className="w-full h-10 px-3 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-600 mt-1">URL ảnh đại diện cho video (JPG, PNG, WebP)</p>
+                {lessonThumbnail.trim() && (
+                  <div className="mt-2 relative rounded-lg overflow-hidden border border-white/10 bg-dark/50" style={{ maxWidth: '200px' }}>
+                    <img
+                      src={lessonThumbnail.trim()}
+                      alt="Thumbnail preview"
+                      className="w-full aspect-video object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
+                    />
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

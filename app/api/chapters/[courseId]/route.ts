@@ -11,6 +11,19 @@ function getScriptUrl() {
 // Max safe URL length for Google Apps Script
 const MAX_URL_LENGTH = 7000;
 
+// Safe JSON parse from a fetch response - returns null if not JSON
+async function safeJsonParse(res: Response): Promise<any | null> {
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('json') && !ct.includes('javascript')) {
+    return null;
+  }
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 // Save chapters to Apps Script, chunking if data is too large
 async function saveChaptersToScript(
   scriptUrl: string,
@@ -24,11 +37,11 @@ async function saveChaptersToScript(
   // If URL fits in one request, send directly
   if (fullUrl.length <= MAX_URL_LENGTH) {
     const res = await fetch(fullUrl, { redirect: 'follow' });
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('json') && !ct.includes('javascript')) {
+    const data = await safeJsonParse(res);
+    if (!data) {
       return { success: false, error: `Non-JSON response (URL ${fullUrl.length} chars)` };
     }
-    return await res.json();
+    return data;
   }
 
   // URL too long → save each chapter individually as chunk, then save index
@@ -41,7 +54,6 @@ async function saveChaptersToScript(
 
     // If even a single chapter is too large, split its lessons
     if (chunkUrl.length > MAX_URL_LENGTH) {
-      // Save chapter without lessons first, then add lessons in batches
       const ch = chapters[i];
       const lessons = ch.lessons || [];
       const batchSize = Math.max(1, Math.floor(lessons.length * (MAX_URL_LENGTH - 500) / chunkUrl.length));
@@ -54,8 +66,8 @@ async function saveChaptersToScript(
         const partJson = JSON.stringify([partChapter]);
         const partQs = new URLSearchParams({ action: 'saveChapters', courseId: partId, chaptersJson: partJson });
         const partRes = await fetch(`${scriptUrl}?${partQs.toString()}`, { redirect: 'follow' });
-        const partData = await partRes.json();
-        if (!partData.success) return { success: false, error: `Failed to save part ${partId}` };
+        const partData = await safeJsonParse(partRes);
+        if (!partData?.success) return { success: false, error: `Failed to save part ${partId}` };
         lessonChunks.push(partId);
       }
       // Save lesson chunk index for this chapter
@@ -65,8 +77,8 @@ async function saveChaptersToScript(
       chunkIds.push(chunkId);
     } else {
       const chunkRes = await fetch(chunkUrl, { redirect: 'follow' });
-      const chunkData = await chunkRes.json();
-      if (!chunkData.success) return { success: false, error: `Failed to save chunk ${i}` };
+      const chunkData = await safeJsonParse(chunkRes);
+      if (!chunkData?.success) return { success: false, error: `Failed to save chunk ${i}` };
       chunkIds.push(chunkId);
     }
   }
@@ -75,8 +87,8 @@ async function saveChaptersToScript(
   const indexJson = JSON.stringify({ _chunks: chunkIds });
   const indexQs = new URLSearchParams({ action: 'saveChapters', courseId, chaptersJson: indexJson });
   const indexRes = await fetch(`${scriptUrl}?${indexQs.toString()}`, { redirect: 'follow' });
-  const indexData = await indexRes.json();
-  if (!indexData.success) return { success: false, error: 'Failed to save chunk index' };
+  const indexData = await safeJsonParse(indexRes);
+  if (!indexData?.success) return { success: false, error: 'Failed to save chunk index' };
 
   return { success: true };
 }
@@ -88,9 +100,9 @@ async function readChaptersFromScript(
 ): Promise<any[]> {
   const qs = new URLSearchParams({ action: 'getChapters', courseId });
   const res = await fetch(`${scriptUrl}?${qs.toString()}`, { redirect: 'follow', cache: 'no-store' });
-  const data = await res.json();
+  const data = await safeJsonParse(res);
 
-  if (!data.success) return [];
+  if (!data || !data.success) return [];
 
   const chapters = data.chapters || [];
 
@@ -161,12 +173,10 @@ export async function POST(
     const scriptUrl = getScriptUrl();
 
     // First, clean up old chunks if they exist
-    const oldData = await readChaptersFromScript(scriptUrl, courseId);
-    // Read the raw index to check for chunks
     const rawQs = new URLSearchParams({ action: 'getChapters', courseId });
     const rawRes = await fetch(`${scriptUrl}?${rawQs.toString()}`, { redirect: 'follow', cache: 'no-store' });
-    const rawData = await rawRes.json();
-    if (rawData.chapters?._chunks) {
+    const rawData = await safeJsonParse(rawRes);
+    if (rawData?.chapters?._chunks) {
       // Clean up old chunks
       for (const chunkId of rawData.chapters._chunks) {
         const emptyQs = new URLSearchParams({ action: 'saveChapters', courseId: chunkId, chaptersJson: '[]' });

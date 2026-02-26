@@ -73,7 +73,12 @@ async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { les
       redirect: 'follow',
       cache: 'no-store',
     });
-    const data = await res.json();
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('json') && !ct.includes('javascript')) {
+      return {};
+    }
+    let data: any;
+    try { data = await res.json(); } catch { return {}; }
     if (data.success && data.data) {
       const stats: Record<string, { lessonsCount: number; duration: number }> = {};
       const allData = data.data as Record<string, any>;
