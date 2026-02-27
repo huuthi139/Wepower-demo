@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEnrollment } from '@/contexts/EnrollmentContext';
 
 const levelColors: Record<string, { bg: string; text: string; border: string }> = {
   Free: { bg: 'bg-white/10', text: 'text-gray-300', border: 'border-white/20' },
@@ -18,6 +19,7 @@ const levelColors: Record<string, { bg: string; text: string; border: string }> 
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
+  const { enrollments, completedCoursesCount, totalHoursLearned, currentStreak } = useEnrollment();
   const router = useRouter();
 
   useEffect(() => {
@@ -45,6 +47,19 @@ export default function Dashboard() {
   if (!user) return null;
 
   const colors = levelColors[user.memberLevel] || levelColors.Free;
+
+  // Get enrolled course objects with progress
+  const enrolledIds = new Set(enrollments.map(e => e.courseId));
+  const enrolledCourses = enrollments
+    .map(enrollment => {
+      const course = courses.find(c => c.id === enrollment.courseId);
+      if (!course) return null;
+      return { ...course, progress: enrollment.progress };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
+  const inProgressCourses = enrolledCourses.filter(c => (c.progress ?? 0) < 100);
+  const recommendedCourses = courses.filter(c => !enrolledIds.has(c.id)).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-dark">
@@ -128,7 +143,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">0</div>
+            <div className="text-3xl font-bold text-white mb-1">{enrollments.length}</div>
             <div className="text-white/90 text-sm">Khóa học đang học</div>
           </div>
 
@@ -141,7 +156,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-black mb-1">0</div>
+            <div className="text-3xl font-bold text-black mb-1">{totalHoursLearned}</div>
             <div className="text-black/90 text-sm">Giờ đã học</div>
           </div>
 
@@ -154,7 +169,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">0</div>
+            <div className="text-3xl font-bold text-white mb-1">{completedCoursesCount}</div>
             <div className="text-white/60 text-sm">Chứng chỉ đã đạt</div>
           </div>
 
@@ -168,7 +183,7 @@ export default function Dashboard() {
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">0</div>
+            <div className="text-3xl font-bold text-white mb-1">{currentStreak}</div>
             <div className="text-white/60 text-sm">Ngày học liên tiếp</div>
           </div>
         </div>
@@ -176,15 +191,19 @@ export default function Dashboard() {
         {/* Continue Learning */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Tiếp tục học</h2>
-            <Button variant="ghost" size="sm">
-              Xem tất cả
-            </Button>
+            <h2 className="text-2xl font-bold text-white">
+              {inProgressCourses.length > 0 ? 'Tiếp tục học' : 'Khóa học nổi bật'}
+            </h2>
+            <Link href="/my-courses">
+              <Button variant="ghost" size="sm">
+                Xem tất cả
+              </Button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.slice(0, 3).map((course) => (
-              <CourseCard key={course.id} course={course} />
+            {(inProgressCourses.length > 0 ? inProgressCourses.slice(0, 3) : recommendedCourses).map((course) => (
+              <CourseCard key={course.id} course={course} showProgress={inProgressCourses.length > 0} />
             ))}
           </div>
         </div>
@@ -221,32 +240,56 @@ export default function Dashboard() {
           <div className="bg-dark border-2 border-white/10 rounded-xl p-6">
             <h3 className="text-xl font-bold text-white mb-6">Thành tích gần đây</h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-gold/20">
-                <div className="w-12 h-12 bg-gold rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">🎯</span>
+              {enrollments.length > 0 && (
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-teal/20">
+                  <div className="w-12 h-12 bg-teal rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-1">Bắt đầu học tập</h4>
+                    <p className="text-sm text-white/60">Đã đăng ký {enrollments.length} khóa học</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-white mb-1">Học viên kiên trì</h4>
-                  <p className="text-sm text-white/60">Hoàn thành 7 ngày học liên tiếp</p>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-teal/20">
-                <div className="w-12 h-12 bg-teal rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">🏆</span>
+              {completedCoursesCount > 0 && (
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-gold/20">
+                  <div className="w-12 h-12 bg-gold rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-1">Hoàn thành xuất sắc</h4>
+                    <p className="text-sm text-white/60">Đã hoàn thành {completedCoursesCount} khóa học</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-white mb-1">Hoàn thành xuất sắc</h4>
-                  <p className="text-sm text-white/60">Đạt 100% trong khóa học</p>
+              )}
+
+              {currentStreak >= 3 && (
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-gold/20">
+                  <div className="w-12 h-12 bg-gradient-to-br from-gold to-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-1">Học viên kiên trì</h4>
+                    <p className="text-sm text-white/60">Hoàn thành {currentStreak} ngày học liên tiếp</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">⭐</span>
+                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-white mb-1">Người mới</h4>
+                  <h4 className="font-bold text-white mb-1">Thành viên WEPOWER</h4>
                   <p className="text-sm text-white/60">Đăng ký thành công tài khoản</p>
                 </div>
               </div>
@@ -260,7 +303,7 @@ export default function Dashboard() {
             Khám phá thêm khóa học mới
           </h3>
           <p className="text-white/60 mb-6 max-w-2xl mx-auto">
-            Mở rộng kiến thức của bạn với 15+ khóa học chất lượng cao
+            Mở rộng kiến thức của bạn với {courses.length}+ khóa học chất lượng cao
           </p>
           <Link href="/courses">
             <Button variant="primary" size="lg">

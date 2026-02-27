@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEnrollment } from '@/contexts/EnrollmentContext';
 import type { MemberLevel } from '@/lib/mockData';
 
 function isEmbedUrl(url: string): boolean {
@@ -61,21 +62,47 @@ const defaultChapters: Chapter[] = [];
 const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
 
 interface Comment {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
   time: string;
   text: string;
   likes: number;
+  courseId: string;
+  lessonId: string;
 }
 
-// TODO: Fetch comments from backend when comment system is implemented
-const mockComments: Comment[] = [];
+const COMMENTS_STORAGE_KEY = 'wepower-comments';
+
+function getStoredComments(courseId: string, lessonId: string): Comment[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const all: Comment[] = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+    return all.filter(c => c.courseId === courseId && c.lessonId === lessonId);
+  } catch { return []; }
+}
+
+function saveComment(comment: Comment) {
+  try {
+    const all: Comment[] = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+    all.unshift(comment);
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(all));
+  } catch { /* ignore */ }
+}
+
+function getAllCourseComments(courseId: string): Comment[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const all: Comment[] = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+    return all.filter(c => c.courseId === courseId);
+  } catch { return []; }
+}
 
 export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { enrollCourse, isEnrolled, markLessonComplete } = useEnrollment();
   const { courses, isLoading } = useCourses();
   const courseId = params.courseId as string;
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
@@ -87,7 +114,45 @@ export default function LearnPage() {
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'curriculum' | 'comments'>('curriculum');
   const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Auto-enroll when visiting learn page
+  useEffect(() => {
+    if (courseId && !isEnrolled(courseId)) {
+      enrollCourse(courseId);
+    }
+  }, [courseId, isEnrolled, enrollCourse]);
+
+  // Load comments when lesson changes
+  useEffect(() => {
+    if (courseId && currentLessonId) {
+      setComments(getStoredComments(courseId, currentLessonId));
+    }
+  }, [courseId, currentLessonId]);
+
+  const handleSubmitComment = () => {
+    if (!user || !commentText.trim()) return;
+    const newComment: Comment = {
+      id: `cmt-${Date.now()}`,
+      name: user.name,
+      avatar: user.name.charAt(0).toUpperCase(),
+      time: 'Vừa xong',
+      text: commentText,
+      likes: 0,
+      courseId,
+      lessonId: currentLessonId,
+    };
+    saveComment(newComment);
+    setComments(prev => [newComment, ...prev]);
+    setCommentText('');
+  };
+
+  const handleMarkComplete = () => {
+    if (!currentLessonId) return;
+    const totalLessons = chapters.reduce((sum, ch) => sum + ch.lessons.length, 0);
+    markLessonComplete(courseId, currentLessonId, totalLessons);
+  };
 
   // Load chapters from API, fallback to localStorage
   useEffect(() => {
@@ -386,7 +451,7 @@ export default function LearnPage() {
                   activeTab === 'comments' ? 'text-teal' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Bình luận ({mockComments.length})
+                Bình luận ({comments.length})
                 {activeTab === 'comments' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal" />}
               </button>
             </div>
@@ -474,9 +539,16 @@ export default function LearnPage() {
                         rows={2}
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal transition-colors resize-none"
                       />
-                      <div className="flex justify-end mt-2">
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button
+                          onClick={handleMarkComplete}
+                          className="px-4 py-2 bg-gold/20 text-gold text-sm font-bold rounded-lg hover:bg-gold/30 transition-colors"
+                        >
+                          Đánh dấu hoàn thành
+                        </button>
                         <button
                           disabled={!commentText.trim()}
+                          onClick={handleSubmitComment}
                           className="px-4 py-2 bg-teal text-white text-sm font-bold rounded-lg hover:bg-teal/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           Gửi bình luận
@@ -493,7 +565,7 @@ export default function LearnPage() {
 
                 {/* Comments List */}
                 <div className="space-y-4 mt-6">
-                  {mockComments.map(comment => (
+                  {comments.length > 0 ? comments.map(comment => (
                     <div key={comment.id} className="flex items-start gap-3">
                       <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs font-bold">{comment.avatar}</span>
@@ -517,7 +589,15 @@ export default function LearnPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-6">
+                      <svg className="w-10 h-10 text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <p className="text-gray-500 text-sm">Chưa có bình luận nào</p>
+                      <p className="text-gray-600 text-xs mt-1">Hãy là người đầu tiên bình luận!</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

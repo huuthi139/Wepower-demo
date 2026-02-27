@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCourses } from '@/contexts/CoursesContext';
+import { useEnrollment, type Order } from '@/contexts/EnrollmentContext';
 import type { Course } from '@/lib/mockData';
 import type { MemberLevel } from '@/lib/mockData';
 import { formatPrice, formatDuration } from '@/lib/utils';
@@ -48,8 +49,7 @@ interface SheetUser {
    ORDERS DATA
    ============================================================ */
 
-// TODO: Fetch orders from Google Sheets Orders tab
-const recentOrders: { id: string; name: string; email: string; course: string; amount: number; status: 'Hoàn thành' | 'Đang chờ' | 'Đang xử lý'; date: string; method: string }[] = [];
+// Orders are now loaded from EnrollmentContext
 
 /* ============================================================
    INLINE COMPONENTS
@@ -118,6 +118,19 @@ export default function AdminDashboard() {
 
   // ------- Course CRUD state -------
   const { courses: sheetCourses } = useCourses();
+  const { orders: enrollmentOrders, updateOrderStatus } = useEnrollment();
+
+  // Map enrollment orders for admin display
+  const recentOrders = enrollmentOrders.map(o => ({
+    id: o.id,
+    name: o.name,
+    email: o.email,
+    course: o.courses.map(c => c.title).join(', '),
+    amount: o.total,
+    status: o.status,
+    date: new Date(o.date).toLocaleDateString('vi-VN'),
+    method: o.paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : o.paymentMethod === 'momo' ? 'MoMo' : 'VNPay',
+  }));
   const COURSES_STORAGE_KEY = 'wepower-admin-courses';
   const [courses, setCourses] = useState<Course[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -835,17 +848,34 @@ export default function AdminDashboard() {
                       <td className="p-4 text-sm text-gold font-semibold">{formatPrice(order.amount)}</td>
                       <td className="p-4 text-sm text-gray-400">{order.method}</td>
                       <td className="p-4">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          order.status === 'Hoàn thành' ? 'bg-green-500/10 text-green-400' :
-                          order.status === 'Đang chờ' ? 'bg-gold/10 text-gold' :
-                          'bg-teal/10 text-teal'
-                        }`}>{order.status}</span>
+                        <select
+                          value={order.status}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value as 'Hoàn thành' | 'Đang chờ' | 'Đang xử lý')}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:outline-none ${
+                            order.status === 'Hoàn thành' ? 'bg-green-500/10 text-green-400' :
+                            order.status === 'Đang chờ' ? 'bg-gold/10 text-gold' :
+                            'bg-teal/10 text-teal'
+                          }`}
+                        >
+                          <option value="Đang chờ">Đang chờ</option>
+                          <option value="Đang xử lý">Đang xử lý</option>
+                          <option value="Hoàn thành">Hoàn thành</option>
+                        </select>
                       </td>
                       <td className="p-4 text-sm text-gray-400">{order.date}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {recentOrders.length === 0 && (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-gray-400">Chưa có đơn hàng nào</p>
+                  <p className="text-gray-500 text-sm mt-1">Đơn hàng sẽ xuất hiện khi học viên thanh toán</p>
+                </div>
+              )}
             </div>
           </div>
         )}
