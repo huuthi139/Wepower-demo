@@ -1,7 +1,7 @@
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
+import { getSheetCsvUrl } from '@/lib/config';
 
 function getSheetUrl(sheetName: string): string {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  return getSheetCsvUrl(sheetName);
 }
 
 function parseCSV(csv: string): Record<string, string>[] {

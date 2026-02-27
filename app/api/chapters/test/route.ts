@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
+import { getScriptUrl } from '@/lib/config';
 
 // Test endpoint: GET /api/chapters/test?courseId=6
-// This tests the full save → read flow directly
+// BLOCKED in production via middleware - only available in development
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const courseId = searchParams.get('courseId') || '6';
-  const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+  const scriptUrl = getScriptUrl();
 
   const results: string[] = [];
 

@@ -64,18 +64,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-dark flex items-center justify-center px-4">
-      {/* Fallback: redirect to static login if React doesn't hydrate within 2s */}
-      <script dangerouslySetInnerHTML={{ __html: `
-        (function() {
-          if (window.__loginFB) return;
-          window.__loginFB = true;
-          setTimeout(function() {
-            if (!window.__reactHydrated) {
-              window.location.replace('/login.html');
-            }
-          }, 2000);
-        })();
-      `}} />
+      {/* Hydration fallback handled by Next.js loading state */}
 
       <div className="w-full max-w-md">
         {/* Logo */}

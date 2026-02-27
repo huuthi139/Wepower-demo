@@ -30,8 +30,9 @@ export async function POST(request: Request) {
       response.cookies.set('wepower-user', encodedUser, {
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: false, // needs to be readable by JS
-        sameSite: 'lax',
+        httpOnly: false, // needs to be readable by JS for SPA hydration
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
       });
       return response;
     }
