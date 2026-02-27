@@ -45,11 +45,11 @@
   background:
     radial-gradient(ellipse 600px 400px at 20% 30%, rgba(124, 58, 237, 0.18) 0%, transparent 70%),
     radial-gradient(ellipse 500px 350px at 75% 60%, rgba(0, 212, 170, 0.07) 0%, transparent 70%),
-    radial-gradient(ellipse 400px 300px at 50% 80%, rgba(255, 60, 170, 0.07) 0%, transparent 70%),
     radial-gradient(ellipse 450px 350px at 85% 20%, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
-  filter: blur(60px);
+  filter: blur(40px);
   pointer-events: none;
   z-index: 0;
+  will-change: transform;
 }
 
 .aurora > * {
@@ -112,9 +112,20 @@
   }
 }
 
-/* Smooth page transitions */
-html {
-  scroll-behavior: smooth;
+/* Smooth page transitions - respect user preference */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Selection color */

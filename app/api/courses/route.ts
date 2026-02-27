@@ -171,7 +171,9 @@ export async function GET() {
         };
       });
 
-    return NextResponse.json({ success: true, courses });
+    const response = NextResponse.json({ success: true, courses });
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300');
+    return response;
   } catch (error) {
     console.error('Courses API error:', error);
     return NextResponse.json({ success: true, courses: [] });

@@ -11,15 +11,12 @@ function getScriptUrl() {
 // ---------------------------------------------------------------------------
 // Google Apps Script GET-based API helpers
 // ---------------------------------------------------------------------------
-// Google Apps Script enforces a total URL limit of ~6158 chars (GSE).
-// After URL-encoding, a 2000-char raw JSON value expands to ~3500 chars,
-// plus ~200 chars for the base URL and query structure = ~3700 total.
-// Safe well within the 6158 limit.
-// ---------------------------------------------------------------------------
 const MAX_URL = 2000; // max chars for raw JSON value
-const REQUEST_TIMEOUT = 15000; // 15s timeout per request
+const REQUEST_TIMEOUT = 20000; // 20s timeout per request
 const SAVE_RETRIES = 2; // retry failed saves up to 2 times
+const READ_RETRIES = 1; // retry failed reads once
 const RETRY_DELAY = 1000; // 1s between retries
+const READ_BATCH_SIZE = 4; // parallel read concurrency
 
 /** Safe JSON parse – returns null when response is not JSON */
 async function safeParse(res: Response): Promise<any | null> {
@@ -49,10 +46,7 @@ async function scriptSave(scriptUrl: string, key: string, value: string): Promis
       const res = await fetchWithTimeout(url, { redirect: 'follow' });
       const data = await safeParse(res);
       if (data?.success === true) return true;
-      // Non-success response – retry
-    } catch {
-      // Timeout or network error – retry
-    }
+    } catch { /* timeout or network error */ }
     if (attempt < SAVE_RETRIES) {
       await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
     }
@@ -60,20 +54,37 @@ async function scriptSave(scriptUrl: string, key: string, value: string): Promis
   return false;
 }
 
-/** Low-level: read a single key from Apps Script (with timeout) */
+/** Low-level: read a single key from Apps Script (with timeout + retry) */
 async function scriptRead(scriptUrl: string, key: string): Promise<any> {
   const qs = new URLSearchParams({ action: 'getChapters', courseId: key });
-  try {
-    const res = await fetchWithTimeout(
-      `${scriptUrl}?${qs.toString()}`,
-      { redirect: 'follow', cache: 'no-store' }
-    );
-    const data = await safeParse(res);
-    if (!data?.success) return null;
-    return data.chapters ?? null;
-  } catch {
-    return null;
+  const url = `${scriptUrl}?${qs.toString()}`;
+
+  for (let attempt = 0; attempt <= READ_RETRIES; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, { redirect: 'follow', cache: 'no-store' });
+      const data = await safeParse(res);
+      if (!data?.success) {
+        if (attempt < READ_RETRIES) { await new Promise(r => setTimeout(r, RETRY_DELAY)); continue; }
+        return null;
+      }
+      return data.chapters ?? null;
+    } catch {
+      if (attempt < READ_RETRIES) { await new Promise(r => setTimeout(r, RETRY_DELAY)); continue; }
+      return null;
+    }
   }
+  return null;
+}
+
+/** Run async tasks in batches of N for controlled parallelism */
+async function batchParallel<T>(tasks: (() => Promise<T>)[], batchSize: number): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(fn => fn()));
+    results.push(...batchResults);
+  }
+  return results;
 }
 
 /** How many chars would the chaptersJson value be for this data? */
@@ -92,9 +103,7 @@ function jsonLen(data: any): number {
 function maxLessonBatch(chapter: any, lessons: any[], offset: number): number {
   const meta = { id: chapter.id, title: chapter.title };
   let lo = 1, hi = lessons.length - offset;
-  // Quick check: does everything from offset fit?
   if (jsonLen([{ ...meta, lessons: lessons.slice(offset) }]) <= MAX_URL) return hi;
-  // Binary search
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
     if (jsonLen([{ ...meta, lessons: lessons.slice(offset, offset + mid) }]) <= MAX_URL) {
@@ -103,23 +112,20 @@ function maxLessonBatch(chapter: any, lessons: any[], offset: number): number {
       hi = mid - 1;
     }
   }
-  return lo; // guaranteed >= 1
+  return lo;
 }
 
 async function saveAllChapters(scriptUrl: string, courseId: string, chapters: any[]): Promise<{ success: boolean; error?: string }> {
-  // 1. Save each chapter
   for (let i = 0; i < chapters.length; i++) {
     const chKey = `${courseId}__${i}`;
     const ch = chapters[i];
     const chJson = JSON.stringify([ch]);
 
     if (chJson.length <= MAX_URL) {
-      // Fits in one call
       if (!await scriptSave(scriptUrl, chKey, chJson)) {
         return { success: false, error: `Lỗi lưu chương ${i + 1}` };
       }
     } else {
-      // Too big – split lessons into parts
       const lessons = ch.lessons || [];
       let offset = 0;
       let partIdx = 0;
@@ -135,14 +141,12 @@ async function saveAllChapters(scriptUrl: string, courseId: string, chapters: an
         partIdx++;
       }
 
-      // Save part index for this chapter
       if (!await scriptSave(scriptUrl, chKey, JSON.stringify({ _p: partIdx }))) {
         return { success: false, error: `Lỗi lưu index chương ${i + 1}` };
       }
     }
   }
 
-  // 2. Save master index
   if (!await scriptSave(scriptUrl, courseId, JSON.stringify({ _n: chapters.length }))) {
     return { success: false, error: 'Lỗi lưu master index' };
   }
@@ -151,54 +155,122 @@ async function saveAllChapters(scriptUrl: string, courseId: string, chapters: an
 }
 
 // ---------------------------------------------------------------------------
-// READ: supports both new format (_n/_p) and old format (_chunks/_lessonChunks)
+// READ: parallel batch reads, supports _n/_p and old _chunks formats
 // ---------------------------------------------------------------------------
 
-async function readAllChapters(scriptUrl: string, courseId: string): Promise<any[]> {
+async function readAllChapters(scriptUrl: string, courseId: string): Promise<{ chapters: any[]; complete: boolean; expectedChapters: number }> {
   const raw = await scriptRead(scriptUrl, courseId);
-  if (!raw) return [];
+  if (!raw) return { chapters: [], complete: true, expectedChapters: 0 };
 
   // --- New format: { _n: count } ---
   if (raw._n !== undefined) {
     const count = raw._n as number;
-    const result: any[] = [];
-    for (let i = 0; i < count; i++) {
-      const chData = await scriptRead(scriptUrl, `${courseId}__${i}`);
-      if (!chData) continue;
+    if (count === 0) return { chapters: [], complete: true, expectedChapters: 0 };
 
-      // Check if chapter has lesson parts
+    // Step 1: Read all chapter indices in parallel batches
+    const chapterTasks = Array.from({ length: count }, (_, i) =>
+      () => scriptRead(scriptUrl, `${courseId}__${i}`)
+    );
+    const chapterDatas = await batchParallel(chapterTasks, READ_BATCH_SIZE);
+
+    // Step 2: Identify partitioned chapters and read their parts in parallel
+    const partTasks: { chapterIdx: number; partIdx: number; task: () => Promise<any> }[] = [];
+    for (let i = 0; i < count; i++) {
+      const chData = chapterDatas[i];
+      if (chData?._p !== undefined) {
+        for (let p = 0; p < chData._p; p++) {
+          partTasks.push({
+            chapterIdx: i,
+            partIdx: p,
+            task: () => scriptRead(scriptUrl, `${courseId}__${i}__${p}`),
+          });
+        }
+      }
+    }
+
+    // Read all partition parts in parallel batches
+    const partResults = await batchParallel(partTasks.map(t => t.task), READ_BATCH_SIZE);
+    // Index part results by chapter
+    const partsByChapter: Record<number, any[]> = {};
+    for (let idx = 0; idx < partTasks.length; idx++) {
+      const { chapterIdx } = partTasks[idx];
+      if (!partsByChapter[chapterIdx]) partsByChapter[chapterIdx] = [];
+      partsByChapter[chapterIdx].push(partResults[idx]);
+    }
+
+    // Step 3: Assemble chapters
+    const result: any[] = [];
+    let readFailures = 0;
+    for (let i = 0; i < count; i++) {
+      const chData = chapterDatas[i];
+      if (!chData) { readFailures++; continue; }
+
       if (chData._p !== undefined) {
-        const partCount = chData._p as number;
+        const parts = partsByChapter[i] || [];
         const allLessons: any[] = [];
         let chapterMeta: any = null;
-        for (let p = 0; p < partCount; p++) {
-          const partData = await scriptRead(scriptUrl, `${courseId}__${i}__${p}`);
+        let partFailed = false;
+        for (const partData of parts) {
           if (Array.isArray(partData) && partData[0]) {
             if (!chapterMeta) chapterMeta = { id: partData[0].id, title: partData[0].title };
             allLessons.push(...(partData[0].lessons || []));
+          } else {
+            partFailed = true;
           }
         }
+        if (partFailed) readFailures++;
         if (chapterMeta) result.push({ ...chapterMeta, lessons: allLessons });
       } else if (Array.isArray(chData) && chData[0]) {
         result.push(chData[0]);
       }
     }
-    return result;
+
+    return { chapters: result, complete: readFailures === 0, expectedChapters: count };
   }
 
   // --- Old format: { _chunks: [...] } ---
   if (raw._chunks) {
-    const result: any[] = [];
-    for (const chunkId of raw._chunks) {
-      const chunkData = await scriptRead(scriptUrl, chunkId);
+    const chunkTasks = raw._chunks.map((chunkId: string) =>
+      () => scriptRead(scriptUrl, chunkId)
+    );
+    const chunkDatas = await batchParallel(chunkTasks, READ_BATCH_SIZE);
+
+    // Collect lesson chunk IDs that need reading
+    const lessonChunkTasks: { chunkIdx: number; chIdx: number; task: () => Promise<any> }[] = [];
+    for (let ci = 0; ci < chunkDatas.length; ci++) {
+      const chunkData = chunkDatas[ci];
       if (!chunkData) continue;
       const arr = Array.isArray(chunkData) ? chunkData : [chunkData];
-      for (const ch of arr) {
+      for (let chi = 0; chi < arr.length; chi++) {
+        if (arr[chi]._lessonChunks) {
+          for (const partId of arr[chi]._lessonChunks) {
+            lessonChunkTasks.push({ chunkIdx: ci, chIdx: chi, task: () => scriptRead(scriptUrl, partId) });
+          }
+        }
+      }
+    }
+
+    const lessonResults = await batchParallel(lessonChunkTasks.map(t => t.task), READ_BATCH_SIZE);
+    const lessonDataMap: Record<string, any[]> = {};
+    for (let idx = 0; idx < lessonChunkTasks.length; idx++) {
+      const key = `${lessonChunkTasks[idx].chunkIdx}_${lessonChunkTasks[idx].chIdx}`;
+      if (!lessonDataMap[key]) lessonDataMap[key] = [];
+      lessonDataMap[key].push(lessonResults[idx]);
+    }
+
+    const result: any[] = [];
+    for (let ci = 0; ci < chunkDatas.length; ci++) {
+      const chunkData = chunkDatas[ci];
+      if (!chunkData) continue;
+      const arr = Array.isArray(chunkData) ? chunkData : [chunkData];
+      for (let chi = 0; chi < arr.length; chi++) {
+        const ch = arr[chi];
         if (ch._lessonChunks) {
+          const key = `${ci}_${chi}`;
+          const parts = lessonDataMap[key] || [];
           const allLessons: any[] = [];
           let meta: any = null;
-          for (const partId of ch._lessonChunks) {
-            const partData = await scriptRead(scriptUrl, partId);
+          for (const partData of parts) {
             if (Array.isArray(partData) && partData[0]) {
               if (!meta) meta = { id: partData[0].id, title: partData[0].title };
               allLessons.push(...(partData[0].lessons || []));
@@ -210,13 +282,13 @@ async function readAllChapters(scriptUrl: string, courseId: string): Promise<any
         }
       }
     }
-    return result;
+    return { chapters: result, complete: true, expectedChapters: result.length };
   }
 
   // --- Direct array (small course, no chunking) ---
-  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw)) return { chapters: raw, complete: true, expectedChapters: raw.length };
 
-  return [];
+  return { chapters: [], complete: true, expectedChapters: 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -232,7 +304,6 @@ async function cleanupOldData(scriptUrl: string, courseId: string, timeLimitMs =
   const empty = '[]';
 
   if (raw._n !== undefined) {
-    // New format cleanup
     for (let i = 0; i < raw._n && !isTimedOut(); i++) {
       const chData = await scriptRead(scriptUrl, `${courseId}__${i}`);
       if (isTimedOut()) break;
@@ -246,7 +317,6 @@ async function cleanupOldData(scriptUrl: string, courseId: string, timeLimitMs =
       }
     }
   } else if (raw._chunks) {
-    // Old format cleanup
     for (const chunkId of raw._chunks) {
       if (isTimedOut()) break;
       const chunkData = await scriptRead(scriptUrl, chunkId);
@@ -280,11 +350,17 @@ export async function GET(
     const { courseId } = params;
     if (!courseId) return NextResponse.json({ success: false, error: 'Missing courseId' }, { status: 400 });
 
-    const chapters = await readAllChapters(getScriptUrl(), courseId);
-    return NextResponse.json({ success: true, chapters });
+    const { chapters, complete, expectedChapters } = await readAllChapters(getScriptUrl(), courseId);
+    return NextResponse.json({
+      success: true,
+      chapters,
+      complete,
+      expectedChapters,
+      loadedChapters: chapters.length,
+    });
   } catch (error) {
     console.error('Chapters GET error:', error);
-    return NextResponse.json({ success: true, chapters: [] });
+    return NextResponse.json({ success: true, chapters: [], complete: false, expectedChapters: -1 });
   }
 }
 
@@ -298,16 +374,28 @@ export async function POST(
 
     const body = await request.json();
     const chapters = body.chapters || [];
+    const expectedLessons = body.expectedLessons as number | undefined;
     const scriptUrl = getScriptUrl();
 
-    // Clean up old chunks (best-effort, time-limited, don't fail if cleanup has issues)
+    // Integrity check: if client tells us how many lessons to expect,
+    // verify the data isn't truncated (prevents saving incomplete data)
+    if (expectedLessons !== undefined) {
+      const actualLessons = chapters.reduce((sum: number, ch: any) => sum + (ch.lessons?.length || 0), 0);
+      if (actualLessons < expectedLessons) {
+        return NextResponse.json({
+          success: false,
+          error: `Dữ liệu không đầy đủ: chỉ có ${actualLessons}/${expectedLessons} bài học. Không lưu để tránh mất dữ liệu.`,
+        }, { status: 400 });
+      }
+    }
+
+    // Clean up old chunks (best-effort, time-limited)
     try { await cleanupOldData(scriptUrl, courseId, 10000); } catch { /* ignore */ }
 
     // Save
     const result = await saveAllChapters(scriptUrl, courseId, chapters);
 
     if (result.success) {
-      // Pre-compute stats and save alongside chapters
       let totalLessons = 0;
       let totalDuration = 0;
       let totalChapters = chapters.length;
@@ -324,7 +412,6 @@ export async function POST(
           }
         }
       }
-      // Save stats as a simple entry (best-effort)
       const statsJson = JSON.stringify({ lessonsCount: totalLessons, duration: totalDuration, chaptersCount: totalChapters });
       try { await scriptSave(scriptUrl, `${courseId}_stats`, statsJson); } catch { /* ignore */ }
 
