@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getScriptUrl, getSheetCsvUrl, getSheetId } from '@/lib/config';
 
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Users';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
-
-function getSheetUrl(sheetName: string): string {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-}
 
 function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split('\n');
@@ -45,17 +40,37 @@ function parseCSV(csv: string): Record<string, string>[] {
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, phone } = await request.json();
+    const body = await request.json();
+    const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : '';
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : '';
+    const password = typeof body.password === 'string' ? body.password.slice(0, 128) : '';
+    const phone = typeof body.phone === 'string' ? body.phone.trim().slice(0, 15) : '';
 
-    if (!name || !email || !password) {
+    if (!name || name.length < 2) {
       return NextResponse.json(
-        { success: false, error: 'Vui lòng điền đầy đủ thông tin' },
+        { success: false, error: 'Tên phải có ít nhất 2 ký tự' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+    if (!email || !emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, error: 'Email không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    if (!password || password.length < 6) {
+      return NextResponse.json(
+        { success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' },
         { status: 400 }
       );
     }
 
     // Method 1: Google Apps Script via GET
-    const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    const scriptUrl = getScriptUrl();
     try {
       const params = new URLSearchParams({
         action: 'register',
@@ -82,7 +97,7 @@ export async function POST(request: Request) {
 
     // Method 2: Check email via CSV + write via Sheets API
     try {
-      const csvRes = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
+      const csvRes = await fetch(getSheetCsvUrl(SHEET_NAME), { cache: 'no-store' });
       const csv = await csvRes.text();
       const users = parseCSV(csv);
 
@@ -105,7 +120,7 @@ export async function POST(request: Request) {
 
     let written = false;
     if (process.env.GOOGLE_SHEETS_API_KEY) {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:H:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/${encodeURIComponent(SHEET_NAME)}!A:H:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
       const res = await fetch(appendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,7 +130,7 @@ export async function POST(request: Request) {
     }
 
     if (!written) {
-      console.log(`[Demo Mode] New user registered:`, rowData);
+      // Demo mode: user registered without Sheets API
     }
 
     return NextResponse.json({

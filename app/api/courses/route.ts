@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server';
 // Force dynamic - không cache static lúc build
 export const dynamic = 'force-dynamic';
 
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
+import { getScriptUrl, getSheetId } from '@/lib/config';
 
 // Column positions in Google Sheet (0-indexed)
 // Data order: ID, Title, Description, Thumbnail, Instructor, Price, OriginalPrice, Rating, ReviewsCount, EnrollmentsCount, Duration, LessonsCount, Badge, Category
@@ -66,7 +65,7 @@ async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { les
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    const scriptUrl = getScriptUrl();
     const res = await fetch(`${scriptUrl}?action=getAllChapters`, {
       signal: controller.signal,
       redirect: 'follow',
@@ -128,7 +127,7 @@ export async function GET() {
     // Fetch courses sheet and chapter stats in parallel
     const [coursesRes, chapterStats] = await Promise.all([
       fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Courses`,
+        `https://docs.google.com/spreadsheets/d/${getSheetId()}/gviz/tq?tqx=out:csv&sheet=Courses`,
         { cache: 'no-store' }
       ),
       fetchChapterStats(),

@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
-
-function getScriptUrl() {
-  return process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
-}
+import { getScriptUrl } from '@/lib/config';
 
 // ---------------------------------------------------------------------------
 // Google Apps Script GET-based API helpers
@@ -427,6 +423,6 @@ export async function POST(
     return NextResponse.json({ success: false, error: result.error || 'Lưu thất bại' }, { status: 500 });
   } catch (error: any) {
     console.error('Chapters POST error:', error);
-    return NextResponse.json({ success: false, error: `Lỗi hệ thống: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Lỗi hệ thống. Vui lòng thử lại.' }, { status: 500 });
   }
 }

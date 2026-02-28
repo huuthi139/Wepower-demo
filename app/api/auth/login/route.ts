@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getScriptUrl, getSheetCsvUrl } from '@/lib/config';
 
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Users';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
-
-function getSheetUrl(sheetName: string): string {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-}
 
 function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split('\n');
@@ -61,7 +56,9 @@ function isAdminRole(roleValue: string): boolean {
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const email = typeof body.email === 'string' ? body.email.trim().slice(0, 254) : '';
+    const password = typeof body.password === 'string' ? body.password.slice(0, 128) : '';
 
     if (!email || !password) {
       return NextResponse.json(
@@ -71,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     // Method 1: Google Apps Script via GET
-    const gsScriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    const gsScriptUrl = getScriptUrl();
     try {
       const params = new URLSearchParams({ action: 'login', email, password });
       const scriptUrl = `${gsScriptUrl}?${params.toString()}`;
@@ -96,10 +93,10 @@ export async function POST(request: Request) {
 
     // Method 2: Đọc CSV từ Google Sheets
     try {
-      const csvRes = await fetch(getSheetUrl(SHEET_NAME), { cache: 'no-store' });
+      const csvRes = await fetch(getSheetCsvUrl(SHEET_NAME), { cache: 'no-store' });
       const csv = await csvRes.text();
       const users = parseCSV(csv);
-      console.log('[Login CSV] Parsed', users.length, 'users. Headers:', users.length > 0 ? Object.keys(users[0]) : 'none');
+      // Removed: sensitive user count logging
 
       const user = users.find(
         u => getCol(u, 'Email', 'email').toLowerCase() === email.toLowerCase()
@@ -107,7 +104,7 @@ export async function POST(request: Request) {
 
       if (!user) {
         return NextResponse.json(
-          { success: false, error: 'Email không tồn tại trong hệ thống' },
+          { success: false, error: 'Email hoặc mật khẩu không đúng' },
           { status: 401 }
         );
       }
@@ -115,7 +112,7 @@ export async function POST(request: Request) {
       const userPassword = getCol(user, 'Password', 'Mật khẩu');
       if (userPassword !== password) {
         return NextResponse.json(
-          { success: false, error: 'Mật khẩu không đúng' },
+          { success: false, error: 'Email hoặc mật khẩu không đúng' },
           { status: 401 }
         );
       }
@@ -123,7 +120,7 @@ export async function POST(request: Request) {
       const roleValue = getCol(user, 'Role', 'Vai trò');
       const memberLevel = getCol(user, 'Level', 'Hạng thành viên', 'MemberLevel');
 
-      console.log('[Login CSV] User found:', { email, roleValue, memberLevel });
+      // Removed: sensitive user data logging
 
       return NextResponse.json({
         success: true,

@@ -10,6 +10,7 @@ import type { Course } from '@/lib/mockData';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useCart } from '@/contexts/CartContext';
+import { useEnrollment } from '@/contexts/EnrollmentContext';
 import Image from 'next/image';
 
 function CheckoutContent() {
@@ -17,6 +18,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { clearCart } = useCart();
+  const { addOrder } = useEnrollment();
   const { courses: allCourses } = useCourses();
 
   const [formData, setFormData] = useState({
@@ -95,13 +97,23 @@ function CheckoutContent() {
       const { submitOrder } = await import('@/lib/googleSheets');
       await submitOrder(orderData);
 
+      // Save order and auto-enroll courses
+      addOrder({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        courses: orderCourses.map(c => ({ id: c.id, title: c.title, price: c.price })),
+        total: totalPrice,
+        paymentMethod: formData.paymentMethod,
+      });
+
       showToast('Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
 
       if (multipleCoursesIds) {
         clearCart();
       }
 
-      router.push('/dashboard');
+      router.push('/my-courses');
     } catch (error) {
       console.error('Order error:', error);
       showToast('Có lỗi xảy ra. Vui lòng thử lại sau.', 'error');

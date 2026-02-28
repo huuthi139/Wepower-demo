@@ -1,19 +1,36 @@
 import { NextResponse } from 'next/server';
+import { getScriptUrl, getSheetId } from '@/lib/config';
 
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 const SHEET_NAME = 'Orders';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
 
 export async function POST(request: Request) {
   try {
-    const { rowData, orderId } = await request.json();
+    const body = await request.json();
+    const { rowData, orderId } = body;
+
+    // Validate order data
+    if (!rowData || !Array.isArray(rowData) || rowData.length === 0 || rowData.length > 20) {
+      return NextResponse.json(
+        { success: false, error: 'Dữ liệu đơn hàng không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize each cell to prevent formula injection
+    const sanitizedRowData = rowData.map((cell: unknown) => {
+      if (typeof cell !== 'string') return cell;
+      if (cell.length > 1000) return cell.slice(0, 1000);
+      // Prevent Google Sheets formula injection
+      if (/^[=+\-@\t\r]/.test(cell)) return "'" + cell;
+      return cell;
+    });
 
     // Method 1: Google Apps Script via GET
-    const gsScriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    const gsScriptUrl = getScriptUrl();
     try {
       const params = new URLSearchParams({
         action: 'appendOrder',
-        rowData: JSON.stringify(rowData),
+        rowData: JSON.stringify(sanitizedRowData),
       });
       const scriptUrl = `${gsScriptUrl}?${params.toString()}`;
         const res = await fetch(scriptUrl, { redirect: 'follow' });
@@ -29,12 +46,12 @@ export async function POST(request: Request) {
 
     // Method 2: Google Sheets API
     if (process.env.GOOGLE_SHEETS_API_KEY) {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/${encodeURIComponent(SHEET_NAME)}!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
 
       const res = await fetch(appendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [rowData] }),
+        body: JSON.stringify({ values: [sanitizedRowData] }),
       });
 
       if (res.ok) {
@@ -43,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // Demo mode fallback
-    console.log(`[Demo Mode] Order ${orderId}:`, rowData);
+    // Demo mode: order not saved to external system
     return NextResponse.json({
       success: true,
       orderId,

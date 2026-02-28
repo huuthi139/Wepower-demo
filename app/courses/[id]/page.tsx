@@ -11,6 +11,7 @@ import { formatPrice, formatDuration } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/providers/ToastProvider';
+import { useEnrollment } from '@/contexts/EnrollmentContext';
 import Image from 'next/image';
 
 import type { MemberLevel } from '@/lib/mockData';
@@ -68,8 +69,33 @@ const defaultChapters: Chapter[] = [];
 
 const LEVEL_ORDER: Record<MemberLevel, number> = { Free: 0, Premium: 1, VIP: 2 };
 
-// TODO: Fetch reviews from Google Sheets when review system is implemented
-const reviewsData: { id: number; name: string; avatar: string; rating: number; date: string; comment: string }[] = [];
+interface Review {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  date: string;
+  comment: string;
+  courseId: string;
+}
+
+const REVIEWS_STORAGE_KEY = 'wepower-reviews';
+
+function getStoredReviews(courseId: string): Review[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const all: Review[] = JSON.parse(localStorage.getItem(REVIEWS_STORAGE_KEY) || '[]');
+    return all.filter(r => r.courseId === courseId);
+  } catch { return []; }
+}
+
+function saveReview(review: Review) {
+  try {
+    const all: Review[] = JSON.parse(localStorage.getItem(REVIEWS_STORAGE_KEY) || '[]');
+    all.unshift(review);
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(all));
+  } catch { /* ignore */ }
+}
 
 export default function CourseDetail() {
   const params = useParams();
@@ -77,12 +103,17 @@ export default function CourseDetail() {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { isEnrolled, enrollCourse } = useEnrollment();
   const { courses, isLoading } = useCourses();
   const userLevel: MemberLevel = user?.memberLevel || 'Free';
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
   const [previewLesson, setPreviewLesson] = useState<{ name: string; sectionTitle: string; directPlayUrl: string } | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [hoverRating, setHoverRating] = useState(0);
 
   // Load chapters from API, fallback to localStorage
   useEffect(() => {
@@ -112,6 +143,38 @@ export default function CourseDetail() {
     }
     return () => { cancelled = true; };
   }, [params.id]);
+
+  // Load reviews
+  useEffect(() => {
+    if (params.id) {
+      setReviews(getStoredReviews(params.id as string));
+    }
+  }, [params.id]);
+
+  const handleSubmitReview = () => {
+    if (!user) {
+      showToast('Vui lòng đăng nhập để đánh giá', 'error');
+      return;
+    }
+    if (!newReviewComment.trim()) {
+      showToast('Vui lòng nhập nội dung đánh giá', 'error');
+      return;
+    }
+    const review: Review = {
+      id: `rev-${Date.now()}`,
+      name: user.name,
+      avatar: user.name.charAt(0).toUpperCase(),
+      rating: newReviewRating,
+      date: new Date().toLocaleDateString('vi-VN'),
+      comment: newReviewComment,
+      courseId: params.id as string,
+    };
+    saveReview(review);
+    setReviews(prev => [review, ...prev]);
+    setNewReviewComment('');
+    setNewReviewRating(5);
+    showToast('Đánh giá của bạn đã được gửi!', 'success');
+  };
 
   const course = courses.find(c => c.id === params.id);
 
@@ -471,12 +534,16 @@ export default function CourseDetail() {
                         </svg>
                       ))}
                     </div>
-                    <div className="text-sm text-gray-400">{course.reviewsCount} đánh giá</div>
+                    <div className="text-sm text-gray-400">{course.reviewsCount + reviews.length} đánh giá</div>
                   </div>
 
                   <div className="flex-1 space-y-2">
                     {[5, 4, 3, 2, 1].map(star => {
-                      const percentage = star === 5 ? 78 : star === 4 ? 15 : star === 3 ? 5 : star === 2 ? 1 : 1;
+                      const count = reviews.filter(r => r.rating === star).length;
+                      const total = reviews.length || 1;
+                      const percentage = reviews.length > 0
+                        ? Math.round((count / total) * 100)
+                        : (star === 5 ? 78 : star === 4 ? 15 : star === 3 ? 5 : star === 2 ? 1 : 1);
                       return (
                         <div key={star} className="flex items-center gap-3">
                           <span className="text-sm text-gray-400 w-12">{star} sao</span>
@@ -493,35 +560,102 @@ export default function CourseDetail() {
                   </div>
                 </div>
 
-                {/* Individual Reviews */}
-                {reviewsData.map(review => (
-                  <div key={review.id} className="p-6 bg-white/5 rounded-xl border border-white/10">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-teal rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold">{review.avatar}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-white">{review.name}</h4>
-                          <span className="text-xs text-gray-500">{review.date}</span>
-                        </div>
-                        <div className="flex items-center gap-0.5 mb-3">
+                {/* Write Review */}
+                <div className="p-6 bg-white/[0.03] rounded-xl border border-white/10">
+                  <h3 className="text-lg font-bold text-white mb-4">Viết đánh giá</h3>
+                  {user ? (
+                    <div className="space-y-4">
+                      {/* Star Rating Input */}
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-2">Đánh giá của bạn</label>
+                        <div className="flex items-center gap-1">
                           {[1, 2, 3, 4, 5].map(star => (
-                            <svg
+                            <button
                               key={star}
-                              className={`w-4 h-4 ${star <= review.rating ? 'text-gold' : 'text-gray-600'}`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                              onMouseEnter={() => setHoverRating(star)}
+                              onMouseLeave={() => setHoverRating(0)}
+                              onClick={() => setNewReviewRating(star)}
+                              className="transition-transform hover:scale-110"
                             >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
+                              <svg
+                                className={`w-8 h-8 ${
+                                  star <= (hoverRating || newReviewRating) ? 'text-gold' : 'text-gray-600'
+                                } transition-colors`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            </button>
                           ))}
+                          <span className="ml-3 text-sm text-gray-400">
+                            {newReviewRating === 5 ? 'Xuất sắc' : newReviewRating === 4 ? 'Tốt' : newReviewRating === 3 ? 'Bình thường' : newReviewRating === 2 ? 'Kém' : 'Rất kém'}
+                          </span>
                         </div>
-                        <p className="text-gray-400 text-sm leading-relaxed">{review.comment}</p>
+                      </div>
+                      {/* Comment */}
+                      <textarea
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        placeholder="Chia sẻ trải nghiệm học tập của bạn..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-dark border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal resize-none"
+                      />
+                      <div className="flex justify-end">
+                        <Button variant="primary" size="sm" onClick={handleSubmitReview}>
+                          Gửi đánh giá
+                        </Button>
                       </div>
                     </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-gray-400 text-sm mb-3">Đăng nhập để viết đánh giá</p>
+                      <Button variant="ghost" size="sm" onClick={() => router.push('/login')}>
+                        Đăng nhập
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Individual Reviews */}
+                {reviews.length > 0 ? (
+                  reviews.map(review => (
+                    <div key={review.id} className="p-6 bg-white/5 rounded-xl border border-white/10">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-teal rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold">{review.avatar}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-semibold text-white">{review.name}</h4>
+                            <span className="text-xs text-gray-500">{review.date}</span>
+                          </div>
+                          <div className="flex items-center gap-0.5 mb-3">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <svg
+                                key={star}
+                                className={`w-4 h-4 ${star <= review.rating ? 'text-gold' : 'text-gray-600'}`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <p className="text-gray-400 text-sm leading-relaxed">{review.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 bg-white/5 rounded-xl border border-white/10">
+                    <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <p className="text-gray-400">Chưa có đánh giá nào</p>
+                    <p className="text-gray-500 text-sm mt-1">Hãy là người đầu tiên đánh giá khóa học này!</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

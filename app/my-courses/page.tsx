@@ -7,16 +7,28 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEnrollment } from '@/contexts/EnrollmentContext';
 
 export default function MyCourses() {
   const { courses, isLoading } = useCourses();
   const { user } = useAuth();
+  const { enrollments } = useEnrollment();
 
-  // TODO: Fetch enrolled courses from Google Sheets when enrollment tracking is implemented
-  const enrolledCourses: typeof courses = [];
+  // Map enrollments to courses with progress
+  const enrolledCourses = enrollments
+    .map(enrollment => {
+      const course = courses.find(c => c.id === enrollment.courseId);
+      if (!course) return null;
+      return { ...course, progress: enrollment.progress };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
   const completedCourses = enrolledCourses.filter(c => c.progress === 100);
   const inProgressCourses = enrolledCourses.filter(c => (c.progress ?? 0) < 100);
-  const recommendedCourses = courses.slice(0, 3);
+
+  // Recommend courses user hasn't enrolled in
+  const enrolledIds = new Set(enrollments.map(e => e.courseId));
+  const recommendedCourses = courses.filter(c => !enrolledIds.has(c.id)).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-dark">
@@ -79,7 +91,8 @@ export default function MyCourses() {
             <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <p className="text-gray-400 mb-4">Bạn chưa đăng ký khóa học nào</p>
+            <p className="text-gray-400 mb-2">Bạn chưa đăng ký khóa học nào</p>
+            <p className="text-gray-500 text-sm mb-4">Hãy khám phá các khóa học và bắt đầu hành trình học tập!</p>
             <Link href="/courses">
               <Button variant="primary" size="md">Khám phá khóa học</Button>
             </Link>

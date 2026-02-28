@@ -3,6 +3,7 @@ import "./globals.css";
 import { CartProvider } from '@/contexts/CartContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CoursesProvider } from '@/contexts/CoursesContext';
+import { EnrollmentProvider } from '@/contexts/EnrollmentContext';
 import { ToastProvider } from '@/providers/ToastProvider';
 
 export const metadata: Metadata = {
@@ -26,9 +27,11 @@ export default function RootLayout({
         <ToastProvider>
           <AuthProvider>
             <CoursesProvider>
-              <CartProvider>
-                {children}
-              </CartProvider>
+              <EnrollmentProvider>
+                <CartProvider>
+                  {children}
+                </CartProvider>
+              </EnrollmentProvider>
             </CoursesProvider>
           </AuthProvider>
         </ToastProvider>

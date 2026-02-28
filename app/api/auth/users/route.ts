@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const SHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
-const FALLBACK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykh_Id91EZesQ0kC1Mn15zEPC2f3oxTxR1xPcDY484gJnlWhNW0toE2v75NG2lVQgo/exec';
-
-function getSheetUrl(sheetName: string): string {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-}
+import { getScriptUrl, getSheetCsvUrl } from '@/lib/config';
 
 function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split('\n');
@@ -45,7 +39,7 @@ function parseCSV(csv: string): Record<string, string>[] {
 export async function GET() {
   try {
     // Method 1: Google Apps Script
-    const scriptUrl = process.env.GOOGLE_SCRIPT_URL || FALLBACK_SCRIPT_URL;
+    const scriptUrl = getScriptUrl();
     try {
       const params = new URLSearchParams({ action: 'getUsers' });
       const res = await fetch(`${scriptUrl}?${params.toString()}`, {
@@ -62,7 +56,7 @@ export async function GET() {
 
     // Method 2: CSV fallback
     try {
-      const csvRes = await fetch(getSheetUrl('Users'), { cache: 'no-store' });
+      const csvRes = await fetch(getSheetCsvUrl('Users'), { cache: 'no-store' });
       const csv = await csvRes.text();
       const rows = parseCSV(csv);
 
