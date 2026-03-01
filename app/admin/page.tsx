@@ -201,21 +201,61 @@ export default function AdminDashboard() {
     persistCourses(courses);
   }, [persistCourses, courses]);
 
-  // Sync courses: load from localStorage first, fallback to Google Sheets
+  // Sync courses: always merge Google Sheets data with localStorage edits
+  // This ensures new courses added to the sheet always appear in Admin
   useEffect(() => {
+    if (sheetCourses.length === 0) return;
+
+    let localEdits: Course[] = [];
     try {
       const saved = localStorage.getItem(COURSES_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCourses(parsed);
-          return;
-        }
+        if (Array.isArray(parsed)) localEdits = parsed;
       }
     } catch { /* ignore */ }
-    if (sheetCourses.length > 0) {
+
+    if (localEdits.length === 0) {
+      // No local edits - use sheet data directly
       setCourses(sheetCourses);
+      return;
     }
+
+    // Merge: use sheetCourses as source of truth for the list,
+    // overlay local-only edits (title, price, etc.) on top,
+    // and keep any locally-added courses not on the server.
+    const localMap = new Map(localEdits.map(c => [c.id, c]));
+    const merged: Course[] = [];
+    const seenIds = new Set<string>();
+
+    for (const sc of sheetCourses) {
+      seenIds.add(sc.id);
+      const local = localMap.get(sc.id);
+      if (local) {
+        // Keep sheet data but apply local metadata edits
+        merged.push({
+          ...sc,
+          title: local.title || sc.title,
+          instructor: local.instructor || sc.instructor,
+          category: local.category || sc.category,
+          price: local.price !== undefined ? local.price : sc.price,
+          isFree: local.price !== undefined ? local.price === 0 : sc.isFree,
+        });
+      } else {
+        merged.push(sc);
+      }
+    }
+
+    // Keep locally-added courses that don't exist on server
+    for (const lc of localEdits) {
+      if (!seenIds.has(lc.id)) {
+        merged.push(lc);
+      }
+    }
+
+    setCourses(merged);
+    // Update localStorage with merged data
+    try { localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(merged)); } catch { /* ignore */ }
   }, [sheetCourses]);
 
   // ------- Computed values -------

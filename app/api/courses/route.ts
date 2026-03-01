@@ -61,7 +61,7 @@ function parseDurationToSeconds(duration: string): number {
 }
 
 // Fetch chapter stats from pre-computed _stats entries saved alongside chapters
-async function fetchChapterStats(timeoutMs = 8000): Promise<Record<string, { lessonsCount: number; duration: number }>> {
+async function fetchChapterStats(timeoutMs = 12000): Promise<Record<string, { lessonsCount: number; duration: number }>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
