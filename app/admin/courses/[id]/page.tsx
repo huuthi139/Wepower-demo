@@ -182,12 +182,10 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       // Client-side timeout: 90 seconds (server may process many chunks)
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 90000);
-      // Send expectedLessons so server can reject incomplete saves
+      // Send expectedLessons = actual count for transmission integrity check
+      // (server verifies payload matches this count to catch truncation)
       const totalLessons = data.reduce((s: number, ch: Chapter) => s + ch.lessons.length, 0);
-      const body: any = { chapters: data };
-      if (serverLessonCount.current !== null && serverLessonCount.current > 0) {
-        body.expectedLessons = serverLessonCount.current;
-      }
+      const body: any = { chapters: data, expectedLessons: totalLessons };
       const res = await fetch(`/api/chapters/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,13 +219,14 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       setServerSynced(false);
     } finally {
       setApiSaving(false);
-      savingRef.current = false;
-      // Process queued save if any
+      // Process queued save BEFORE releasing the lock to prevent race condition
       const queued = pendingSave.current;
       if (queued) {
         pendingSave.current = null;
-        // Small delay to prevent rapid-fire requests
+        // savingRef stays true - the queued save will release it
         setTimeout(() => persistToApi(queued), 500);
+      } else {
+        savingRef.current = false;
       }
     }
   }, [id]);

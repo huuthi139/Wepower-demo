@@ -7,7 +7,7 @@ import { getScriptUrl } from '@/lib/config';
 // ---------------------------------------------------------------------------
 // Google Apps Script GET-based API helpers
 // ---------------------------------------------------------------------------
-const MAX_URL = 2000; // max chars for raw JSON value
+const MAX_ENCODED_URL = 7500; // max total URL length (Google Apps Script limit ~8192)
 const REQUEST_TIMEOUT = 25000; // 25s timeout per request
 const SAVE_RETRIES = 2; // retry failed saves up to 2 times
 const READ_RETRIES = 2; // retry failed reads up to 2 times
@@ -72,20 +72,21 @@ async function scriptRead(scriptUrl: string, key: string): Promise<any> {
   return null;
 }
 
-/** Run async tasks in batches of N for controlled parallelism */
-async function batchParallel<T>(tasks: (() => Promise<T>)[], batchSize: number): Promise<T[]> {
-  const results: T[] = [];
+/** Run async tasks in batches of N for controlled parallelism (tolerates individual failures) */
+async function batchParallel<T>(tasks: (() => Promise<T>)[], batchSize: number): Promise<(T | null)[]> {
+  const results: (T | null)[] = [];
   for (let i = 0; i < tasks.length; i += batchSize) {
     const batch = tasks.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(fn => fn()));
-    results.push(...batchResults);
+    const settled = await Promise.allSettled(batch.map(fn => fn()));
+    results.push(...settled.map(r => r.status === 'fulfilled' ? r.value : null));
   }
   return results;
 }
 
-/** How many chars would the chaptersJson value be for this data? */
-function jsonLen(data: any): number {
-  return JSON.stringify(data).length;
+/** Calculate the actual URL length after encoding (accounts for URLSearchParams encoding) */
+function encodedUrlLen(scriptUrl: string, key: string, value: string): number {
+  const qs = new URLSearchParams({ action: 'saveChapters', courseId: key, chaptersJson: value });
+  return scriptUrl.length + 1 + qs.toString().length; // +1 for '?'
 }
 
 // ---------------------------------------------------------------------------
@@ -95,14 +96,16 @@ function jsonLen(data: any): number {
 //       courseId__0__1 → [chapter0 with lesson slice 1]  etc.
 // ---------------------------------------------------------------------------
 
-/** Find the maximum number of lessons (starting at offset) that fit in MAX_URL */
-function maxLessonBatch(chapter: any, lessons: any[], offset: number): number {
+/** Find the maximum number of lessons (starting at offset) that fit within the URL limit */
+function maxLessonBatch(scriptUrl: string, chKey: string, chapter: any, lessons: any[], offset: number): number {
   const meta = { id: chapter.id, title: chapter.title };
   let lo = 1, hi = lessons.length - offset;
-  if (jsonLen([{ ...meta, lessons: lessons.slice(offset) }]) <= MAX_URL) return hi;
+  const allJson = JSON.stringify([{ ...meta, lessons: lessons.slice(offset) }]);
+  if (encodedUrlLen(scriptUrl, chKey, allJson) <= MAX_ENCODED_URL) return hi;
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
-    if (jsonLen([{ ...meta, lessons: lessons.slice(offset, offset + mid) }]) <= MAX_URL) {
+    const midJson = JSON.stringify([{ ...meta, lessons: lessons.slice(offset, offset + mid) }]);
+    if (encodedUrlLen(scriptUrl, chKey, midJson) <= MAX_ENCODED_URL) {
       lo = mid;
     } else {
       hi = mid - 1;
@@ -117,7 +120,7 @@ async function saveAllChapters(scriptUrl: string, courseId: string, chapters: an
     const ch = chapters[i];
     const chJson = JSON.stringify([ch]);
 
-    if (chJson.length <= MAX_URL) {
+    if (encodedUrlLen(scriptUrl, chKey, chJson) <= MAX_ENCODED_URL) {
       if (!await scriptSave(scriptUrl, chKey, chJson)) {
         return { success: false, error: `Lỗi lưu chương ${i + 1}` };
       }
@@ -127,10 +130,11 @@ async function saveAllChapters(scriptUrl: string, courseId: string, chapters: an
       let partIdx = 0;
 
       while (offset < lessons.length) {
-        const batch = maxLessonBatch(ch, lessons, offset);
+        const partKey = `${chKey}__${partIdx}`;
+        const batch = maxLessonBatch(scriptUrl, partKey, ch, lessons, offset);
         const partChapter = { id: ch.id, title: ch.title, lessons: lessons.slice(offset, offset + batch) };
         const partJson = JSON.stringify([partChapter]);
-        if (!await scriptSave(scriptUrl, `${chKey}__${partIdx}`, partJson)) {
+        if (!await scriptSave(scriptUrl, partKey, partJson)) {
           return { success: false, error: `Lỗi lưu chương ${i + 1} phần ${partIdx + 1}` };
         }
         offset += batch;
@@ -393,23 +397,25 @@ export async function POST(
     const expectedLessons = body.expectedLessons as number | undefined;
     const scriptUrl = getScriptUrl();
 
-    // Integrity check: if client tells us how many lessons to expect,
-    // verify the data isn't truncated (prevents saving incomplete data)
+    // Integrity check: verify the received data is self-consistent
+    // (catches transmission truncation without blocking intentional deletions)
     if (expectedLessons !== undefined) {
       const actualLessons = chapters.reduce((sum: number, ch: any) => sum + (ch.lessons?.length || 0), 0);
-      if (actualLessons < expectedLessons) {
+      if (actualLessons !== expectedLessons) {
         return NextResponse.json({
           success: false,
-          error: `Dữ liệu không đầy đủ: chỉ có ${actualLessons}/${expectedLessons} bài học. Không lưu để tránh mất dữ liệu.`,
+          error: `Dữ liệu không khớp: nhận ${actualLessons} bài nhưng client báo ${expectedLessons}. Thử lưu lại.`,
         }, { status: 400 });
       }
     }
 
-    // Clean up old chunks (best-effort, time-limited)
-    try { await cleanupOldData(scriptUrl, courseId, 10000); } catch { /* ignore */ }
-
-    // Save
+    // Save FIRST, then clean up old data (prevents data loss if save fails)
     const result = await saveAllChapters(scriptUrl, courseId, chapters);
+
+    // Clean up old chunks AFTER successful save (best-effort, time-limited)
+    if (result.success) {
+      try { await cleanupOldData(scriptUrl, courseId, 8000); } catch { /* ignore */ }
+    }
 
     if (result.success) {
       let totalLessons = 0;
