@@ -8,11 +8,11 @@ import { getScriptUrl } from '@/lib/config';
 // Google Apps Script GET-based API helpers
 // ---------------------------------------------------------------------------
 const MAX_URL = 2000; // max chars for raw JSON value
-const REQUEST_TIMEOUT = 20000; // 20s timeout per request
+const REQUEST_TIMEOUT = 25000; // 25s timeout per request
 const SAVE_RETRIES = 2; // retry failed saves up to 2 times
-const READ_RETRIES = 1; // retry failed reads once
+const READ_RETRIES = 2; // retry failed reads up to 2 times
 const RETRY_DELAY = 1000; // 1s between retries
-const READ_BATCH_SIZE = 4; // parallel read concurrency
+const READ_BATCH_SIZE = 6; // parallel read concurrency
 
 /** Safe JSON parse – returns null when response is not JSON */
 async function safeParse(res: Response): Promise<any | null> {
@@ -169,8 +169,16 @@ async function readAllChapters(scriptUrl: string, courseId: string): Promise<{ c
     );
     const chapterDatas = await batchParallel(chapterTasks, READ_BATCH_SIZE);
 
+    // Step 1b: Retry any failed chapter reads individually
+    for (let i = 0; i < count; i++) {
+      if (!chapterDatas[i]) {
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+        chapterDatas[i] = await scriptRead(scriptUrl, `${courseId}__${i}`);
+      }
+    }
+
     // Step 2: Identify partitioned chapters and read their parts in parallel
-    const partTasks: { chapterIdx: number; partIdx: number; task: () => Promise<any> }[] = [];
+    const partTasks: { chapterIdx: number; partIdx: number; key: string }[] = [];
     for (let i = 0; i < count; i++) {
       const chData = chapterDatas[i];
       if (chData?._p !== undefined) {
@@ -178,14 +186,26 @@ async function readAllChapters(scriptUrl: string, courseId: string): Promise<{ c
           partTasks.push({
             chapterIdx: i,
             partIdx: p,
-            task: () => scriptRead(scriptUrl, `${courseId}__${i}__${p}`),
+            key: `${courseId}__${i}__${p}`,
           });
         }
       }
     }
 
     // Read all partition parts in parallel batches
-    const partResults = await batchParallel(partTasks.map(t => t.task), READ_BATCH_SIZE);
+    const partResults = await batchParallel(
+      partTasks.map(t => () => scriptRead(scriptUrl, t.key)),
+      READ_BATCH_SIZE
+    );
+
+    // Step 2b: Retry any failed part reads individually
+    for (let idx = 0; idx < partResults.length; idx++) {
+      if (!partResults[idx]) {
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+        partResults[idx] = await scriptRead(scriptUrl, partTasks[idx].key);
+      }
+    }
+
     // Index part results by chapter
     const partsByChapter: Record<number, any[]> = {};
     for (let idx = 0; idx < partTasks.length; idx++) {
