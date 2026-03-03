@@ -79,8 +79,8 @@ export async function POST(request: Request) {
     }
 
     // Method 1: Google Apps Script via GET
-    const gsScriptUrl = getScriptUrl();
     try {
+      const gsScriptUrl = getScriptUrl();
       const params = new URLSearchParams({ action: 'login', email, password });
       const scriptUrl = `${gsScriptUrl}?${params.toString()}`;
       const res = await fetchWithTimeout(scriptUrl, {
@@ -105,17 +105,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, user });
       }
 
-      return NextResponse.json(
-        { success: false, error: data.error || 'Đăng nhập thất bại' },
-        { status: 401 }
-      );
+      // Only return 401 if Apps Script explicitly says credentials are wrong
+      if (data.error) {
+        return NextResponse.json(
+          { success: false, error: data.error },
+          { status: 401 }
+        );
+      }
+
+      throw new Error('Apps Script returned unsuccessful without error');
     } catch (err) {
       console.error('[Login] Apps Script error:', err instanceof Error ? err.message : err);
     }
 
-    // Method 2: Đọc CSV từ Google Sheets
+    // Method 2: Read CSV from Google Sheets
     try {
-      const csvRes = await fetchWithTimeout(getSheetCsvUrl(SHEET_NAME), { cache: 'no-store' });
+      const csvUrl = getSheetCsvUrl(SHEET_NAME);
+      const csvRes = await fetchWithTimeout(csvUrl, { cache: 'no-store' });
       if (!csvRes.ok) {
         throw new Error(`CSV fetch failed with status ${csvRes.status}`);
       }
@@ -156,15 +162,18 @@ export async function POST(request: Request) {
       });
     } catch (csvError) {
       console.error('[Login] CSV failed:', csvError instanceof Error ? csvError.message : csvError);
-      return NextResponse.json(
-        { success: false, error: 'Không thể kết nối đến hệ thống. Vui lòng thử lại sau.', useClientFallback: true },
-        { status: 503 }
-      );
     }
+
+    // Both methods failed - tell client to use direct fallback
+    return NextResponse.json(
+      { success: false, error: 'Không thể kết nối đến hệ thống. Vui lòng thử lại sau.', useClientFallback: true },
+      { status: 503 }
+    );
   } catch (error) {
     console.error('Login API error:', error);
+    // Even on 500, tell client to try fallback
     return NextResponse.json(
-      { success: false, error: 'Lỗi hệ thống. Vui lòng thử lại.' },
+      { success: false, error: 'Lỗi hệ thống. Vui lòng thử lại.', useClientFallback: true },
       { status: 500 }
     );
   }

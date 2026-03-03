@@ -165,6 +165,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // Helper: try client-side fallback
+    const tryClientFallback = async (serverError?: string): Promise<{ success: boolean; error?: string }> => {
+      const fallback = await loginViaAppsScript(email, password);
+      if (fallback.success && fallback.user) {
+        setUser(fallback.user);
+        return { success: true };
+      }
+      // Return the most specific error available
+      return { success: false, error: fallback.error || serverError || 'Đăng nhập thất bại. Vui lòng thử lại.' };
+    };
+
     try {
       // Method 1: Server API
       const res = await fetch('/api/auth/login', {
@@ -178,12 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data = await res.json();
       } catch {
         // Server returned non-JSON, try client fallback
-        const fallback = await loginViaAppsScript(email, password);
-        if (fallback.success && fallback.user) {
-          setUser(fallback.user);
-          return { success: true };
-        }
-        return { success: false, error: 'Lỗi kết nối server. Vui lòng thử lại.' };
+        return tryClientFallback('Lỗi kết nối server.');
       }
 
       if (data.success && data.user) {
@@ -191,29 +197,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: true };
       }
 
-      // If server can't reach Google (503), try client-side fallback
-      if (data.useClientFallback || res.status === 503) {
-        const fallback = await loginViaAppsScript(email, password);
-        if (fallback.success && fallback.user) {
-          setUser(fallback.user);
-          return { success: true };
-        }
-        return { success: false, error: fallback.error || 'Đăng nhập thất bại' };
+      // If server can't reach Google (503 or 500 with fallback hint), try client-side
+      if (data.useClientFallback || res.status === 503 || res.status === 500) {
+        return tryClientFallback(data.error);
       }
 
+      // Server returned a specific auth error (401, 400, 429)
       return { success: false, error: data.error || 'Đăng nhập thất bại' };
     } catch {
       // Server completely unreachable - try client-side fallback
-      const fallback = await loginViaAppsScript(email, password);
-      if (fallback.success && fallback.user) {
-        setUser(fallback.user);
-        return { success: true };
-      }
-      return { success: false, error: fallback.error || 'Lỗi kết nối. Vui lòng thử lại.' };
+      return tryClientFallback();
     }
   };
 
   const register = async (regData: { name: string; email: string; password: string; phone?: string }): Promise<{ success: boolean; error?: string }> => {
+    // Helper: try client-side fallback
+    const tryClientFallback = async (serverError?: string): Promise<{ success: boolean; error?: string }> => {
+      const fallback = await registerViaAppsScript(regData);
+      if (fallback.success && fallback.user) {
+        setUser(fallback.user);
+        return { success: true };
+      }
+      return { success: false, error: fallback.error || serverError || 'Đăng ký thất bại. Vui lòng thử lại.' };
+    };
+
     try {
       // Method 1: Server API
       const res = await fetch('/api/auth/register', {
@@ -222,32 +229,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(regData),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        return tryClientFallback('Lỗi kết nối server.');
+      }
 
       if (data.success && data.user) {
         setUser(data.user);
         return { success: true };
       }
 
-      // If server can't reach Google (503), try client-side fallback
-      if (data.useClientFallback || res.status === 503) {
-        const fallback = await registerViaAppsScript(regData);
-        if (fallback.success && fallback.user) {
-          setUser(fallback.user);
-          return { success: true };
-        }
-        return { success: false, error: fallback.error || 'Đăng ký thất bại' };
+      // If server can't reach Google (503 or 500 with fallback hint), try client-side
+      if (data.useClientFallback || res.status === 503 || res.status === 500) {
+        return tryClientFallback(data.error);
       }
 
+      // Server returned a specific error (409 duplicate, 400 validation, 429 rate limit)
       return { success: false, error: data.error || 'Đăng ký thất bại' };
     } catch {
       // Server completely unreachable - try client-side fallback
-      const fallback = await registerViaAppsScript(regData);
-      if (fallback.success && fallback.user) {
-        setUser(fallback.user);
-        return { success: true };
-      }
-      return { success: false, error: fallback.error || 'Lỗi kết nối. Vui lòng thử lại.' };
+      return tryClientFallback();
     }
   };
 
