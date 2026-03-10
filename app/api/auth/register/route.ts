@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getScriptUrl, getSheetCsvUrl, getSheetId } from '@/lib/config';
+import { hashPassword } from '@/lib/auth/password';
+import { createSession } from '@/lib/auth/session';
 
 const SHEET_NAME = 'Users';
 const FETCH_TIMEOUT_MS = 10_000;
@@ -80,6 +82,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // Hash password before sending anywhere
+    const hashedPassword = await hashPassword(password);
+
     // Method 1: Google Apps Script via GET
     try {
       const scriptUrl = getScriptUrl();
@@ -87,7 +92,7 @@ export async function POST(request: Request) {
         action: 'register',
         name,
         email,
-        password,
+        passwordHash: hashedPassword,
         phone: phone || '',
       });
       const fullUrl = `${scriptUrl}?${params.toString()}`;
@@ -95,7 +100,9 @@ export async function POST(request: Request) {
       const data = await res.json();
 
       if (data.success) {
-        return NextResponse.json({ success: true, user: data.user });
+        const registeredUser = data.user || { name, email, phone: phone || '', role: 'user', memberLevel: 'Free' };
+        await createSession({ email: registeredUser.email, role: registeredUser.role || 'user', name: registeredUser.name || name, level: registeredUser.memberLevel || 'Free' });
+        return NextResponse.json({ success: true, user: registeredUser });
       }
 
       return NextResponse.json(
@@ -127,7 +134,7 @@ export async function POST(request: Request) {
     }
 
     // Row data thứ tự khớp headers thực tế: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
-    const rowData = [email, password, 'Student', name, 'Free', '', '', phone || ''];
+    const rowData = [email, hashedPassword, 'Student', name, 'Free', '', '', phone || ''];
 
     let written = false;
     if (process.env.GOOGLE_SHEETS_API_KEY) {
@@ -151,10 +158,9 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      user: { name, email, phone: phone || '', role: 'user', memberLevel: 'Free' },
-    });
+    const newUser = { name, email, phone: phone || '', role: 'user', memberLevel: 'Free' };
+    await createSession({ email, role: 'user', name, level: 'Free' });
+    return NextResponse.json({ success: true, user: newUser });
   } catch (error) {
     console.error('Register API error:', error);
     return NextResponse.json(

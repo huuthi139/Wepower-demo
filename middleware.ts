@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
+
+const SESSION_COOKIE = 'wepower-token';
 
 // Simple in-memory rate limiter (per-IP, per-route)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -27,19 +30,21 @@ setInterval(() => {
   }
 }, 60_000);
 
-// Helper: extract user from cookie for admin checks
-function getUserFromCookie(request: NextRequest): { role?: string } | null {
+// Helper: verify JWT token from cookie
+async function verifySessionToken(request: NextRequest): Promise<{ email: string; role: string; name: string; level: string } | null> {
   try {
-    const cookie = request.cookies.get('wepower-user');
-    if (!cookie?.value) return null;
-    const decoded = Buffer.from(cookie.value, 'base64').toString('utf-8');
-    return JSON.parse(decoded);
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!token) return null;
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret.length < 32) return null;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    return payload as { email: string; role: string; name: string; level: string };
   } catch {
     return null;
   }
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
@@ -76,10 +81,10 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // --- Admin-only endpoints ---
+  // --- Admin-only endpoints (JWT verification) ---
   if (pathname === '/api/auth/users') {
-    const user = getUserFromCookie(request);
-    if (!user || (user.role !== 'Admin')) {
+    const session = await verifySessionToken(request);
+    if (!session || session.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Không có quyền truy cập' },
         { status: 403 }

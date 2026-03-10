@@ -82,7 +82,7 @@ function doGet(e) {
     var action = (e.parameter.action || '').trim();
 
     if (!action) {
-      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters'] });
+      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'updatePassword', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters'] });
     }
 
     switch (action) {
@@ -100,6 +100,9 @@ function doGet(e) {
 
       case 'updateUserLevel':
         return jsonResponse_(handleUpdateUserLevel_(e.parameter));
+
+      case 'updatePassword':
+        return jsonResponse_(handleUpdatePassword_(e.parameter));
 
       case 'deleteUser':
         return jsonResponse_(handleDeleteUser_(e.parameter));
@@ -136,6 +139,7 @@ function doPost(e) {
       case 'appendOrder': return jsonResponse_(handleAppendOrder_(data));
       case 'getUsers':    return jsonResponse_(handleGetUsers_());
       case 'updateUserLevel': return jsonResponse_(handleUpdateUserLevel_(data));
+      case 'updatePassword': return jsonResponse_(handleUpdatePassword_(data));
       case 'deleteUser':  return jsonResponse_(handleDeleteUser_(data));
       case 'saveChapters': return jsonResponse_(handleSaveChapters_(data));
       case 'getChapters': return jsonResponse_(handleGetChapters_(data));
@@ -154,10 +158,9 @@ function doPost(e) {
 // ==========================================
 function handleLogin_(data) {
   var email = (data.email || '').toLowerCase().trim();
-  var password = (data.password || '').trim();
 
-  if (!email || !password) {
-    return { success: false, error: 'Email và mật khẩu không được để trống' };
+  if (!email) {
+    return { success: false, error: 'Email không được để trống' };
   }
 
   var sheet = getSheet_('Users');
@@ -171,9 +174,8 @@ function handleLogin_(data) {
   for (var i = 1; i < rows.length; i++) {
     var row = rows[i];
     var rowEmail = (row[h.Email] || '').toString().toLowerCase().trim();
-    var rowPass = (row[h.Password] || '').toString().trim();
 
-    if (rowEmail === email && rowPass === password) {
+    if (rowEmail === email) {
       var role = (row[h.Role] || 'user').toString().trim();
       var level = (row[h.Level] || 'Free').toString().trim();
       if (['Free', 'Premium', 'VIP'].indexOf(level) === -1) level = 'Free';
@@ -183,6 +185,7 @@ function handleLogin_(data) {
         user: {
           name: (row[h['Tên']] || '').toString().trim(),
           email: rowEmail,
+          passwordHash: (row[h.Password] || '').toString().trim(),
           phone: (row[h.Phone] || '').toString().trim(),
           role: isAdmin_(role) ? 'admin' : 'user',
           memberLevel: level
@@ -191,7 +194,7 @@ function handleLogin_(data) {
     }
   }
 
-  return { success: false, error: 'Email hoặc mật khẩu không đúng' };
+  return { success: false, error: 'User not found' };
 }
 
 // ==========================================
@@ -200,10 +203,10 @@ function handleLogin_(data) {
 function handleRegister_(data) {
   var name = (data.name || '').trim();
   var email = (data.email || '').toLowerCase().trim();
-  var password = (data.password || '').trim();
+  var passwordHash = (data.passwordHash || '').trim(); // Already hashed by Next.js
   var phone = (data.phone || '').trim();
 
-  if (!name || !email || !password) {
+  if (!name || !email || !passwordHash) {
     return { success: false, error: 'Vui lòng điền đầy đủ thông tin' };
   }
 
@@ -224,8 +227,8 @@ function handleRegister_(data) {
     }
   }
 
-  // Thêm user: Email | Password | Role | Tên | Level | Enrolled | Completed | Phone
-  sheet.appendRow([email, password, 'Student', name, 'Free', '', '', phone]);
+  // Thêm user: Email | Password (hashed) | Role | Tên | Level | Enrolled | Completed | Phone
+  sheet.appendRow([email, passwordHash, 'Student', name, 'Free', '', '', phone]);
   Logger.log('New user: ' + email);
 
   return {
@@ -319,6 +322,32 @@ function handleUpdateUserLevel_(data) {
     if ((rows[i][h.Email] || '').toString().toLowerCase().trim() === email) {
       sheet.getRange(i + 1, h.Level + 1).setValue(newLevel);
       return { success: true, message: 'Đã cập nhật level: ' + newLevel };
+    }
+  }
+
+  return { success: false, error: 'Không tìm thấy user: ' + email };
+}
+
+// ==========================================
+// UPDATE PASSWORD (migration from plaintext to bcrypt hash)
+// ==========================================
+function handleUpdatePassword_(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var newHash = (data.passwordHash || '').trim();
+
+  if (!email || !newHash) return { success: false, error: 'Thiếu email hoặc passwordHash' };
+
+  var sheet = getSheet_('Users');
+  if (!sheet) return { success: false, error: 'Tab Users không tồn tại' };
+
+  var rows = sheet.getDataRange().getValues();
+  var h = headerIndex_(rows[0]);
+
+  for (var j = 1; j < rows.length; j++) {
+    if ((rows[j][h.Email] || '').toString().toLowerCase().trim() === email) {
+      sheet.getRange(j + 1, h.Password + 1).setValue(newHash);
+      Logger.log('Password migrated for: ' + email);
+      return { success: true };
     }
   }
 
