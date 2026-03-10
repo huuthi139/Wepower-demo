@@ -1,34 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { getLoginLimiter, getRegisterLimiter, getApiLimiter, checkRateLimit } from '@/lib/rate-limit';
 
 const SESSION_COOKIE = 'wepower-token';
-
-// Simple in-memory rate limiter (per-IP, per-route)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function isRateLimited(key: string, maxRequests: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return false;
-  }
-
-  entry.count++;
-  return entry.count > maxRequests;
-}
-
-// Periodically clean up old entries to prevent memory leak
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetAt) {
-      rateLimitMap.delete(key);
-    }
-  }
-}, 60_000);
 
 // Helper: verify JWT token from cookie
 async function verifySessionToken(request: NextRequest): Promise<{ email: string; role: string; name: string; level: string } | null> {
@@ -48,23 +23,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
-  // --- Rate limiting ---
-  // Strict limits for auth endpoints (prevent brute force)
+  // --- Rate limiting (Upstash Redis) ---
   if (pathname.startsWith('/api/auth/login')) {
-    const key = `login:${ip}`;
-    if (isRateLimited(key, 10, 60_000)) { // 10 requests/minute
+    const result = await checkRateLimit(getLoginLimiter(), ip);
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: 'Quá nhiều lần thử. Vui lòng đợi 1 phút.' },
+        { success: false, error: 'Quá nhiều lần thử. Vui lòng đợi 1 phút.', retryAfter: result.retryAfter },
         { status: 429 }
       );
     }
   }
 
   if (pathname.startsWith('/api/auth/register')) {
-    const key = `register:${ip}`;
-    if (isRateLimited(key, 5, 60_000)) { // 5 requests/minute
+    const result = await checkRateLimit(getRegisterLimiter(), ip);
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: 'Quá nhiều lần đăng ký. Vui lòng đợi 1 phút.' },
+        { success: false, error: 'Quá nhiều lần đăng ký. Vui lòng đợi 1 phút.', retryAfter: result.retryAfter },
         { status: 429 }
       );
     }
@@ -72,10 +46,10 @@ export async function middleware(request: NextRequest) {
 
   // General API rate limiting
   if (pathname.startsWith('/api/')) {
-    const key = `api:${ip}`;
-    if (isRateLimited(key, 100, 60_000)) { // 100 requests/minute
+    const result = await checkRateLimit(getApiLimiter(), ip);
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: 'Quá nhiều request. Vui lòng thử lại sau.' },
+        { success: false, error: 'Quá nhiều request. Vui lòng thử lại sau.', retryAfter: result.retryAfter },
         { status: 429 }
       );
     }

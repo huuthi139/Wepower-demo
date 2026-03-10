@@ -98,12 +98,16 @@ function loadPosts(): Post[] {
         }));
       }
     }
-  } catch { /* ignore */ }
+  } catch (error) {
+    console.error('[Community] localStorage read error:', error instanceof Error ? error.message : String(error));
+  }
   return defaultPosts;
 }
 
 function savePosts(posts: Post[]) {
-  try { localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(posts)); } catch { /* ignore */ }
+  try { localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(posts)); } catch (error) {
+    console.error('[Community] localStorage save error:', error instanceof Error ? error.message : String(error));
+  }
 }
 
 export default function Community() {

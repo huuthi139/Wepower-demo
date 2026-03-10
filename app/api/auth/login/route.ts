@@ -2,82 +2,18 @@ import { NextResponse } from 'next/server';
 import { getScriptUrl, getSheetCsvUrl } from '@/lib/config';
 import { verifyPassword, isBcryptHash, hashPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
+import { csvToObjects } from '@/lib/utils/csv';
+import { fetchWithTimeout } from '@/lib/utils/fetch';
+import { isAdminRole, DEMO_USERS } from '@/lib/utils/auth';
 
 const SHEET_NAME = 'Users';
 const FETCH_TIMEOUT_MS = 15_000; // 15 seconds (Google Apps Script can be slow on cold start)
-
-// Demo credentials fallback when all Google services are unreachable
-const DEMO_HASH = '$2a$10$placeholder'; // Will be computed at runtime
-const DEMO_USERS = [
-  {
-    email: 'admin@wepower.vn',
-    plainPassword: '123456', // only used for runtime hash comparison
-    name: 'Admin WePower',
-    role: 'admin',
-    memberLevel: 'VIP',
-    phone: '',
-  },
-];
-
-function parseCSV(csv: string): Record<string, string>[] {
-  const lines = csv.trim().split('\n');
-  if (lines.length < 2) return [];
-
-  const parseRow = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-    return values;
-  };
-
-  const headers = parseRow(lines[0]);
-  const rows: Record<string, string>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseRow(lines[i]);
-    const row: Record<string, string> = {};
-    headers.forEach((header, idx) => {
-      row[header] = values[idx] || '';
-    });
-    rows.push(row);
-  }
-
-  return rows;
-}
 
 function getCol(row: Record<string, string>, ...keys: string[]): string {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== '') return row[key];
   }
   return '';
-}
-
-function isAdminRole(roleValue: string): boolean {
-  const normalized = roleValue.toLowerCase().trim();
-  const adminValues = ['admin', 'administrator', 'quản trị', 'quản trị viên', 'qtv'];
-  return adminValues.some(v => normalized.includes(v));
-}
-
-function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = FETCH_TIMEOUT_MS): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  return fetch(url, {
-    ...options,
-    signal: controller.signal,
-  }).finally(() => clearTimeout(timeoutId));
 }
 
 async function migratePasswordIfNeeded(email: string, storedPassword: string, plaintext: string) {
@@ -184,7 +120,7 @@ export async function POST(request: Request) {
         throw new Error(`CSV fetch failed with status ${csvRes.status}`);
       }
       const csv = await csvRes.text();
-      const users = parseCSV(csv);
+      const users = csvToObjects(csv);
 
       const user = users.find(
         u => getCol(u, 'Email', 'email').toLowerCase() === email.toLowerCase()

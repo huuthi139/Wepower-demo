@@ -1,5 +1,5 @@
 {
-  "name": "wepower-demo",
+  "name": "wepower-edu-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,9 +12,12 @@
     "test:coverage": "vitest run --coverage",
     "test:security": "vitest run tests/auth/",
     "test:data": "vitest run tests/data/",
+    "test:stability": "vitest run tests/stability/",
     "test:all": "vitest run tests/"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.4",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",

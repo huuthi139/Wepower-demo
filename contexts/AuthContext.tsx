@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { isAdminRole } from '@/lib/utils/auth';
 
 export type MemberLevel = 'Free' | 'Premium' | 'VIP';
 export type UserRole = 'admin' | 'user';
@@ -22,12 +23,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-function isAdminRole(role: string): boolean {
-  const normalized = role.toLowerCase().trim();
-  const adminValues = ['admin', 'administrator', 'quản trị', 'quản trị viên', 'qtv'];
-  return adminValues.some(v => normalized.includes(v));
-}
 
 function normalizeUser(raw: Record<string, string | undefined>): User {
   const role = raw.role || 'user';
@@ -52,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       }
-    } catch {
-      // localStorage corrupted, start fresh
+    } catch (error) {
+      console.error('[AuthProvider] localStorage error:', error instanceof Error ? error.message : String(error));
     }
     setIsLoading(false);
   }, []);
@@ -124,8 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // Best effort — clear client state regardless
+    } catch (error) {
+      console.error('[AuthProvider] Logout request failed:', error instanceof Error ? error.message : String(error));
     }
     setUser(null);
     localStorage.removeItem('wepower-user');

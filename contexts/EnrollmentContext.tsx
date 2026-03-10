@@ -93,7 +93,9 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
 
       const savedOrders = localStorage.getItem(STORAGE_KEY_ORDERS);
       if (savedOrders) setOrders(JSON.parse(savedOrders));
-    } catch { /* ignore */ }
+    } catch (error) {
+      console.error('[EnrollmentProvider] localStorage error:', error instanceof Error ? error.message : String(error));
+    }
     setIsLoaded(true);
   }, []);
 
@@ -162,7 +164,9 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
         streakData.lastDate = today;
         localStorage.setItem(STORAGE_KEY_STREAK, JSON.stringify(streakData));
       }
-    } catch { /* ignore */ }
+    } catch (error) {
+      console.error('[EnrollmentProvider] localStorage error:', error instanceof Error ? error.message : String(error));
+    }
 
     // Sync progress to server (background, non-blocking)
     fetch('/api/enrollments/progress', {
@@ -207,7 +211,9 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
     if (streakData.lastDate === today || streakData.lastDate === yesterday) {
       currentStreak = streakData.count || 0;
     }
-  } catch { /* ignore */ }
+  } catch (error) {
+    console.error('[EnrollmentProvider] localStorage error:', error instanceof Error ? error.message : String(error));
+  }
 
   return (
     <EnrollmentContext.Provider value={{

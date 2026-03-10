@@ -421,7 +421,7 @@ export async function POST(
 
     // Clean up old chunks AFTER successful save (best-effort, time-limited)
     if (result.success) {
-      try { await cleanupOldData(scriptUrl, courseId, 8000); } catch { /* ignore */ }
+      try { await cleanupOldData(scriptUrl, courseId, 8000); } catch (error) { console.error('[Chapters] Background task error:', error instanceof Error ? error.message : String(error)); }
     }
 
     if (result.success) {
@@ -442,7 +442,7 @@ export async function POST(
         }
       }
       const statsJson = JSON.stringify({ lessonsCount: totalLessons, duration: totalDuration, chaptersCount: totalChapters });
-      try { await scriptSave(scriptUrl, `${courseId}_stats`, statsJson); } catch { /* ignore */ }
+      try { await scriptSave(scriptUrl, `${courseId}_stats`, statsJson); } catch (error) { console.error('[Chapters] Background task error:', error instanceof Error ? error.message : String(error)); }
 
       return NextResponse.json({
         success: true,
