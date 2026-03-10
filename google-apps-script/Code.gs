@@ -23,6 +23,8 @@
  * - Orders:  Thời gian | Mã đơn hàng | Tên khách hàng | Email | SĐT | Khóa học | Mã khóa học | Tổng tiền | PTTT | Trạng thái | Mã GD
  * - Courses: ID | Title | Description | Thumbnail | Instructor | Price | OriginalPrice | Rating | ReviewsCount | EnrollmentsCount | Duration | LessonsCount | Badge | Category | MemberLevel
  * - Chapters: CourseId | ChaptersJSON
+ * - Enrollments: enrollmentId | userId | courseId | enrolledAt | progress | completedLessons | lastAccessedAt | status
+ * - Reviews: reviewId | userId | userEmail | userName | courseId | rating | content | createdAt
  */
 
 var SPREADSHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
@@ -82,7 +84,7 @@ function doGet(e) {
     var action = (e.parameter.action || '').trim();
 
     if (!action) {
-      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'updatePassword', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters'] });
+      return jsonResponse_({ success: true, message: 'WePower API is running', actions: ['login', 'register', 'appendOrder', 'getUsers', 'updateUserLevel', 'updatePassword', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters', 'enrollCourse', 'getEnrollments', 'updateProgress', 'saveReview', 'getReviews'] });
     }
 
     switch (action) {
@@ -116,6 +118,21 @@ function doGet(e) {
       case 'getAllChapters':
         return jsonResponse_(handleGetAllChapters_());
 
+      case 'enrollCourse':
+        return jsonResponse_(handleEnrollCourse_(e.parameter));
+
+      case 'getEnrollments':
+        return jsonResponse_(handleGetEnrollments_(e.parameter));
+
+      case 'updateProgress':
+        return jsonResponse_(handleUpdateProgress_(e.parameter));
+
+      case 'saveReview':
+        return jsonResponse_(handleSaveReview_(e.parameter));
+
+      case 'getReviews':
+        return jsonResponse_(handleGetReviews_(e.parameter));
+
       default:
         return jsonResponse_({ success: false, error: 'Unknown action: ' + action });
     }
@@ -144,6 +161,11 @@ function doPost(e) {
       case 'saveChapters': return jsonResponse_(handleSaveChapters_(data));
       case 'getChapters': return jsonResponse_(handleGetChapters_(data));
       case 'getAllChapters': return jsonResponse_(handleGetAllChapters_());
+      case 'enrollCourse': return jsonResponse_(handleEnrollCourse_(data));
+      case 'getEnrollments': return jsonResponse_(handleGetEnrollments_(data));
+      case 'updateProgress': return jsonResponse_(handleUpdateProgress_(data));
+      case 'saveReview': return jsonResponse_(handleSaveReview_(data));
+      case 'getReviews': return jsonResponse_(handleGetReviews_(data));
       case 'setup':       setup(); return jsonResponse_({ success: true, message: 'Setup done' });
       default: return jsonResponse_({ success: false, error: 'Unknown action: ' + action });
     }
@@ -463,6 +485,143 @@ function handleGetAllChapters_() {
   }
 
   return { success: true, data: result };
+}
+
+// ==========================================
+// HELPER: Ensure sheet exists with headers
+// ==========================================
+function ensureSheetExists(ss, sheetName, headers) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  }
+  return sheet;
+}
+
+// ==========================================
+// ENROLLMENT HANDLERS
+// ==========================================
+function handleEnrollCourse_(data) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var enrollSheet = ensureSheetExists(ss, 'Enrollments',
+    ['enrollmentId','userId','courseId','enrolledAt','progress','completedLessons','lastAccessedAt','status']);
+  var userId = (data.userId || '').toLowerCase().trim();
+  var courseId = (data.courseId || '').trim();
+  if (!userId || !courseId) return { success: false, error: 'Missing userId or courseId' };
+
+  var enrollData = enrollSheet.getDataRange().getValues();
+  for (var i = 1; i < enrollData.length; i++) {
+    if (enrollData[i][1] === userId && enrollData[i][2] === courseId) {
+      return { success: true, enrollmentId: enrollData[i][0], alreadyEnrolled: true };
+    }
+  }
+  var enrollId = Utilities.getUuid();
+  var now = new Date().toISOString();
+  enrollSheet.appendRow([enrollId, userId, courseId, now, 0, '[]', now, 'active']);
+  return { success: true, enrollmentId: enrollId };
+}
+
+function handleGetEnrollments_(data) {
+  var userId = (data.userId || '').toLowerCase().trim();
+  if (!userId) return { success: false, error: 'Missing userId' };
+
+  var sheet = getSheet_('Enrollments');
+  if (!sheet) return { success: true, enrollments: [] };
+
+  var allEnroll = sheet.getDataRange().getValues();
+  var userEnrollments = [];
+  for (var ei = 1; ei < allEnroll.length; ei++) {
+    if (allEnroll[ei][1] === userId) {
+      userEnrollments.push({
+        enrollmentId: allEnroll[ei][0],
+        courseId: allEnroll[ei][2],
+        enrolledAt: allEnroll[ei][3],
+        progress: allEnroll[ei][4],
+        completedLessons: JSON.parse(allEnroll[ei][5] || '[]'),
+        lastAccessedAt: allEnroll[ei][6],
+        status: allEnroll[ei][7]
+      });
+    }
+  }
+  return { success: true, enrollments: userEnrollments };
+}
+
+function handleUpdateProgress_(data) {
+  var userId = (data.userId || '').toLowerCase().trim();
+  var courseId = (data.courseId || '').trim();
+  if (!userId || !courseId) return { success: false, error: 'Missing userId or courseId' };
+
+  var progSheet = getSheet_('Enrollments');
+  if (!progSheet) return { success: false, error: 'Enrollment not found' };
+
+  var progData = progSheet.getDataRange().getValues();
+  for (var pi = 1; pi < progData.length; pi++) {
+    if (progData[pi][1] === userId && progData[pi][2] === courseId) {
+      var completedArr = JSON.parse(progData[pi][5] || '[]');
+      var lessonId = (data.lessonId || '').trim();
+      if (lessonId && completedArr.indexOf(lessonId) === -1) {
+        completedArr.push(lessonId);
+      }
+      var progress = parseFloat(data.progress) || progData[pi][4];
+      progSheet.getRange(pi + 1, 5).setValue(progress);
+      progSheet.getRange(pi + 1, 6).setValue(JSON.stringify(completedArr));
+      progSheet.getRange(pi + 1, 7).setValue(new Date().toISOString());
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'Enrollment not found' };
+}
+
+// ==========================================
+// REVIEW HANDLERS
+// ==========================================
+function handleSaveReview_(data) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var reviewSheet = ensureSheetExists(ss, 'Reviews',
+    ['reviewId','userId','userEmail','userName','courseId','rating','content','createdAt']);
+  var userId = (data.userId || '').toLowerCase().trim();
+  var courseId = (data.courseId || '').trim();
+  if (!userId || !courseId) return { success: false, error: 'Missing userId or courseId' };
+
+  var reviewData = reviewSheet.getDataRange().getValues();
+  for (var ri = 1; ri < reviewData.length; ri++) {
+    if (reviewData[ri][1] === userId && reviewData[ri][4] === courseId) {
+      reviewSheet.getRange(ri + 1, 6).setValue(parseFloat(data.rating));
+      reviewSheet.getRange(ri + 1, 7).setValue(data.content || '');
+      return { success: true, updated: true };
+    }
+  }
+  var reviewId = Utilities.getUuid();
+  reviewSheet.appendRow([reviewId, userId, data.userEmail || '', data.userName || '',
+    courseId, parseFloat(data.rating), data.content || '', new Date().toISOString()]);
+  return { success: true, reviewId: reviewId };
+}
+
+function handleGetReviews_(data) {
+  var courseId = (data.courseId || '').trim();
+  if (!courseId) return { success: false, error: 'Missing courseId' };
+
+  var sheet = getSheet_('Reviews');
+  if (!sheet) return { success: true, reviews: [] };
+
+  var allReviews = sheet.getDataRange().getValues();
+  var courseReviews = [];
+  for (var rvi = 1; rvi < allReviews.length; rvi++) {
+    if (allReviews[rvi][4] === courseId) {
+      courseReviews.push({
+        reviewId: allReviews[rvi][0],
+        userId: allReviews[rvi][1],
+        userEmail: allReviews[rvi][2],
+        userName: allReviews[rvi][3],
+        rating: allReviews[rvi][5],
+        content: allReviews[rvi][6],
+        createdAt: allReviews[rvi][7]
+      });
+    }
+  }
+  return { success: true, reviews: courseReviews };
 }
 
 // ==========================================

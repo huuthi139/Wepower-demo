@@ -68,7 +68,7 @@ interface OrderPayload {
 }
 
 function generateOrderId(): string {
-  return `WP${Date.now()}`;
+  return `WP-${crypto.randomUUID()}`;
 }
 
 function formatPaymentMethod(method: string): string {
