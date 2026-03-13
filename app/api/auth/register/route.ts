@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
+import { getLocalUser, createLocalUser, localUserExists } from '@/lib/fallback-data';
 
 const GAS_TIMEOUT = 15000; // 15 seconds
 
@@ -201,10 +202,33 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
-      { status: 503 }
-    );
+    // Method 3: Local in-memory fallback (when all external services are unreachable)
+    console.warn('[Register] All external services unavailable, using local fallback');
+    if (localUserExists(email)) {
+      return NextResponse.json(
+        { success: false, error: 'Email đã được sử dụng. Vui lòng dùng email khác.' },
+        { status: 409 }
+      );
+    }
+
+    const localUser = createLocalUser({ name, email, phone, passwordHash: hashedPassword });
+
+    try {
+      await createSession({ email, role: 'user', name, level: 'Free' });
+    } catch (sessionErr) {
+      console.error('[Register] Session creation failed:', sessionErr instanceof Error ? sessionErr.message : sessionErr);
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        name: localUser.name,
+        email: localUser.email,
+        phone: localUser.phone,
+        role: localUser.role,
+        memberLevel: localUser.memberLevel,
+      },
+    });
   } catch (error) {
     console.error('[Register] Unexpected error:', error instanceof Error ? error.message : error);
     return NextResponse.json(
