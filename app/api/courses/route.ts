@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 import { getScriptUrl, getSheetId } from '@/lib/config';
+import { FALLBACK_COURSES } from '@/lib/fallback-data';
 
 /**
  * Parse a number that may be formatted with locale separators or currency symbols.
@@ -253,6 +254,11 @@ async function fetchAndParseCourses() {
   return [];
 }
 
+function isDnsError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('EAI_AGAIN') || msg.includes('ENOTFOUND') || msg.includes('getaddrinfo');
+}
+
 export async function GET() {
   try {
     const now = Date.now();
@@ -264,7 +270,14 @@ export async function GET() {
       return response;
     }
 
-    const courses = await fetchAndParseCourses();
+    let courses = await fetchAndParseCourses();
+
+    // Fallback to embedded data if external sources returned nothing
+    if (courses.length === 0) {
+      console.warn('[Courses] External sources returned empty, using fallback data');
+      courses = FALLBACK_COURSES;
+    }
+
     cachedCourses = courses;
     cacheTimestamp = now;
 
@@ -279,6 +292,7 @@ export async function GET() {
       response.headers.set('Cache-Control', 'public, s-maxage=60');
       return response;
     }
-    return NextResponse.json({ success: true, courses: [] });
+    // Last resort: use fallback data
+    return NextResponse.json({ success: true, courses: FALLBACK_COURSES });
   }
 }

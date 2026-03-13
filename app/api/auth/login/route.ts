@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSession } from '@/lib/auth/session';
 import { isAdminRole, DEMO_USERS } from '@/lib/utils/auth';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
+import { getLocalUser } from '@/lib/fallback-data';
 
 const GAS_TIMEOUT = 15000; // 15 seconds
 
@@ -212,11 +213,31 @@ export async function POST(request: Request) {
       }
     }
 
-    // If nothing worked
-    if (!firebaseAvailable && !scriptUrl) {
+    // Method 4: Local in-memory user store (users registered via fallback)
+    const localUser = getLocalUser(email);
+    if (localUser) {
+      const isValid = await verifyPassword(password, localUser.passwordHash);
+      if (isValid) {
+        try {
+          await createSession({ email: localUser.email, role: localUser.role, name: localUser.name, level: localUser.memberLevel });
+        } catch (sessionErr) {
+          console.error('[Login] Local session creation failed:', sessionErr instanceof Error ? sessionErr.message : sessionErr);
+        }
+
+        return NextResponse.json({
+          success: true,
+          user: {
+            name: localUser.name,
+            email: localUser.email,
+            phone: localUser.phone,
+            role: localUser.role,
+            memberLevel: localUser.memberLevel,
+          },
+        });
+      }
       return NextResponse.json(
-        { success: false, error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
-        { status: 503 }
+        { success: false, error: 'Email hoặc mật khẩu không đúng' },
+        { status: 401 }
       );
     }
 
