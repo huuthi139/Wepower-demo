@@ -5,19 +5,14 @@ export const dynamic = 'force-dynamic';
 import { getAllCourses } from '@/lib/supabase/courses';
 import { getAllChapterStats } from '@/lib/supabase/chapters';
 import { FALLBACK_COURSES } from '@/lib/fallback-data';
-
-// In-memory cache
-let cachedCourses: any[] | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL_MS = 30 * 1000; // 30 seconds
+import { getCachedCourses, setCachedCourses } from '@/lib/supabase/courses-cache';
 
 export async function GET() {
   try {
-    const now = Date.now();
-
     // Serve from cache if still fresh
-    if (cachedCourses && now - cacheTimestamp < CACHE_TTL_MS) {
-      const response = NextResponse.json({ success: true, courses: cachedCourses });
+    const cached = getCachedCourses();
+    if (cached.fresh && cached.courses) {
+      const response = NextResponse.json({ success: true, courses: cached.courses });
       response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       return response;
     }
@@ -57,8 +52,7 @@ export async function GET() {
       courses = FALLBACK_COURSES;
     }
 
-    cachedCourses = courses;
-    cacheTimestamp = now;
+    setCachedCourses(courses);
 
     const response = NextResponse.json({ success: true, courses });
     response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
@@ -66,8 +60,9 @@ export async function GET() {
   } catch (error) {
     console.error('Courses API error:', error);
     // Serve stale cache on error
-    if (cachedCourses) {
-      const response = NextResponse.json({ success: true, courses: cachedCourses });
+    const cached = getCachedCourses();
+    if (cached.courses) {
+      const response = NextResponse.json({ success: true, courses: cached.courses });
       response.headers.set('Cache-Control', 'public, s-maxage=60');
       return response;
     }

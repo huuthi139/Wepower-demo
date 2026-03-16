@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminRole, hasAdminAccess } from '@/lib/utils/auth';
+import { invalidateCoursesCache } from '@/lib/supabase/courses-cache';
 
 /** Verify admin or sub_admin access via JWT session cookie */
 async function verifyAdmin(request: NextRequest): Promise<boolean> {
@@ -74,6 +75,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không thể lưu khóa học' }, { status: 500 });
     }
 
+    // Invalidate public courses cache so next fetch returns fresh data
+    invalidateCoursesCache();
+
     return NextResponse.json({ success: true, course });
   } catch (err) {
     console.error('[Admin Courses] POST error:', err instanceof Error ? err.message : err);
@@ -101,6 +105,9 @@ export async function DELETE(request: NextRequest) {
     if (!success) {
       return NextResponse.json({ success: false, error: 'Không thể xóa khóa học' }, { status: 500 });
     }
+
+    // Invalidate public courses cache
+    invalidateCoursesCache();
 
     return NextResponse.json({ success: true });
   } catch (err) {
