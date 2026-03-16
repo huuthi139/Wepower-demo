@@ -8,7 +8,7 @@
 
 ## 1. Codebase Overview
 
-WESPEAK ("WePower Academy") is a Vietnamese e-learning platform built with:
+WESPEAK ("WEDU Academy") is a Vietnamese e-learning platform built with:
 - **Frontend:** Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS
 - **Backend:** Next.js API routes → Google Apps Script → Google Sheets
 - **Video:** Bunny CDN (iframe embeds)

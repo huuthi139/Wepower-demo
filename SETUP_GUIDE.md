@@ -1,4 +1,4 @@
-# WePower LMS - Setup Guide
+# WEDU LMS - Setup Guide
 
 > Hướng dẫn cài đặt và chạy prototype demo
 
@@ -37,7 +37,7 @@ npm --version    # Should show: 9.x.x or higher
 
 ### Bước 1: Mở Terminal
 ```bash
-cd /Users/kevinnguyen/Downloads/wepower-demo
+cd /Users/kevinnguyen/Downloads/wedu-demo
 ```
 
 ### Bước 2: Install Dependencies (lần đầu tiên)
@@ -149,7 +149,7 @@ npx next dev
 ## 📦 File Structure Quick View
 
 ```
-wepower-demo/
+wedu-demo/
 ├── app/                    # Pages (Next.js App Router)
 │   ├── page.tsx           # Landing page (/)
 │   ├── dashboard/
@@ -196,7 +196,7 @@ Sau khi demo chạy thành công:
    # Push to GitHub first
    git init
    git add .
-   git commit -m "Initial WePower LMS demo"
+   git commit -m "Initial WEDU LMS demo"
    git remote add origin <your-repo-url>
    git push -u origin main
 
@@ -212,7 +212,7 @@ Nếu gặp vấn đề:
 1. Check Terminal output có error gì không
 2. Check Browser Console (F12) có lỗi gì không
 3. Đọc `README.md` để biết thêm chi tiết
-4. Tham khảo `WePower_Implementation_Checklist.md` cho roadmap đầy đủ
+4. Tham khảo `WEDU_Implementation_Checklist.md` cho roadmap đầy đủ
 
 ---
 

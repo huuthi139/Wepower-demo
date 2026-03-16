@@ -1,4 +1,4 @@
-# WePower LMS - UI Preview
+# WEDU LMS - UI Preview
 
 > Preview các pages và components trong demo
 
@@ -25,7 +25,7 @@ White:          #FFFFFF  ████████
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         HEADER                               │
-│  [Logo WePower]    Khóa học  Dashboard  Định giá  [Login][Signup] │
+│  [Logo WEDU]    Khóa học  Dashboard  Định giá  [Login][Signup] │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -73,7 +73,7 @@ White:          #FFFFFF  ████████
 ### Why Choose Us
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│             Tại sao chọn WePower?                            │
+│             Tại sao chọn WEDU?                            │
 │   Nền tảng học tập trực tuyến hàng đầu với công nghệ tiên tiến│
 └─────────────────────────────────────────────────────────────┘
 
@@ -359,4 +359,4 @@ Colors:    transparent → white/10 → transparent
 
 ---
 
-**🎉 Demo này showcase đầy đủ Design System từ WePower_v8_UI_Design_System.md!**
+**🎉 Demo này showcase đầy đủ Design System từ WEDU_v8_UI_Design_System.md!**

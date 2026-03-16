@@ -45,7 +45,7 @@ Browser → Vercel/Next.js → middleware (rate limit + headers)
 Browser → POST /api/auth/login
   → Method 1: Google Apps Script ?action=login (15s timeout)
   → Method 2 (fallback): Read Users CSV from Google Sheets, compare plaintext passwords
-  → Method 3 (fallback): Local demo user (admin@wepower.vn/123456)
+  → Method 3 (fallback): Local demo user (admin@wedu.vn/123456)
   → Return user object → Client stores in localStorage + base64 cookie
 ```
 
