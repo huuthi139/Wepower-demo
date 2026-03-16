@@ -19,6 +19,23 @@ async function safeJsonParse(res: Response): Promise<any | null> {
   try { return await res.json(); } catch { return null; }
 }
 
+/** One-way sync: Google Sheets → Supabase (background, non-blocking, never deletes) */
+async function syncSheetUsersBackground(sheetUsers: Array<Record<string, string>>) {
+  try {
+    const { syncSheetUsersToSupabase } = await import('@/lib/supabase/users');
+    const mapped = sheetUsers.map((u) => ({
+      email: u.Email || u.email || '',
+      name: u['Tên'] || u.name || '',
+      phone: u.Phone || u.phone || '',
+      role: u.Role || u.role || 'user',
+      memberLevel: u.Level || u.memberLevel || 'Free',
+    }));
+    await syncSheetUsersToSupabase(mapped);
+  } catch (err) {
+    console.warn('[Users] Background sync to Supabase failed:', err instanceof Error ? err.message : err);
+  }
+}
+
 /** Verify admin or sub_admin access via JWT session cookie */
 async function verifyAdmin(request: NextRequest): Promise<boolean> {
   try {
@@ -84,6 +101,9 @@ export async function GET(request: NextRequest) {
           Level: u.Level || 'Free',
           Phone: u.Phone || '',
         }));
+
+        // One-way sync: Sheet → Supabase in background (non-blocking, upsert only)
+        syncSheetUsersBackground(data.users).catch(() => {});
 
         return NextResponse.json({ success: true, users });
       }
