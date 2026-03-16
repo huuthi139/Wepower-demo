@@ -232,16 +232,76 @@ export default function AdminDashboard() {
           try {
             gasData = JSON.parse(gasText);
           } catch {
-            errors.push('GAS: invalid JSON response');
+            errors.push('GAS trực tiếp: phản hồi không hợp lệ');
           }
 
           if (gasData?.success && Array.isArray(gasData.users) && gasData.users.length > 0) {
             setStudents(mapUsersToStudents(gasData.users));
             return;
           }
-          errors.push('GAS: 0 users returned');
+          if (!gasData?.success) {
+            errors.push('GAS trực tiếp: không có dữ liệu');
+          }
         } catch (gasErr) {
-          errors.push(`GAS: ${gasErr instanceof Error ? gasErr.message : 'network error'}`);
+          errors.push(`GAS trực tiếp: ${gasErr instanceof Error ? gasErr.message : 'lỗi mạng'}`);
+        }
+      }
+
+      // Last resort: try Google Sheets CSV export directly from client
+      const sheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID;
+      if (sheetId) {
+        try {
+          const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Users')}`;
+          const csvRes = await fetch(csvUrl, { cache: 'no-store' });
+          if (csvRes.ok) {
+            const csvText = await csvRes.text();
+            if (csvText && csvText.length > 10) {
+              // Parse CSV: first line is headers, rest is data
+              const lines = csvText.trim().split('\n');
+              if (lines.length >= 2) {
+                const parseRow = (line: string): string[] => {
+                  const cols: string[] = [];
+                  let current = '';
+                  let inQuotes = false;
+                  for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') {
+                      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+                      else inQuotes = !inQuotes;
+                    } else if (ch === ',' && !inQuotes) {
+                      cols.push(current.trim());
+                      current = '';
+                    } else {
+                      current += ch;
+                    }
+                  }
+                  cols.push(current.trim());
+                  return cols;
+                };
+                const headers = parseRow(lines[0]);
+                const csvUsers: SheetUser[] = lines.slice(1).map(line => {
+                  const cols = parseRow(line);
+                  const row: Record<string, string> = {};
+                  headers.forEach((h, i) => { row[h] = cols[i] || ''; });
+                  return {
+                    Email: row.Email || row.email || '',
+                    Role: row.Role || row.role || '',
+                    'Tên': row['Tên'] || row.name || '',
+                    Level: row.Level || row.level || 'Free',
+                    Phone: row.Phone || row.phone || '',
+                  };
+                }).filter(u => u.Email);
+
+                if (csvUsers.length > 0) {
+                  setStudents(mapUsersToStudents(csvUsers));
+                  return;
+                }
+              }
+            }
+          }
+          errors.push('CSV trực tiếp: không có dữ liệu');
+        } catch (csvErr) {
+          errors.push(`CSV trực tiếp: ${csvErr instanceof Error ? csvErr.message : 'lỗi mạng'}`);
         }
       }
 
