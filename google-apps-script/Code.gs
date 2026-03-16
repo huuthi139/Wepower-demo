@@ -36,6 +36,37 @@ var WEBAPP_URL = 'https://wepower.vn'; // URL của web app (Vercel)
 var SYNC_SECRET = '56ec5986c1bcefd4f8f42439b2007600fbb8f72b0ba42aa6eb9c124d24bcd0b2'; // Phải khớp với SYNC_SECRET trong Vercel env
 
 // ==========================================
+// CUSTOM MENU - Hiện trên Google Sheets khi mở
+// ==========================================
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('⚡ Wepower Admin')
+    .addItem('⚙️ Setup Sheet (lần đầu)', 'setup')
+    .addItem('📚 Seed 15 khóa học', 'seedCourses')
+    .addSeparator()
+    .addItem('🔗 Test kết nối', 'testConnection')
+    .addSeparator()
+    .addItem('🔧 Cài Auto Sync', 'setupAutoSync')
+    .addItem('🗑️ Gỡ Auto Sync', 'removeAutoSync')
+    .addSeparator()
+    .addItem('🔄 Sync tất cả Users ngay', 'syncAllUsersToWebApp')
+    .addToUi();
+}
+
+// ==========================================
+// REMOVE AUTO-SYNC TRIGGERS
+// ==========================================
+function removeAutoSync() {
+  var triggers = ScriptApp.getProjectTriggers();
+  var count = 0;
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+    count++;
+  }
+  SpreadsheetApp.getUi().alert('Đã gỡ ' + count + ' trigger(s). Auto Sync đã tắt.');
+}
+
+// ==========================================
 // SETUP - Chạy 1 lần để tạo các tab
 // ==========================================
 function setup() {
@@ -841,6 +872,16 @@ function setupAutoSync() {
   Logger.log('Auto-sync triggers đã được cài đặt!');
   Logger.log('1. onEdit: Sync ngay khi chỉnh sửa tab Users');
   Logger.log('2. Time-driven: Full sync mỗi 5 phút');
+
+  try {
+    SpreadsheetApp.getUi().alert(
+      '✅ Auto Sync đã cài đặt!\n\n' +
+      '1. onEdit: Sync ngay khi chỉnh sửa tab Users\n' +
+      '2. Time-driven: Full sync mỗi 5 phút'
+    );
+  } catch (e) {
+    // Bỏ qua nếu không có UI (chạy từ trigger)
+  }
 }
 
 // ==========================================
