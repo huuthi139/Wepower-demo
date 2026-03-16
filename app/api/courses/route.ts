@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 import { getAllCourses } from '@/lib/supabase/courses';
+import { getAllChapterStats } from '@/lib/supabase/chapters';
 import { FALLBACK_COURSES } from '@/lib/fallback-data';
 
 // In-memory cache
@@ -22,28 +23,34 @@ export async function GET() {
     }
 
     // Fetch from Supabase (source of truth)
-    const supabaseCourses = await getAllCourses();
+    const [supabaseCourses, chapterStats] = await Promise.all([
+      getAllCourses(),
+      getAllChapterStats(),
+    ]);
 
     let courses: any[];
     if (supabaseCourses.length > 0) {
-      courses = supabaseCourses.map(c => ({
-        id: c.id,
-        thumbnail: c.thumbnail || '',
-        title: c.title || '',
-        description: c.description || '',
-        instructor: c.instructor || 'WEDU',
-        price: c.price || 0,
-        originalPrice: c.original_price || undefined,
-        rating: c.rating || 0,
-        reviewsCount: c.reviews_count || 0,
-        enrollmentsCount: c.enrollments_count || 0,
-        duration: c.duration || 0,
-        lessonsCount: c.lessons_count || 0,
-        isFree: (c.price || 0) === 0,
-        badge: c.badge || undefined,
-        category: c.category || '',
-        memberLevel: c.member_level || 'Free',
-      }));
+      courses = supabaseCourses.map(c => {
+        const stats = chapterStats[c.id];
+        return {
+          id: c.id,
+          thumbnail: c.thumbnail || '',
+          title: c.title || '',
+          description: c.description || '',
+          instructor: c.instructor || 'WEDU',
+          price: c.price || 0,
+          originalPrice: c.original_price || undefined,
+          rating: c.rating || 0,
+          reviewsCount: c.reviews_count || 0,
+          enrollmentsCount: c.enrollments_count || 0,
+          duration: stats?.duration || c.duration || 0,
+          lessonsCount: stats?.lessonsCount || c.lessons_count || 0,
+          isFree: (c.price || 0) === 0,
+          badge: c.badge || undefined,
+          category: c.category || '',
+          memberLevel: c.member_level || 'Free',
+        };
+      });
     } else {
       // Fallback to embedded data if Supabase returned nothing
       console.warn('[Courses] Supabase returned empty, using fallback data');

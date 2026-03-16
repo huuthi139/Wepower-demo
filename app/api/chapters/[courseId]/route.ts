@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 import { getChaptersByCourse, saveChapters } from '@/lib/supabase/chapters';
+import { getSupabaseAdmin } from '@/lib/supabase/client';
 
 // ---------------------------------------------------------------------------
 // Google Apps Script fallback (read-only, for migrating old data)
@@ -194,6 +195,15 @@ export async function GET(
       }
       saveChapters(courseId, gasChapters, totalLessons, totalDuration).catch(() => {});
 
+      // Also update the courses table
+      const supabase2 = getSupabaseAdmin();
+      Promise.resolve(
+        supabase2
+          .from('courses')
+          .update({ lessons_count: totalLessons, duration: totalDuration, updated_at: new Date().toISOString() })
+          .eq('id', courseId)
+      ).catch(() => {});
+
       return NextResponse.json({
         success: true,
         chapters: gasChapters,
@@ -249,6 +259,19 @@ export async function POST(
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Lưu thất bại' }, { status: 500 });
     }
+
+    // Also update the courses table with lessons_count and duration
+    const supabase = getSupabaseAdmin();
+    Promise.resolve(
+      supabase
+        .from('courses')
+        .update({
+          lessons_count: totalLessons,
+          duration: totalDuration,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', courseId)
+    ).catch(() => {});
 
     // Background sync to GAS (optional, for legacy compatibility)
     const scriptUrl = getScriptUrl();
