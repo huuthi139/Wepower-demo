@@ -129,3 +129,83 @@ export async function getAllUsers(): Promise<SupabaseUser[]> {
   if (error || !data) return [];
   return data as SupabaseUser[];
 }
+
+/**
+ * One-way sync: Google Sheets → Supabase (upsert only, never delete)
+ * Uses email as unique key. Only adds new users or updates existing ones.
+ * Never removes users from Supabase even if they're removed from Sheets.
+ */
+export async function syncSheetUsersToSupabase(sheetUsers: Array<{
+  email: string;
+  name: string;
+  phone?: string;
+  role?: string;
+  memberLevel?: string;
+  passwordHash?: string;
+}>): Promise<{ added: number; updated: number; skipped: number }> {
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const u of sheetUsers) {
+    const email = (u.email || '').toLowerCase().trim();
+    if (!email) { skipped++; continue; }
+
+    try {
+      // Check if user already exists in Supabase
+      const { data: existing } = await supabase
+        .from('users')
+        .select('id, email, name, phone, role, member_level')
+        .eq('email', email)
+        .limit(1)
+        .single();
+
+      const validRole = ['admin', 'sub_admin', 'instructor', 'user'].includes(u.role || '') ? u.role! : 'user';
+      const validLevel = ['Free', 'Premium', 'VIP'].includes(u.memberLevel || '') ? u.memberLevel! : 'Free';
+
+      if (existing) {
+        // Update only if Sheet has newer/different info (don't overwrite with empty values)
+        const updates: Record<string, string> = { updated_at: now };
+        if (u.name && u.name !== existing.name) updates.name = u.name;
+        if (u.phone && u.phone !== existing.phone) updates.phone = u.phone;
+        if (u.role && validRole !== existing.role) updates.role = validRole;
+        if (u.memberLevel && validLevel !== existing.member_level) updates.member_level = validLevel;
+
+        // Only update if there are actual changes beyond updated_at
+        if (Object.keys(updates).length > 1) {
+          const { error } = await supabase
+            .from('users')
+            .update(updates)
+            .eq('email', email);
+          if (!error) updated++;
+          else skipped++;
+        } else {
+          skipped++;
+        }
+      } else {
+        // Insert new user from Sheet
+        const { error } = await supabase
+          .from('users')
+          .insert({
+            email,
+            name: u.name || '',
+            phone: u.phone || '',
+            password_hash: u.passwordHash || '',
+            role: validRole,
+            member_level: validLevel,
+            created_at: now,
+            updated_at: now,
+          });
+        if (!error) added++;
+        else skipped++;
+      }
+    } catch {
+      skipped++;
+    }
+  }
+
+  console.log(`[Sync] Sheet→Supabase users: added=${added}, updated=${updated}, skipped=${skipped}`);
+  return { added, updated, skipped };
+}
