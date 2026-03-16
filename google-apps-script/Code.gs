@@ -30,6 +30,43 @@
 var SPREADSHEET_ID = '1KOuhPurnWcHOayeRn7r-hNgVl13Zf7Q0z0r4d1-K0JY';
 
 // ==========================================
+// AUTO-SYNC CONFIG
+// ==========================================
+var WEBAPP_URL = 'https://wepower.vn'; // URL của web app (Vercel)
+var SYNC_SECRET = '56ec5986c1bcefd4f8f42439b2007600fbb8f72b0ba42aa6eb9c124d24bcd0b2'; // Phải khớp với SYNC_SECRET trong Vercel env
+
+// ==========================================
+// CUSTOM MENU - Hiện trên Google Sheets khi mở
+// ==========================================
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('⚡ Wepower Admin')
+    .addItem('⚙️ Setup Sheet (lần đầu)', 'setup')
+    .addItem('📚 Seed 15 khóa học', 'seedCourses')
+    .addSeparator()
+    .addItem('🔗 Test kết nối', 'testConnection')
+    .addSeparator()
+    .addItem('🔧 Cài Auto Sync', 'setupAutoSync')
+    .addItem('🗑️ Gỡ Auto Sync', 'removeAutoSync')
+    .addSeparator()
+    .addItem('🔄 Sync tất cả Users ngay', 'syncAllUsersToWebApp')
+    .addToUi();
+}
+
+// ==========================================
+// REMOVE AUTO-SYNC TRIGGERS
+// ==========================================
+function removeAutoSync() {
+  var triggers = ScriptApp.getProjectTriggers();
+  var count = 0;
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+    count++;
+  }
+  SpreadsheetApp.getUi().alert('Đã gỡ ' + count + ' trigger(s). Auto Sync đã tắt.');
+}
+
+// ==========================================
 // SETUP - Chạy 1 lần để tạo các tab
 // ==========================================
 function setup() {
@@ -84,7 +121,7 @@ function doGet(e) {
     var action = (e.parameter.action || '').trim();
 
     if (!action) {
-      return jsonResponse_({ success: true, message: 'Wepower Edu App API is running', actions: ['ping', 'login', 'register', 'getCourses', 'appendOrder', 'getUsers', 'updateUserLevel', 'updatePassword', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters', 'enrollCourse', 'getEnrollments', 'updateProgress', 'saveReview', 'getReviews'] });
+      return jsonResponse_({ success: true, message: 'Wepower Edu App API is running', actions: ['ping', 'login', 'register', 'getCourses', 'appendOrder', 'getUsers', 'getUsersForSync', 'updateUserLevel', 'updatePassword', 'deleteUser', 'saveChapters', 'getChapters', 'getAllChapters', 'enrollCourse', 'getEnrollments', 'updateProgress', 'saveReview', 'getReviews'] });
     }
 
     switch (action) {
@@ -105,6 +142,9 @@ function doGet(e) {
 
       case 'getUsers':
         return jsonResponse_(handleGetUsers_());
+
+      case 'getUsersForSync':
+        return jsonResponse_(handleGetUsersForSync_());
 
       case 'updateUserLevel':
         return jsonResponse_(handleUpdateUserLevel_(e.parameter));
@@ -162,6 +202,7 @@ function doPost(e) {
       case 'appendOrder': return jsonResponse_(handleAppendOrder_(data));
       case 'getCourses':  return jsonResponse_(handleGetCourses_());
       case 'getUsers':    return jsonResponse_(handleGetUsers_());
+      case 'getUsersForSync': return jsonResponse_(handleGetUsersForSync_());
       case 'updateUserLevel': return jsonResponse_(handleUpdateUserLevel_(data));
       case 'updatePassword': return jsonResponse_(handleUpdatePassword_(data));
       case 'deleteUser':  return jsonResponse_(handleDeleteUser_(data));
@@ -653,6 +694,205 @@ function handleGetReviews_(data) {
     }
   }
   return { success: true, reviews: courseReviews };
+}
+
+// ==========================================
+// GET USERS FOR SYNC (trả cả password hash cho sync)
+// ==========================================
+function handleGetUsersForSync_() {
+  var sheet = getSheet_('Users');
+  if (!sheet) return { success: true, users: [] };
+
+  var rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, users: [] };
+
+  var headers = rows[0].map(function(h) { return h.toString().trim(); });
+  var users = [];
+
+  for (var i = 1; i < rows.length; i++) {
+    var user = {};
+    for (var j = 0; j < headers.length; j++) {
+      user[headers[j]] = rows[i][j] ? rows[i][j].toString().trim() : '';
+    }
+    users.push(user);
+  }
+
+  return { success: true, users: users };
+}
+
+// ==========================================
+// AUTO-SYNC: onEdit trigger
+// Tự động đồng bộ khi chỉnh sửa trên Google Sheet
+// ==========================================
+function onEditSync(e) {
+  try {
+    var sheet = e.source.getActiveSheet();
+    var sheetName = sheet.getName();
+
+    // Chỉ sync khi edit tab Users
+    if (sheetName !== 'Users') return;
+
+    var row = e.range.getRow();
+    // Bỏ qua header row
+    if (row <= 1) return;
+
+    // Lấy dữ liệu user từ row vừa edit
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    var h = {};
+    for (var i = 0; i < headers.length; i++) {
+      h[headers[i].toString().trim()] = i;
+    }
+
+    var email = (rowData[h['Email']] || '').toString().toLowerCase().trim();
+    if (!email) return; // Bỏ qua nếu không có email
+
+    var userData = {
+      email: email,
+      name: (rowData[h['Tên']] || '').toString().trim(),
+      phone: (rowData[h['Phone']] || '').toString().trim(),
+      role: mapRoleForSync_(rowData[h['Role']] || ''),
+      memberLevel: (rowData[h['Level']] || 'Free').toString().trim(),
+      passwordHash: (rowData[h['Password']] || '').toString().trim()
+    };
+
+    // Gọi webhook để sync user này lên Supabase
+    syncUserToWebApp_(userData);
+
+  } catch (err) {
+    Logger.log('onEditSync ERROR: ' + err.toString());
+  }
+}
+
+// ==========================================
+// AUTO-SYNC: Sync toàn bộ users (chạy theo schedule)
+// ==========================================
+function syncAllUsersToWebApp() {
+  try {
+    var url = WEBAPP_URL + '/api/webhook/sheet-sync';
+    var options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'X-Sync-Secret': SYNC_SECRET
+      },
+      payload: JSON.stringify({ action: 'syncAll' }),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(url, options);
+    var result = JSON.parse(response.getContentText());
+    Logger.log('Full sync result: ' + JSON.stringify(result));
+    return result;
+  } catch (err) {
+    Logger.log('syncAllUsersToWebApp ERROR: ' + err.toString());
+    return { success: false, error: err.toString() };
+  }
+}
+
+// ==========================================
+// AUTO-SYNC: Sync 1 user (gọi từ onEdit)
+// ==========================================
+function syncUserToWebApp_(userData) {
+  try {
+    var url = WEBAPP_URL + '/api/webhook/sheet-sync';
+    var options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'X-Sync-Secret': SYNC_SECRET
+      },
+      payload: JSON.stringify({
+        action: 'syncOne',
+        user: userData
+      }),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(url, options);
+    var result = JSON.parse(response.getContentText());
+    Logger.log('Sync user ' + userData.email + ': ' + JSON.stringify(result));
+    return result;
+  } catch (err) {
+    Logger.log('syncUserToWebApp_ ERROR: ' + err.toString());
+  }
+}
+
+// ==========================================
+// AUTO-SYNC: Xóa user khỏi Supabase
+// ==========================================
+function deleteUserFromWebApp_(email) {
+  try {
+    var url = WEBAPP_URL + '/api/webhook/sheet-sync';
+    var options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'X-Sync-Secret': SYNC_SECRET
+      },
+      payload: JSON.stringify({
+        action: 'deleteOne',
+        email: email
+      }),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(url, options);
+    var result = JSON.parse(response.getContentText());
+    Logger.log('Delete user ' + email + ': ' + JSON.stringify(result));
+    return result;
+  } catch (err) {
+    Logger.log('deleteUserFromWebApp_ ERROR: ' + err.toString());
+  }
+}
+
+// ==========================================
+// SETUP TRIGGERS - Chạy 1 lần để cài đặt auto-sync
+// ==========================================
+function setupAutoSync() {
+  // Xóa tất cả triggers cũ
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+  }
+
+  // Trigger 1: onEdit - mỗi khi edit sheet → sync ngay
+  ScriptApp.newTrigger('onEditSync')
+    .forSpreadsheet(SPREADSHEET_ID)
+    .onEdit()
+    .create();
+
+  // Trigger 2: Time-driven - sync toàn bộ mỗi 5 phút (backup)
+  ScriptApp.newTrigger('syncAllUsersToWebApp')
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+
+  Logger.log('Auto-sync triggers đã được cài đặt!');
+  Logger.log('1. onEdit: Sync ngay khi chỉnh sửa tab Users');
+  Logger.log('2. Time-driven: Full sync mỗi 5 phút');
+
+  try {
+    SpreadsheetApp.getUi().alert(
+      '✅ Auto Sync đã cài đặt!\n\n' +
+      '1. onEdit: Sync ngay khi chỉnh sửa tab Users\n' +
+      '2. Time-driven: Full sync mỗi 5 phút'
+    );
+  } catch (e) {
+    // Bỏ qua nếu không có UI (chạy từ trigger)
+  }
+}
+
+// ==========================================
+// HELPER: Map role for sync
+// ==========================================
+function mapRoleForSync_(role) {
+  var r = (role || '').toString().toLowerCase().trim();
+  if (r === 'admin' || r === 'administrator' || r.indexOf('quản trị') !== -1 || r === 'qtv') return 'admin';
+  if (r === 'sub_admin' || r === 'sub admin') return 'sub_admin';
+  if (r === 'instructor' || r.indexOf('giảng viên') !== -1) return 'instructor';
+  return 'user';
 }
 
 // ==========================================
