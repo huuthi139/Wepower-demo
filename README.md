@@ -1,13 +1,13 @@
-# WePower LMS - Prototype Demo
+# WEDU LMS - Prototype Demo
 
-> Demo tương tác của WePower LMS với Landing page, Dashboard, và Course Catalog
+> Demo tương tác của WEDU LMS với Landing page, Dashboard, và Course Catalog
 
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
-cd /Users/kevinnguyen/Downloads/wepower-demo
+cd /Users/kevinnguyen/Downloads/wedu-demo
 npm install
 ```
 
@@ -139,7 +139,7 @@ Tất cả, UI/UX, Marketing, AI, Web Dev, Business, Data
 ## 📁 Project Structure
 
 ```
-wepower-demo/
+wedu-demo/
 ├── app/
 │   ├── layout.tsx          # Root layout
 │   ├── globals.css         # Global styles
@@ -206,7 +206,7 @@ wepower-demo/
    - Supabase (Backend)
    - Redis Cloud (Cache)
 
-Tham khảo: `WePower_Implementation_Checklist.md` để biết roadmap đầy đủ.
+Tham khảo: `WEDU_Implementation_Checklist.md` để biết roadmap đầy đủ.
 
 ## 📸 Screenshots
 
@@ -240,8 +240,8 @@ Tham khảo: `WePower_Implementation_Checklist.md` để biết roadmap đầy �
 
 ## 🎨 Design Credits
 
-Design System based on: `WePower_v8_UI_Design_System.md`
+Design System based on: `WEDU_v8_UI_Design_System.md`
 
 ---
 
-**Built with ❤️ for WePower LMS**
+**Built with ❤️ for WEDU LMS**

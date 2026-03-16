@@ -32,7 +32,7 @@
 
 ### 5. NO SESSION MANAGEMENT — HIGH
 - **Files:** `contexts/AuthContext.tsx:179-181`
-- **Evidence:** `document.cookie = wepower-user=${btoa(json)}` — user object in base64 cookie
+- **Evidence:** `document.cookie = wedu-user=${btoa(json)}` — user object in base64 cookie
 - **Why it matters:** Anyone can forge admin access by setting a cookie with `role: "admin"`. No server-side session validation.
 - **Action:** Implement JWT with server-side verification
 

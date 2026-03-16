@@ -1,7 +1,7 @@
-# WESPEAK (WePower) — Audit Overview
+# WESPEAK (WEDU) — Audit Overview
 
 **Audit Date:** 2026-03-07
-**Repo:** /home/user/Wepower-demo
+**Repo:** /home/user/WEDU-demo
 **Branch:** claude/continue-project-work-sV7yd
 **Mode:** READ-ONLY
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-WESPEAK (branded "WePower Academy" / "Wepower Elearning") is a **Vietnamese e-learning platform** built as a Next.js 14 single-page application. It uses **Google Sheets as its primary database** via Google Apps Script as a backend API, with Bunny CDN for video hosting.
+WESPEAK (branded "WEDU Academy" / "WEDU Elearning") is a **Vietnamese e-learning platform** built as a Next.js 14 single-page application. It uses **Google Sheets as its primary database** via Google Apps Script as a backend API, with Bunny CDN for video hosting.
 
 The system is at **prototype/MVP stage** (~40-50% production readiness). The frontend is reasonably complete with 15+ pages and a polished dark-theme UI. The backend is fragile — it relies entirely on Google Sheets/Apps Script with no real database, no password hashing, no session management, and heavy localStorage usage for critical state (enrollments, orders, progress).
 
@@ -64,7 +64,7 @@ public/        — static assets
 4. **NO TESTS** — Zero test files in the project
 5. **HEAVY localStorage DEPENDENCY** — Enrollments, orders, reviews, comments, community posts, cart, profile all stored in browser localStorage only
 6. **CODE DUPLICATION** — CSV parser duplicated in 4+ files; `normalizeChapters`/`isEmbedUrl` duplicated in 3 files
-7. **HARDCODED DEMO CREDENTIALS** — `admin@wepower.vn / 123456` in both client and server code
+7. **HARDCODED DEMO CREDENTIALS** — `admin@wedu.vn / 123456` in both client and server code
 8. **SECRETS IN REPO** — `.env.local` and `.env.production` committed with Google Script URLs and Sheet IDs
 
 ## Audit Scope

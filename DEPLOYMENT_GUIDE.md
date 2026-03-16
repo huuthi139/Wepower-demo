@@ -1,4 +1,4 @@
-# WePower LMS - Deployment Guide
+# WEDU LMS - Deployment Guide
 
 > Hướng dẫn deploy demo lên Vercel để có URL public
 
@@ -11,14 +11,14 @@
 ```bash
 # Tạo repo mới trên GitHub.com
 # 1. Truy cập: https://github.com/new
-# 2. Repository name: wepower-demo
+# 2. Repository name: wedu-demo
 # 3. Private/Public: Chọn Public
 # 4. Không check "Initialize with README"
 # 5. Click "Create repository"
 
 # Push code lên GitHub
-cd /Users/kevinnguyen/Downloads/wepower-demo
-git remote add origin https://github.com/YOUR_USERNAME/wepower-demo.git
+cd /Users/kevinnguyen/Downloads/wedu-demo
+git remote add origin https://github.com/YOUR_USERNAME/wedu-demo.git
 git branch -M main
 git push -u origin main
 ```
@@ -30,7 +30,7 @@ git push -u origin main
 3. Click **"Add New Project"**
 4. Click **"Import Git Repository"**
 5. Authorize Vercel để access GitHub repos
-6. Tìm và select repository **wepower-demo**
+6. Tìm và select repository **wedu-demo**
 7. **Configure Project:**
    - Framework Preset: **Next.js** (auto-detected)
    - Root Directory: `./` (default)
@@ -47,12 +47,12 @@ git push -u origin main
 🚀 Deploying...
 ✅ Deployment ready
 
-🌐 Production URL: https://wepower-demo.vercel.app
+🌐 Production URL: https://wedu-demo.vercel.app
 ```
 
 **Preview URL sẽ có dạng:**
-- Production: `https://wepower-demo.vercel.app`
-- Preview: `https://wepower-demo-git-main-yourname.vercel.app`
+- Production: `https://wedu-demo.vercel.app`
+- Preview: `https://wedu-demo-git-main-yourname.vercel.app`
 
 ---
 
@@ -61,7 +61,7 @@ git push -u origin main
 ### Bước 1: Login vào Vercel
 
 ```bash
-cd /Users/kevinnguyen/Downloads/wepower-demo
+cd /Users/kevinnguyen/Downloads/wedu-demo
 npx vercel login
 ```
 
@@ -85,10 +85,10 @@ npx vercel --prod
 **Quá trình deploy:**
 ```
 Vercel CLI 50.17.1
-? Set up and deploy "~/Downloads/wepower-demo"? [Y/n] y
+? Set up and deploy "~/Downloads/wedu-demo"? [Y/n] y
 ? Which scope do you want to deploy to? Your Name
 ? Link to existing project? [y/N] n
-? What's your project's name? wepower-demo
+? What's your project's name? wedu-demo
 ? In which directory is your code located? ./
 Auto-detected Project Settings (Next.js):
 - Build Command: next build
@@ -96,14 +96,14 @@ Auto-detected Project Settings (Next.js):
 - Development Command: next dev --port $PORT
 ? Want to override the settings? [y/N] n
 
-🔗  Linked to yourname/wepower-demo
-🔍  Inspect: https://vercel.com/yourname/wepower-demo/xxxxx
-✅  Production: https://wepower-demo.vercel.app [copied to clipboard]
+🔗  Linked to yourname/wedu-demo
+🔍  Inspect: https://vercel.com/yourname/wedu-demo/xxxxx
+✅  Production: https://wedu-demo.vercel.app [copied to clipboard]
 ```
 
 ### Bước 3: Truy cập URL
 
-Mở browser: **https://wepower-demo.vercel.app**
+Mở browser: **https://wedu-demo.vercel.app**
 
 ---
 
@@ -125,7 +125,7 @@ Mở browser: **https://wepower-demo.vercel.app**
 
 1. Vào Vercel Dashboard
 2. Settings → Domains
-3. Add domain: `wepower.com` hoặc `demo.wepower.com`
+3. Add domain: `wedu.com` hoặc `demo.wedu.com`
 4. Follow DNS setup instructions
 5. Wait for SSL certificate (auto)
 
@@ -134,7 +134,7 @@ Mở browser: **https://wepower-demo.vercel.app**
 1. Vercel Dashboard → Settings → Environment Variables
 2. Add variables:
    ```
-   NEXT_PUBLIC_API_URL=https://api.wepower.com
+   NEXT_PUBLIC_API_URL=https://api.wedu.com
    DATABASE_URL=postgresql://...
    REDIS_URL=redis://...
    ```
@@ -148,7 +148,7 @@ Vercel tự động bật:
 - ✅ **Logs** - Build & runtime logs
 - ✅ **Edge Network** - Global CDN
 
-Xem tại: https://vercel.com/yourname/wepower-demo/analytics
+Xem tại: https://vercel.com/yourname/wedu-demo/analytics
 
 ---
 
@@ -236,7 +236,7 @@ Check:
 ```tsx
 // app/layout.tsx
 export const metadata = {
-  title: 'WePower LMS - Học kinh doanh chuyên nghiệp',
+  title: 'WEDU LMS - Học kinh doanh chuyên nghiệp',
   description: 'Nền tảng học tập online hàng đầu...',
 }
 ```
@@ -254,18 +254,18 @@ export const revalidate = 3600 // 1 hour
 
 Sau khi deploy, anh sẽ có:
 
-- **Production**: https://wepower-demo.vercel.app
-- **Preview**: https://wepower-demo-git-[branch].vercel.app
-- **Custom**: https://demo.wepower.com (nếu setup domain)
+- **Production**: https://wedu-demo.vercel.app
+- **Preview**: https://wedu-demo-git-[branch].vercel.app
+- **Custom**: https://demo.wedu.com (nếu setup domain)
 
 ### Share demo:
 
 ```
-🎉 WePower LMS Demo
+🎉 WEDU LMS Demo
 
-✨ Landing: https://wepower-demo.vercel.app
-📊 Dashboard: https://wepower-demo.vercel.app/dashboard
-📚 Courses: https://wepower-demo.vercel.app/courses
+✨ Landing: https://wedu-demo.vercel.app
+📊 Dashboard: https://wedu-demo.vercel.app/dashboard
+📚 Courses: https://wedu-demo.vercel.app/courses
 
 Tech Stack: Next.js 14 + TailwindCSS + TypeScript
 Design: Royal Red + Gold Premium Dark Theme

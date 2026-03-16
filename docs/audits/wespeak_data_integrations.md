@@ -28,18 +28,18 @@
 
 | Key | Purpose | Written By | Risk |
 |-----|---------|-----------|------|
-| `wepower-user` | Current user session | AuthContext | Lost on browser change |
-| `wepower-cart` | Shopping cart items | CartContext | Lost on browser change |
-| `wepower-enrollments` | Course enrollment records | EnrollmentContext | **Critical data lost on browser change** |
-| `wepower-orders` | Order history | EnrollmentContext | **Critical data lost on browser change** |
-| `wepower-streak` | Learning streak counter | EnrollmentContext | Non-critical |
-| `wepower-reviews` | Course reviews | CourseDetail page | **User content lost on browser change** |
-| `wepower-comments` | Lesson comments | LearnPage | **User content lost on browser change** |
-| `wepower-community-posts` | Community forum posts | Community page | **User content lost on browser change** |
-| `wepower-profile` | Extra profile fields | Profile page | Non-critical |
-| `wepower-passwords` | Changed passwords | Profile page | **Security risk — plaintext in localStorage** |
-| `wepower-chapters-{id}` | Cached chapter data per course | CourseDetail, LearnPage | Cache, acceptable |
-| `wepower-notifications` | Notification state | (implied) | Unknown |
+| `wedu-user` | Current user session | AuthContext | Lost on browser change |
+| `wedu-cart` | Shopping cart items | CartContext | Lost on browser change |
+| `wedu-enrollments` | Course enrollment records | EnrollmentContext | **Critical data lost on browser change** |
+| `wedu-orders` | Order history | EnrollmentContext | **Critical data lost on browser change** |
+| `wedu-streak` | Learning streak counter | EnrollmentContext | Non-critical |
+| `wedu-reviews` | Course reviews | CourseDetail page | **User content lost on browser change** |
+| `wedu-comments` | Lesson comments | LearnPage | **User content lost on browser change** |
+| `wedu-community-posts` | Community forum posts | Community page | **User content lost on browser change** |
+| `wedu-profile` | Extra profile fields | Profile page | Non-critical |
+| `wedu-passwords` | Changed passwords | Profile page | **Security risk — plaintext in localStorage** |
+| `wedu-chapters-{id}` | Cached chapter data per course | CourseDetail, LearnPage | Cache, acceptable |
+| `wedu-notifications` | Notification state | (implied) | Unknown |
 
 ### In-Memory Stores (Server)
 
