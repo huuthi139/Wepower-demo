@@ -14,9 +14,15 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 }
 
 async function safeJsonParse(res: Response): Promise<any | null> {
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('json') && !ct.includes('javascript')) return null;
-  try { return await res.json(); } catch { return null; }
+  // Try parsing as JSON regardless of content-type, since GAS responses
+  // after redirects may have unexpected content-types (text/html, etc.)
+  try {
+    const text = await res.text();
+    if (!text || text.length < 2) return null;
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /** Standard user shape returned to client */
@@ -75,43 +81,52 @@ async function fetchFromSupabase(): Promise<UserRow[] | null> {
 
 /** Try fetching users from Google Apps Script (JSON API) */
 async function fetchFromGoogleAppsScript(): Promise<UserRow[] | null> {
-  const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
+  const scriptUrl = process.env.GOOGLE_SCRIPT_URL || process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
   if (!scriptUrl) {
     console.warn('[Users] GOOGLE_SCRIPT_URL not set');
     return null;
   }
 
-  try {
-    const res = await fetchWithTimeout(
-      `${scriptUrl}?action=getUsers`,
-      { redirect: 'follow', cache: 'no-store' }
-    );
-    const data = await safeJsonParse(res);
+  // Retry up to 2 times for transient network failures
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        `${scriptUrl}?action=getUsers`,
+        { redirect: 'follow', cache: 'no-store' },
+        20000 // 20s timeout for GAS (it can be slow)
+      );
+      const data = await safeJsonParse(res);
 
-    if (data?.success && Array.isArray(data.users) && data.users.length > 0) {
-      // Normalize role: 'Student' → 'user' for consistency
-      const users: UserRow[] = data.users.map((u: Record<string, string>) => ({
-        Email: u.Email || '',
-        Role: normalizeRole(u.Role),
-        'Tên': u['Tên'] || '',
-        Level: u.Level || 'Free',
-        Phone: u.Phone || '',
-      }));
+      if (data?.success && Array.isArray(data.users) && data.users.length > 0) {
+        // Normalize role: 'Student' → 'user' for consistency
+        const users: UserRow[] = data.users.map((u: Record<string, string>) => ({
+          Email: u.Email || '',
+          Role: normalizeRole(u.Role),
+          'Tên': u['Tên'] || '',
+          Level: u.Level || 'Free',
+          Phone: u.Phone || '',
+        }));
 
-      // Sync to Supabase in background (non-blocking)
-      syncSheetUsersBackground(data.users).catch(() => {});
+        // Sync to Supabase in background (non-blocking)
+        syncSheetUsersBackground(data.users).catch(() => {});
 
-      console.log(`[Users] Google Apps Script returned ${users.length} users`);
-      return users;
+        console.log(`[Users] Google Apps Script returned ${users.length} users`);
+        return users;
+      }
+
+      console.warn('[Users] Google Apps Script returned empty or invalid data:', data?.error || 'no data');
+      return null;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[Users] Google Apps Script error (attempt ${attempt + 1}):`, msg);
+      if (attempt === 0) {
+        await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+        continue;
+      }
+      return null;
     }
-
-    console.warn('[Users] Google Apps Script returned empty or invalid data:', data?.error || 'no data');
-    return null;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[Users] Google Apps Script error:', msg);
-    return null;
   }
+  return null;
 }
 
 /** Try fetching users from Google Sheets CSV export (direct, no GAS needed) */
@@ -210,7 +225,9 @@ async function handleFetchUsers(request: NextRequest): Promise<NextResponse> {
     }
     errors.push('Supabase: 0 users');
   } catch (err) {
-    errors.push(`Supabase: ${err instanceof Error ? err.message : String(err)}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Users] Supabase fetch error:', msg);
+    errors.push(`Supabase: ${msg}`);
   }
 
   // Method 2: Google Apps Script (secondary)
@@ -221,7 +238,9 @@ async function handleFetchUsers(request: NextRequest): Promise<NextResponse> {
     }
     errors.push('GAS: 0 users');
   } catch (err) {
-    errors.push(`GAS: ${err instanceof Error ? err.message : String(err)}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Users] GAS fetch error:', msg);
+    errors.push(`GAS: ${msg}`);
   }
 
   // Method 3: Google Sheets CSV export (tertiary)
@@ -232,7 +251,9 @@ async function handleFetchUsers(request: NextRequest): Promise<NextResponse> {
     }
     errors.push('CSV: 0 users');
   } catch (err) {
-    errors.push(`CSV: ${err instanceof Error ? err.message : String(err)}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Users] CSV fetch error:', msg);
+    errors.push(`CSV: ${msg}`);
   }
 
   console.error('[Users] All data sources failed:', errors.join(' | '));
