@@ -123,7 +123,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   // ------- Course CRUD state -------
-  const { courses: sheetCourses } = useCourses();
+  const { courses: sheetCourses, refetch: refetchCourses } = useCourses();
   // ------- Orders from Supabase -------
   const [supabaseOrders, setSupabaseOrders] = useState<{ id: string; name: string; email: string; course: string; amount: number; status: string; date: string; method: string }[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -593,6 +593,8 @@ export default function AdminDashboard() {
 
     setSaveStatus('saving');
 
+    let ok = false;
+
     if (editingCourse) {
       // Update existing course
       const updatedCourse: Course = {
@@ -606,8 +608,7 @@ export default function AdminDashboard() {
         thumbnail: courseForm.thumbnail || editingCourse.thumbnail,
       };
       updateCourses(prev => prev.map(c => c.id === editingCourse.id ? updatedCourse : c));
-      const ok = await saveCourseToAPI(updatedCourse);
-      setSaveStatus(ok ? 'saved' : 'error');
+      ok = await saveCourseToAPI(updatedCourse);
     } else {
       // Add new course
       const newId = String(Math.max(...courses.map(c => parseInt(c.id) || 0), 0) + 1);
@@ -629,8 +630,14 @@ export default function AdminDashboard() {
         memberLevel: 'Free',
       };
       updateCourses(prev => [...prev, newCourse]);
-      const ok = await saveCourseToAPI(newCourse);
-      setSaveStatus(ok ? 'saved' : 'error');
+      ok = await saveCourseToAPI(newCourse);
+    }
+
+    setSaveStatus(ok ? 'saved' : 'error');
+
+    // Refetch from Supabase so context stays in sync (cache was invalidated server-side)
+    if (ok) {
+      refetchCourses();
     }
 
     setTimeout(() => setSaveStatus('idle'), 2500);
@@ -647,7 +654,8 @@ export default function AdminDashboard() {
   const handleDeleteCourse = async () => {
     if (!deletingCourse) return;
     updateCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
-    await deleteCourseFromAPI(deletingCourse.id);
+    const ok = await deleteCourseFromAPI(deletingCourse.id);
+    if (ok) refetchCourses();
     setShowDeleteModal(false);
     setDeletingCourse(null);
   };
