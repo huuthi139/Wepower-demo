@@ -381,6 +381,35 @@ export default function AdminDashboard() {
     fetchStudents();
   }, [fetchStudents]);
 
+  // Sync students from Google Sheets to Supabase
+  const [syncingSheetsStudents, setSyncingSheetsStudents] = useState(false);
+  const [syncSheetsStudentsMessage, setSyncSheetsStudentsMessage] = useState<string | null>(null);
+
+  const handleSyncStudentsFromSheets = useCallback(async () => {
+    setSyncingSheetsStudents(true);
+    setSyncSheetsStudentsMessage('Dang dong bo hoc vien tu Google Sheets...');
+    try {
+      const res = await fetch('/api/admin/sync-users', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncSheetsStudentsMessage(
+          `Import hoan tat: ${data.stats?.added || 0} them moi, ${data.stats?.updated || 0} cap nhat, ${data.stats?.skipped || 0} bo qua (tong: ${data.stats?.total || 0})`
+        );
+        // Refresh student list
+        fetchStudents();
+      } else {
+        setSyncSheetsStudentsMessage(`Loi: ${data.error || 'Import that bai'}`);
+      }
+    } catch (err) {
+      setSyncSheetsStudentsMessage(`Loi ket noi: ${err instanceof Error ? err.message : 'unknown'}`);
+    } finally {
+      setSyncingSheetsStudents(false);
+    }
+  }, [fetchStudents]);
+
   // Save a single course to Supabase via API
   const [courseError, setCourseError] = useState<string | null>(null);
 
@@ -884,6 +913,9 @@ export default function AdminDashboard() {
             setShowAddCourseModal={setShowAddCourseModal}
             handleRemoveCourse={handleRemoveCourse}
             onRefresh={fetchStudents}
+            onSyncFromSheets={handleSyncStudentsFromSheets}
+            syncingSheets={syncingSheetsStudents}
+            syncSheetsMessage={syncSheetsStudentsMessage}
             LevelBadge={LevelBadge}
           />
         )}

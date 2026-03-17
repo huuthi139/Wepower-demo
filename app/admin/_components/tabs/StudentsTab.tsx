@@ -35,6 +35,9 @@ interface StudentsTabProps {
   setShowAddCourseModal: (studentId: string | null) => void;
   handleRemoveCourse: (studentId: string, courseId: string) => void;
   onRefresh: () => void;
+  onSyncFromSheets?: () => void;
+  syncingSheets?: boolean;
+  syncSheetsMessage?: string | null;
   LevelBadge: React.ComponentType<{ level: MemberLevel }>;
 }
 
@@ -50,14 +53,71 @@ export function StudentsTab({
   setShowAddCourseModal,
   handleRemoveCourse,
   onRefresh,
+  onSyncFromSheets,
+  syncingSheets,
+  syncSheetsMessage,
   LevelBadge,
 }: StudentsTabProps) {
   return (
     <div className="space-y-6">
-      {/* Filter + Refresh */}
+      {/* Sync from Google Sheets banner */}
+      {(students.length === 0 && !studentsLoading) && onSyncFromSheets && (
+        <div className="bg-teal/10 border border-teal/20 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-teal/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-white font-semibold mb-1">Import danh sach hoc vien tu Google Sheets</h4>
+              <p className="text-sm text-gray-400 mb-3">
+                Chua co hoc vien nao trong he thong. Ban co the import danh sach hoc vien tu Google Sheets.
+              </p>
+              <button
+                onClick={onSyncFromSheets}
+                disabled={syncingSheets}
+                className="px-4 py-2 bg-teal hover:bg-teal/80 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {syncingSheets ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Dang import...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import tu Google Sheets
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync message */}
+      {syncSheetsMessage && (
+        <div className={`p-3 rounded-lg text-sm ${
+          syncSheetsMessage.includes('thanh cong') || syncSheetsMessage.includes('hoan tat')
+            ? 'bg-green-500/10 border border-green-500/20 text-green-300'
+            : syncSheetsMessage.includes('loi') || syncSheetsMessage.includes('that bai')
+            ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+            : 'bg-teal/10 border border-teal/20 text-teal'
+        }`}>
+          {syncSheetsMessage}
+        </div>
+      )}
+
+      {/* Filter + Refresh + Sync */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">Lọc theo hạng tài khoản:</span>
+          <span className="text-sm text-gray-400">Loc theo hang tai khoan:</span>
           {(['all', 'Free', 'Premium', 'VIP'] as const).map(f => (
             <button
               key={f}
@@ -66,20 +126,34 @@ export function StudentsTab({
                 studentFilter === f ? 'bg-teal text-white' : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              {f === 'all' ? 'Tất cả' : f} {f !== 'all' && `(${students.filter(s => s.memberLevel === f).length})`}
+              {f === 'all' ? 'Tat ca' : f} {f !== 'all' && `(${students.filter(s => s.memberLevel === f).length})`}
             </button>
           ))}
         </div>
-        <button
-          onClick={onRefresh}
-          disabled={studentsLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-        >
-          <svg className={`w-3.5 h-3.5 ${studentsLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          {onSyncFromSheets && students.length > 0 && (
+            <button
+              onClick={onSyncFromSheets}
+              disabled={syncingSheets}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal/10 text-teal hover:bg-teal/20 transition-colors disabled:opacity-50"
+            >
+              <svg className={`w-3.5 h-3.5 ${syncingSheets ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Sync Google Sheets
+            </button>
+          )}
+          <button
+            onClick={onRefresh}
+            disabled={studentsLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            <svg className={`w-3.5 h-3.5 ${studentsLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Lam moi
+          </button>
+        </div>
       </div>
 
       {/* Error message */}
