@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
-    const res = await fetch(`${scriptUrl}?action=getUsers`, {
+    const res = await fetch(`${scriptUrl}?action=getUsersForSync`, {
       redirect: 'follow',
       signal: controller.signal,
     });

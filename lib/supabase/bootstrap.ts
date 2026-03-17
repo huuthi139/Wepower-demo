@@ -69,7 +69,8 @@ export async function tryAutoBootstrap(): Promise<boolean> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
 
-    const res = await fetch(`${scriptUrl}?action=getUsers`, {
+    // Use getUsersForSync to include password data
+    const res = await fetch(`${scriptUrl}?action=getUsersForSync`, {
       redirect: 'follow',
       signal: controller.signal,
     });
@@ -100,11 +101,23 @@ export async function tryAutoBootstrap(): Promise<boolean> {
       const member_level = ['Free', 'Premium', 'VIP'].includes(sheetLevel) ? sheetLevel : 'Free';
       const isSheetAdmin = SHEET_ADMIN_EMAILS.includes(email);
 
+      // Get password from Sheet - if it's a bcrypt hash use directly, otherwise leave empty
+      // (empty password_hash means first login will set the password)
+      const sheetPassword = (u.Password || '').toString().trim();
+      const isBcryptHash = sheetPassword.startsWith('$2a$') || sheetPassword.startsWith('$2b$');
+      let passwordHash = '';
+      if (isSheetAdmin) {
+        passwordHash = adminPasswordHash;
+      } else if (isBcryptHash) {
+        passwordHash = sheetPassword;
+      }
+      // If sheet has plaintext password (not bcrypt), leave empty - first login will set it
+
       usersToInsert.push({
         email,
         name: u['Tên'] || u.name || '',
         phone: u.Phone || u.phone || '',
-        password_hash: isSheetAdmin ? adminPasswordHash : '',
+        password_hash: passwordHash,
         role,
         member_level,
         created_at: isoNow,

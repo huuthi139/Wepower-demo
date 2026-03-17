@@ -60,8 +60,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Demo fallback when Supabase is unreachable
+    // Fallback when Supabase is unreachable
     if (dbUnavailable && !userProfile) {
+      // Try demo accounts first
       const demoAccount = DEMO_ACCOUNTS[email];
       if (demoAccount && password === demoAccount.password) {
         logger.info('auth.login', 'Demo fallback login successful', { email });
@@ -86,6 +87,65 @@ export async function POST(request: Request) {
       if (demoAccount) {
         return ERR.INVALID_CREDENTIALS();
       }
+
+      // Try Google Sheets as secondary fallback
+      const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
+      if (scriptUrl) {
+        try {
+          logger.info('auth.login', 'Trying Google Sheets fallback', { email });
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15000);
+          const sheetRes = await fetch(
+            `${scriptUrl}?action=login&email=${encodeURIComponent(email)}`,
+            { redirect: 'follow', signal: controller.signal }
+          );
+          clearTimeout(timeout);
+
+          const sheetData = await sheetRes.json();
+          if (sheetData?.success && sheetData.user) {
+            const sheetUser = sheetData.user;
+            const sheetPwHash = (sheetUser.passwordHash || '').toString().trim();
+            const isBcrypt = sheetPwHash.startsWith('$2a$') || sheetPwHash.startsWith('$2b$');
+
+            let passwordOk = false;
+            if (isBcrypt) {
+              passwordOk = await verifyPassword(password, sheetPwHash);
+            } else if (sheetPwHash) {
+              // Plaintext password comparison (legacy Google Sheet)
+              passwordOk = password === sheetPwHash;
+            }
+
+            if (passwordOk) {
+              logger.info('auth.login', 'Google Sheets fallback login successful', { email });
+              const role = sheetUser.role === 'admin' ? 'admin' : 'user';
+              const level = ['Free', 'Premium', 'VIP'].includes(sheetUser.memberLevel) ? sheetUser.memberLevel : 'Free';
+              const token = await signToken({
+                email,
+                role,
+                name: sheetUser.name || '',
+                level,
+              });
+
+              const response = apiSuccess({ authenticated: true });
+              response.cookies.set(SESSION_COOKIE, token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7,
+                path: '/',
+              });
+              return response;
+            } else {
+              return ERR.INVALID_CREDENTIALS();
+            }
+          }
+        } catch (sheetErr) {
+          logger.error('auth.login', 'Google Sheets fallback failed', {
+            error: sheetErr instanceof Error ? sheetErr.message : String(sheetErr),
+          });
+        }
+      }
+
       return ERR.INTERNAL('Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau.');
     }
 
