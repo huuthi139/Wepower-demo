@@ -189,5 +189,18 @@ VALUES
   ('course-006', 'Sales & Negotiation Skills', 'Kỹ năng bán hàng và đàm phán chuyên nghiệp.', '', 'WEDU', 'Business', 1800000, 2800000, 4.8, 178, 1580, 420, 21, 'Hot', 'VIP', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- SEED DATA: Admin account (password: Admin@123)
+-- Password hash generated with bcryptjs, 10 salt rounds
+INSERT INTO public.users (email, name, phone, password_hash, role, member_level)
+VALUES (
+  'admin@wedu.vn',
+  'Admin WEDU',
+  '',
+  '$2a$10$YourHashHere',
+  'admin',
+  'VIP'
+)
+ON CONFLICT (email) DO NOTHING;
+
 SELECT 'Migration completed successfully!' as result;
 `.trim();
