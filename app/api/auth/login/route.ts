@@ -53,39 +53,34 @@ export async function POST(request: Request) {
     }
 
     if (userProfile) {
-      // Verify password - reject if no password_hash is set
-      if (!userProfile.password_hash) {
-        return NextResponse.json(
-          { success: false, error: 'Tài khoản chưa thiết lập mật khẩu. Vui lòng dùng chức năng Quên mật khẩu.' },
-          { status: 401 }
-        );
-      }
-      const isValid = await verifyPassword(password, userProfile.password_hash);
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: 'Email hoặc mật khẩu không đúng' },
-          { status: 401 }
-        );
+      // Verify password against Supabase hash
+      let supabaseAuthOk = false;
+      if (userProfile.password_hash) {
+        supabaseAuthOk = await verifyPassword(password, userProfile.password_hash);
       }
 
-      const role = isAdminRole(userProfile.role) ? 'admin'
-        : isSubAdminRole(userProfile.role) ? 'sub_admin'
-        : userProfile.role === 'instructor' ? 'instructor'
-        : userProfile.role || 'user';
-      const memberLevel = userProfile.member_level || 'Free';
+      if (supabaseAuthOk) {
+        const role = isAdminRole(userProfile.role) ? 'admin'
+          : isSubAdminRole(userProfile.role) ? 'sub_admin'
+          : userProfile.role === 'instructor' ? 'instructor'
+          : userProfile.role || 'user';
+        const memberLevel = userProfile.member_level || 'Free';
 
-      const token = await signToken({ email: userProfile.email, role, name: userProfile.name, level: memberLevel });
+        const token = await signToken({ email: userProfile.email, role, name: userProfile.name, level: memberLevel });
 
-      return buildJsonResponse({
-        name: userProfile.name,
-        email: userProfile.email,
-        phone: userProfile.phone || '',
-        role,
-        memberLevel,
-      }, token);
+        return buildJsonResponse({
+          name: userProfile.name,
+          email: userProfile.email,
+          phone: userProfile.phone || '',
+          role,
+          memberLevel,
+        }, token);
+      }
+
+      // Supabase password failed or not set — check demo users before rejecting
     }
 
-    // Fallback: Demo users (for development/testing only)
+    // Fallback: Demo users (for development/testing, or Supabase user without password)
     const demoUser = DEMO_USERS.find(
       u => u.email.toLowerCase() === email
     );

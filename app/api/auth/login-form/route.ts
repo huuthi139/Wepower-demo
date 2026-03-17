@@ -58,33 +58,33 @@ export async function POST(request: Request) {
     }
 
     if (userProfile) {
-      if (!userProfile.password_hash) {
-        return redirectWithError('Tài khoản chưa thiết lập mật khẩu. Vui lòng dùng chức năng Quên mật khẩu.', request.url);
+      let supabaseAuthOk = false;
+      if (userProfile.password_hash) {
+        supabaseAuthOk = await verifyPassword(password, userProfile.password_hash);
       }
 
-      const isValid = await verifyPassword(password, userProfile.password_hash);
-      if (!isValid) {
-        return redirectWithError('Email hoặc mật khẩu không đúng', request.url);
+      if (supabaseAuthOk) {
+        const role = isAdminRole(userProfile.role) ? 'admin'
+          : isSubAdminRole(userProfile.role) ? 'sub_admin'
+          : userProfile.role === 'instructor' ? 'instructor'
+          : userProfile.role || 'user';
+        const memberLevel = userProfile.member_level || 'Free';
+
+        const token = await signToken({ email: userProfile.email, role, name: userProfile.name, level: memberLevel });
+
+        return buildLoginResponse({
+          name: userProfile.name,
+          email: userProfile.email,
+          phone: userProfile.phone || '',
+          role,
+          memberLevel,
+        }, token, request.url);
       }
 
-      const role = isAdminRole(userProfile.role) ? 'admin'
-        : isSubAdminRole(userProfile.role) ? 'sub_admin'
-        : userProfile.role === 'instructor' ? 'instructor'
-        : userProfile.role || 'user';
-      const memberLevel = userProfile.member_level || 'Free';
-
-      const token = await signToken({ email: userProfile.email, role, name: userProfile.name, level: memberLevel });
-
-      return buildLoginResponse({
-        name: userProfile.name,
-        email: userProfile.email,
-        phone: userProfile.phone || '',
-        role,
-        memberLevel,
-      }, token, request.url);
+      // Supabase password failed or not set — check demo users before rejecting
     }
 
-    // Fallback: Demo users (for development/testing)
+    // Fallback: Demo users (for development/testing, or Supabase user without password)
     const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === email);
     if (demoUser && demoUser.plainPassword === password) {
       const token = await signToken({ email: demoUser.email, role: demoUser.role, name: demoUser.name, level: demoUser.memberLevel });
