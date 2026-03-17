@@ -54,7 +54,7 @@ export async function POST() {
     success: false,
     missing,
     message: `Thiếu ${missing.length} bảng. Copy SQL bên dưới → paste vào Supabase Dashboard → SQL Editor → Run.`,
-    dashboard_url: `https://supabase.com/dashboard/project/juawbhosgdnfyeaanpnv/sql`,
+    dashboard_url: `https://supabase.com/dashboard/project/fmctniqxvkcfcqzpaalc/sql`,
     sql: MIGRATION_SQL,
   });
 }
