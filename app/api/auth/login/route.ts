@@ -23,8 +23,16 @@ export async function POST(request: Request) {
     try {
       userProfile = await getUserByEmail(email);
     } catch (err) {
-      logger.error('auth.login', 'DB lookup failed', { email, error: err instanceof Error ? err.message : String(err) });
-      return ERR.INTERNAL('Lỗi hệ thống, vui lòng thử lại');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error('auth.login', 'DB lookup failed', { email, error: errMsg });
+      // Check for common issues and provide helpful error messages
+      if (errMsg.includes('Thiếu biến môi trường') || errMsg.includes('SUPABASE')) {
+        return ERR.INTERNAL('Lỗi cấu hình hệ thống. Vui lòng liên hệ quản trị viên.');
+      }
+      if (errMsg.includes('PGRST') || errMsg.includes('relation') || errMsg.includes('does not exist')) {
+        return ERR.INTERNAL('Cơ sở dữ liệu chưa được thiết lập. Vui lòng chạy /api/admin/setup-db.');
+      }
+      return ERR.INTERNAL('Lỗi hệ thống, vui lòng thử lại sau');
     }
 
     if (!userProfile) {

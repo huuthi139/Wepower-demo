@@ -28,8 +28,15 @@ export async function getUserByEmail(email: string): Promise<SupabaseUser | null
     .limit(1)
     .single();
 
-  if (error || !data) return null;
-  return data as SupabaseUser;
+  if (error) {
+    // PGRST116 = "no rows found" from .single() - this is expected when user doesn't exist
+    if (error.code === 'PGRST116') return null;
+    // Any other error (table missing, connection issue, etc.) should be thrown
+    // so the caller can handle it properly
+    throw new Error(`[Supabase] getUserByEmail failed: ${error.message} (code: ${error.code})`);
+  }
+
+  return data as SupabaseUser || null;
 }
 
 /**
