@@ -202,7 +202,7 @@ async function importStudents(
     // Check existing user
     const { data: existing } = await supabase
       .from('users')
-      .select('id, email, name, phone, system_role, status')
+      .select('id, email, name, phone, system_role, status, password_hash')
       .eq('email', email)
       .limit(1)
       .single();
@@ -211,7 +211,7 @@ async function importStudents(
 
     if (existing) {
       // Update only non-empty fields, don't overwrite good data with empty
-      const updates: Record<string, string> = { updated_at: now };
+      const updates: Record<string, unknown> = { updated_at: now };
       if (fullName && fullName !== existing.name) updates.name = fullName;
       if (phone && phone !== existing.phone) updates.phone = phone;
       if (systemRoleRaw && systemRole !== existing.system_role) updates.system_role = systemRole;
@@ -221,6 +221,15 @@ async function importStudents(
       if (systemRoleRaw) {
         const legacyRole = systemRole === 'admin' ? 'admin' : systemRole === 'instructor' ? 'instructor' : 'user';
         updates.role = legacyRole;
+      }
+
+      // If password provided and existing user has no password, set it
+      if (passwordRaw && !existing.password_hash) {
+        try {
+          const { hashPassword } = await import('@/lib/auth/password');
+          updates.password_hash = await hashPassword(passwordRaw);
+          stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Đã set password cho user chưa có mật khẩu' });
+        } catch { /* ignore hash failure */ }
       }
 
       if (Object.keys(updates).length > 1) {
@@ -249,13 +258,14 @@ async function importStudents(
         updated_at: now,
       };
 
-      // Hash password if provided
+      // Hash password if provided, otherwise leave empty for first-login flow
       if (passwordRaw) {
         try {
           const { hashPassword } = await import('@/lib/auth/password');
           insertData.password_hash = await hashPassword(passwordRaw);
         } catch {
           insertData.password_hash = '';
+          stats.errors.push({ row: rowNum, field: 'warning', value: email, message: 'Hash password thất bại, user sẽ dùng first-login flow' });
         }
       } else {
         insertData.password_hash = '';
@@ -266,6 +276,9 @@ async function importStudents(
         stats.errors.push({ row: rowNum, field: 'insert', value: email, message: error.message });
       } else {
         stats.inserted++;
+        if (!passwordRaw) {
+          stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Tạo user không có mật khẩu → first-login sẽ set password' });
+        }
       }
     }
   }
@@ -552,7 +565,7 @@ export async function POST(request: NextRequest) {
   }
 
   const tables = (body.tables as string[]) || ['courses', 'students', 'course_access'];
-  const dryRun = body.dryRun !== false && body.dryRun !== undefined ? Boolean(body.dryRun) : false;
+  const dryRun = body.dryRun === true;
   const upgradeOnly = body.upgradeOnly !== false;
 
   const results: Record<string, ImportStats> = {};
@@ -657,7 +670,7 @@ export async function GET(request: NextRequest) {
     preview,
     instructions: {
       tabs_required: ['students', 'courses', 'course_access'],
-      students_columns: ['email (bắt buộc)', 'full_name', 'phone', 'system_role', 'status'],
+      students_columns: ['email (bắt buộc)', 'full_name', 'phone', 'system_role', 'status', 'password (tùy chọn - nếu trống, first-login sẽ set password)'],
       courses_columns: ['course_code (bắt buộc)', 'title (bắt buộc)', 'slug', 'status'],
       course_access_columns: ['email (bắt buộc)', 'course_code (bắt buộc)', 'access_tier', 'status', 'activated_at', 'expires_at', 'source'],
     },
