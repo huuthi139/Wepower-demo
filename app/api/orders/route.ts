@@ -3,6 +3,9 @@ import { createOrder } from '@/lib/supabase/orders';
 import { grantCourseAccess } from '@/lib/supabase/course-access';
 import { getSupabaseAdmin } from '@/lib/supabase/client';
 import { getSession } from '@/lib/auth/session';
+import type { AccessTier } from '@/lib/types';
+
+const VALID_TIERS: AccessTier[] = ['free', 'premium', 'vip'];
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +28,15 @@ export async function POST(request: Request) {
       return cell;
     });
 
+    // Require authentication for order placement
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn cần đăng nhập để đặt hàng' },
+        { status: 401 }
+      );
+    }
+
     // Save to Supabase (source of truth)
     const order = await createOrder({
       orderId: orderId || `WP-${crypto.randomUUID()}`,
@@ -37,52 +49,61 @@ export async function POST(request: Request) {
       paymentMethod: String(sanitizedRowData[8] || ''),
     });
 
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: 'Không thể tạo đơn hàng' },
+        { status: 500 }
+      );
+    }
+
     // Grant course access for purchased courses
-    const session = await getSession();
-    if (session && order) {
-      const supabase = getSupabaseAdmin();
-      const { data: user } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', session.email.toLowerCase())
-        .limit(1)
-        .single();
+    const supabase = getSupabaseAdmin();
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.email.toLowerCase())
+      .limit(1)
+      .single();
 
-      if (user) {
-        // Parse courseIds from order data
-        const courseIdsStr = String(sanitizedRowData[6] || '');
-        const courseIds = courseIdsStr.split(',').map((id: string) => id.trim()).filter(Boolean);
+    if (user) {
+      // Parse courseIds from order data
+      const courseIdsStr = String(sanitizedRowData[6] || '');
+      const courseIdsList = courseIdsStr.split(',').map((id: string) => id.trim()).filter(Boolean);
 
-        // If courseItems are provided with access_tier info, use them
-        if (Array.isArray(courseItems) && courseItems.length > 0) {
-          for (const item of courseItems) {
-            const tier = item.accessTier || 'premium';
-            await grantCourseAccess({
-              userId: user.id,
-              courseId: item.courseId,
-              accessTier: tier,
-              source: 'order',
-            });
+      // If courseItems are provided with access_tier info, use them
+      if (Array.isArray(courseItems) && courseItems.length > 0) {
+        for (const item of courseItems) {
+          if (!item.courseId) continue;
+          // Validate tier - only accept valid values, default to premium
+          const tier: AccessTier = VALID_TIERS.includes(item.accessTier) ? item.accessTier : 'premium';
 
-            // Also create order_item with access_tier
-            await supabase.from('order_items').insert({
-              order_id: order.id,
-              course_id: item.courseId,
-              course_title: item.courseTitle || '',
-              access_tier: tier,
-              price: item.price || 0,
-            });
-          }
-        } else {
-          // Fallback: grant premium access for all courses in order
-          for (const courseId of courseIds) {
-            await grantCourseAccess({
-              userId: user.id,
-              courseId,
-              accessTier: 'premium',
-              source: 'order',
-            });
-          }
+          await grantCourseAccess({
+            userId: user.id,
+            courseId: item.courseId,
+            accessTier: tier,
+            source: 'order',
+          });
+
+          // Create order_item for traceability
+          await supabase.from('order_items').insert({
+            order_id: order.id,
+            course_id: item.courseId,
+            course_title: item.courseTitle || '',
+            access_tier: tier,
+            price: item.price || 0,
+          }).then(({ error }) => {
+            if (error) console.warn('[Orders] order_item insert failed:', error.message);
+          });
+        }
+      } else {
+        // Fallback: grant premium access for all courses in order
+        for (const courseId of courseIdsList) {
+          await grantCourseAccess({
+            userId: user.id,
+            courseId,
+            accessTier: 'premium',
+            source: 'order',
+          });
         }
       }
     }
@@ -91,7 +112,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Order API error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to process order' },
+      { success: false, error: 'Lỗi hệ thống khi xử lý đơn hàng' },
       { status: 500 }
     );
   }

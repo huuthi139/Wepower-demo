@@ -7,28 +7,47 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEnrollment } from '@/contexts/EnrollmentContext';
+import { useCourseAccess } from '@/contexts/CourseAccessContext';
+import { accessTierLabel } from '@/lib/types';
 
 export default function MyCourses() {
   const { courses, isLoading } = useCourses();
   const { user } = useAuth();
-  const { enrollments } = useEnrollment();
+  const { courseAccessList, enrollments, getProgress } = useCourseAccess();
 
-  // Map enrollments to courses with progress
-  const enrolledCourses = enrollments
-    .map(enrollment => {
-      const course = courses.find(c => c.id === enrollment.courseId);
+  // Build set of courses the user has paid access to (via course_access)
+  const accessCourseIds = new Set(
+    courseAccessList
+      .filter(ca => ca.status === 'active')
+      .map(ca => ca.courseId)
+  );
+
+  // Also include legacy enrollments for backward compat (free courses etc.)
+  const enrolledCourseIds = new Set(enrollments.map(e => e.courseId));
+
+  // Merge both sets
+  const allMyCourseIds = new Set([...accessCourseIds, ...enrolledCourseIds]);
+
+  // Map to courses with progress
+  const myCourses = Array.from(allMyCourseIds)
+    .map(courseId => {
+      const course = courses.find(c => c.id === courseId);
       if (!course) return null;
-      return { ...course, progress: enrollment.progress };
+      const progress = getProgress(courseId);
+      const access = courseAccessList.find(ca => ca.courseId === courseId && ca.status === 'active');
+      return {
+        ...course,
+        progress,
+        accessTierLabel: access ? accessTierLabel(access.accessTier) : 'Free',
+      };
     })
     .filter((c): c is NonNullable<typeof c> => c !== null);
 
-  const completedCourses = enrolledCourses.filter(c => c.progress === 100);
-  const inProgressCourses = enrolledCourses.filter(c => (c.progress ?? 0) < 100);
+  const completedCourses = myCourses.filter(c => c.progress === 100);
+  const inProgressCourses = myCourses.filter(c => (c.progress ?? 0) < 100);
 
-  // Recommend courses user hasn't enrolled in
-  const enrolledIds = new Set(enrollments.map(e => e.courseId));
-  const recommendedCourses = courses.filter(c => !enrolledIds.has(c.id)).slice(0, 3);
+  // Recommend courses user hasn't accessed
+  const recommendedCourses = courses.filter(c => !allMyCourseIds.has(c.id)).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-dark">
@@ -48,7 +67,7 @@ export default function MyCourses() {
         {/* Stats Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-white mb-1">{enrolledCourses.length}</div>
+            <div className="text-3xl font-bold text-white mb-1">{myCourses.length}</div>
             <div className="text-sm text-gray-400">Tổng khóa học</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
@@ -86,7 +105,7 @@ export default function MyCourses() {
         )}
 
         {/* Empty state */}
-        {enrolledCourses.length === 0 && (
+        {myCourses.length === 0 && (
           <div className="mb-12 text-center py-12 bg-white/5 border border-white/10 rounded-xl">
             <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

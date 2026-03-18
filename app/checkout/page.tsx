@@ -10,7 +10,7 @@ import type { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useCart } from '@/contexts/CartContext';
-import { useEnrollment } from '@/contexts/EnrollmentContext';
+import { useCourseAccess } from '@/contexts/CourseAccessContext';
 import Image from 'next/image';
 
 function CheckoutContent() {
@@ -18,7 +18,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { clearCart } = useCart();
-  const { addOrder } = useEnrollment();
+  const { addOrder, refreshAccess } = useCourseAccess();
   const { courses: allCourses } = useCourses();
 
   const [formData, setFormData] = useState({
@@ -94,10 +94,11 @@ function CheckoutContent() {
 
     try {
       // Submit order to Supabase via API route
+      // This creates the order AND grants course_access on the server
       const { submitOrder } = await import('@/lib/googleSheets');
       await submitOrder(orderData);
 
-      // Save order and auto-enroll courses
+      // Track order in local state (for UI display)
       addOrder({
         name: formData.name,
         email: formData.email,
@@ -106,6 +107,9 @@ function CheckoutContent() {
         total: totalPrice,
         paymentMethod: formData.paymentMethod,
       });
+
+      // Refresh course access from server to reflect new access grants
+      await refreshAccess();
 
       showToast('Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
 
