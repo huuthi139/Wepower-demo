@@ -258,17 +258,19 @@ async function importStudents(
         updated_at: now,
       };
 
-      // Hash password if provided, otherwise leave empty for first-login flow
+      // Hash password if provided, otherwise lock account until activation via forgot-password flow
       if (passwordRaw) {
         try {
           const { hashPassword } = await import('@/lib/auth/password');
           insertData.password_hash = await hashPassword(passwordRaw);
         } catch {
-          insertData.password_hash = '';
-          stats.errors.push({ row: rowNum, field: 'warning', value: email, message: 'Hash password thất bại, user sẽ dùng first-login flow' });
+          const { LOCKED_PASSWORD_SENTINEL } = await import('@/lib/auth/password');
+          insertData.password_hash = LOCKED_PASSWORD_SENTINEL;
+          stats.errors.push({ row: rowNum, field: 'warning', value: email, message: 'Hash password thất bại, user cần dùng "Quên mật khẩu" để kích hoạt' });
         }
       } else {
-        insertData.password_hash = '';
+        const { LOCKED_PASSWORD_SENTINEL } = await import('@/lib/auth/password');
+        insertData.password_hash = LOCKED_PASSWORD_SENTINEL;
       }
 
       const { error } = await supabase.from('users').insert(insertData);
@@ -277,7 +279,7 @@ async function importStudents(
       } else {
         stats.inserted++;
         if (!passwordRaw) {
-          stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Tạo user không có mật khẩu → first-login sẽ set password' });
+          stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Tạo user không có mật khẩu → cần dùng "Quên mật khẩu" để kích hoạt tài khoản' });
         }
       }
     }
@@ -388,7 +390,8 @@ async function importCourseAccess(
         userId = user.id as string;
         userCache.set(email, userId);
       } else {
-        // Auto-create placeholder profile
+        // Auto-create placeholder profile (locked – must activate via forgot-password)
+        const { LOCKED_PASSWORD_SENTINEL } = await import('@/lib/auth/password');
         const now = new Date().toISOString();
         const { data: newUser, error: createErr } = await supabase
           .from('users')
@@ -396,7 +399,7 @@ async function importCourseAccess(
             email,
             name: email.split('@')[0],
             phone: '',
-            password_hash: '',
+            password_hash: LOCKED_PASSWORD_SENTINEL,
             role: 'user',
             system_role: 'student',
             member_level: 'Free',
@@ -414,7 +417,7 @@ async function importCourseAccess(
 
         userId = newUser.id as string;
         userCache.set(email, userId);
-        stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Đã tạo profile placeholder (chưa có mật khẩu)' });
+        stats.errors.push({ row: rowNum, field: 'info', value: email, message: 'Đã tạo profile placeholder (bị khóa - cần "Quên mật khẩu" để kích hoạt)' });
       }
     }
 
@@ -670,7 +673,7 @@ export async function GET(request: NextRequest) {
     preview,
     instructions: {
       tabs_required: ['students', 'courses', 'course_access'],
-      students_columns: ['email (bắt buộc)', 'full_name', 'phone', 'system_role', 'status', 'password (tùy chọn - nếu trống, first-login sẽ set password)'],
+      students_columns: ['email (bắt buộc)', 'full_name', 'phone', 'system_role', 'status', 'password (tùy chọn - nếu trống, user cần dùng "Quên mật khẩu" để kích hoạt)'],
       courses_columns: ['course_code (bắt buộc)', 'title (bắt buộc)', 'slug', 'status'],
       course_access_columns: ['email (bắt buộc)', 'course_code (bắt buộc)', 'access_tier', 'status', 'activated_at', 'expires_at', 'source'],
     },
