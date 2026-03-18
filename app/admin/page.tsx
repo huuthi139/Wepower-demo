@@ -262,7 +262,7 @@ export default function AdminDashboard() {
       });
       const apiData = await res.json();
 
-      if (apiData?.success && Array.isArray(apiData.users) && apiData.users.length > 0) {
+      if (apiData?.success && Array.isArray(apiData.users)) {
         setStudents(mapUsersToStudents(apiData.users));
         return;
       }

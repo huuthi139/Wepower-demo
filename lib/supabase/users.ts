@@ -136,8 +136,10 @@ export async function getAllUsers(): Promise<SupabaseUser[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error || !data) return [];
-  return data as SupabaseUser[];
+  if (error) {
+    throw new Error(`[Supabase] getAllUsers failed: ${error.message} (code: ${error.code})`);
+  }
+  return (data as SupabaseUser[]) || [];
 }
 
 /**
