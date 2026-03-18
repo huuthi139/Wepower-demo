@@ -230,30 +230,44 @@ async function syncReviews(sheetId: string): Promise<{ added: number; skipped: n
   return stats;
 }
 
-async function syncCourses(): Promise<{ added: number; skipped: number; errors: number }> {
+async function syncCourses(sheetId?: string): Promise<{ added: number; updated: number; skipped: number; errors: number }> {
   const supabase = getSupabaseAdmin();
-  const stats = { added: 0, skipped: 0, errors: 0 };
+  const stats = { added: 0, updated: 0, skipped: 0, errors: 0 };
 
-  // Import fallback courses as seed data
-  const { FALLBACK_COURSES } = await import('@/lib/fallback-data');
+  // Try Google Sheets first, fall back to embedded data
+  let courses: Array<{
+    id: string; title: string; description: string; thumbnail: string;
+    instructor: string; category: string; price: number; originalPrice?: number;
+    rating: number; reviewsCount: number; enrollmentsCount: number;
+    duration: number; lessonsCount: number; badge?: string; memberLevel: string;
+  }> = [];
 
-  for (const course of FALLBACK_COURSES) {
-    // Check if already exists
-    const { data: existing } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('id', course.id)
-      .limit(1)
-      .single();
+  if (sheetId) {
+    try {
+      const { fetchCoursesFromSheet } = await import('@/lib/googleSheets/courses');
+      const sheetCourses = await fetchCoursesFromSheet(sheetId);
+      if (sheetCourses.length > 0) {
+        courses = sheetCourses;
+        console.log(`[SyncCourses] Using ${sheetCourses.length} courses from Google Sheets`);
+      }
+    } catch (err) {
+      console.warn('[SyncCourses] Failed to fetch from Google Sheets:', err);
+    }
+  }
 
-    if (existing) { stats.skipped++; continue; }
+  if (courses.length === 0) {
+    const { FALLBACK_COURSES } = await import('@/lib/fallback-data');
+    courses = FALLBACK_COURSES;
+    console.log(`[SyncCourses] Using ${courses.length} courses from fallback data`);
+  }
 
-    const { error } = await supabase.from('courses').insert({
+  for (const course of courses) {
+    const courseData = {
       id: course.id,
       title: course.title,
       description: course.description || '',
       thumbnail: course.thumbnail || '',
-      instructor: course.instructor || 'WEDU',
+      instructor: course.instructor || 'WePower Academy',
       category: course.category || '',
       price: course.price ?? 0,
       original_price: course.originalPrice ?? null,
@@ -266,10 +280,27 @@ async function syncCourses(): Promise<{ added: number; skipped: number; errors: 
       member_level: course.memberLevel || 'Free',
       is_active: true,
       updated_at: new Date().toISOString(),
-    });
+    };
 
-    if (error) { stats.errors++; console.error('[SyncCourses] Insert error:', error.message); }
-    else { stats.added++; }
+    const { data: existing } = await supabase
+      .from('courses')
+      .select('id')
+      .eq('id', course.id)
+      .limit(1)
+      .single();
+
+    if (existing) {
+      // Update existing course with latest data from source
+      const { error } = await supabase.from('courses')
+        .update(courseData)
+        .eq('id', course.id);
+      if (error) { stats.errors++; console.error('[SyncCourses] Update error:', error.message); }
+      else { stats.updated++; }
+    } else {
+      const { error } = await supabase.from('courses').insert(courseData);
+      if (error) { stats.errors++; console.error('[SyncCourses] Insert error:', error.message); }
+      else { stats.added++; }
+    }
   }
 
   return stats;
@@ -396,9 +427,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const tables = body.tables || ['courses', 'orders', 'enrollments', 'reviews', 'chapters'];
 
-    // Sync courses from fallback data (seed)
+    // Sync courses from Google Sheets (or fallback data)
     if (tables.includes('courses')) {
-      results.courses = await syncCourses();
+      results.courses = await syncCourses(sheetId || undefined);
     }
 
     // Sync orders from CSV
