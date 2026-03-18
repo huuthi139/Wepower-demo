@@ -25,19 +25,16 @@ export interface AuditEntry {
 export async function writeAuditLog(entry: AuditEntry): Promise<void> {
   try {
     const supabase = getSupabaseAdmin();
+    // Production uses migration 002 schema: action, entity_type, entity_id, before_json, after_json
     const { error } = await supabase
       .from('audit_logs')
       .insert({
         actor_user_id: entry.actorUserId || null,
-        action_type: entry.actionType,
-        target_table: entry.targetTable || null,
-        target_id: entry.targetId || null,
-        entity_key: entry.entityKey || null,
-        old_value: entry.oldValue || null,
-        new_value: entry.newValue || null,
-        metadata: entry.metadata || null,
-        status: entry.status || 'success',
-        error_message: entry.errorMessage || null,
+        action: entry.actionType,
+        entity_type: entry.targetTable || 'system',
+        entity_id: entry.targetId || entry.entityKey || null,
+        before_json: entry.oldValue || null,
+        after_json: entry.newValue || entry.metadata || null,
       });
 
     if (error) {
@@ -55,17 +52,14 @@ export async function writeAuditLogBatch(entries: AuditEntry[]): Promise<void> {
   if (entries.length === 0) return;
   try {
     const supabase = getSupabaseAdmin();
+    // Production uses migration 002 schema: action, entity_type, entity_id, before_json, after_json
     const rows = entries.map(entry => ({
       actor_user_id: entry.actorUserId || null,
-      action_type: entry.actionType,
-      target_table: entry.targetTable || null,
-      target_id: entry.targetId || null,
-      entity_key: entry.entityKey || null,
-      old_value: entry.oldValue || null,
-      new_value: entry.newValue || null,
-      metadata: entry.metadata || null,
-      status: entry.status || 'success',
-      error_message: entry.errorMessage || null,
+      action: entry.actionType,
+      entity_type: entry.targetTable || 'system',
+      entity_id: entry.targetId || entry.entityKey || null,
+      before_json: entry.oldValue || null,
+      after_json: entry.newValue || entry.metadata || null,
     }));
 
     const { error } = await supabase.from('audit_logs').insert(rows);
@@ -129,7 +123,7 @@ export async function getAuditLogsByAction(actionType: string, limit = 50): Prom
     const { data } = await supabase
       .from('audit_logs')
       .select('*')
-      .eq('action_type', actionType)
+      .eq('action', actionType)
       .order('created_at', { ascending: false })
       .limit(limit);
 
