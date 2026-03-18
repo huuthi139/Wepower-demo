@@ -6,7 +6,12 @@ import { getSectionsByCourse } from '@/lib/supabase/sections';
 import { getChaptersByCourse } from '@/lib/supabase/chapters';
 import { getSupabaseAdmin } from '@/lib/supabase/client';
 import { FALLBACK_CHAPTERS } from '@/lib/fallback-chapters';
-import type { LessonRow } from '@/lib/types';
+import { getSession } from '@/lib/auth/session';
+import { getEffectiveAccessTier } from '@/lib/supabase/course-access';
+import { getUserByEmail } from '@/lib/supabase/users';
+import { meetsAccessTier } from '@/lib/types';
+import { isAdminLevelRole, normalizeRole } from '@/lib/auth/permissions';
+import type { LessonRow, AccessTier } from '@/lib/types';
 
 // Parse "MM:SS" duration to seconds
 function parseDurationToSeconds(duration: string): number {
@@ -30,24 +35,56 @@ function accessTierToLevel(tier: string | undefined): string {
 }
 
 /**
- * Convert normalized sections+lessons to the legacy chapter format
- * that the frontend expects.
+ * Convert normalized sections+lessons to the legacy chapter format.
+ * Strips sensitive content (directPlayUrl, video_url) for lessons the user cannot access.
  */
-function sectionsToChapterFormat(sections: Array<{ id: string; title: string; lessons: LessonRow[] }>) {
+function sectionsToChapterFormat(
+  sections: Array<{ id: string; title: string; lessons: LessonRow[] }>,
+  userTier: AccessTier,
+  isStaffUser: boolean,
+) {
   return sections.map(sec => ({
     id: sec.id,
     title: sec.title,
-    lessons: sec.lessons.map(ls => ({
-      id: ls.id,
-      title: ls.title,
-      duration: ls.duration || '',
-      accessTier: (ls as any).access_tier || 'free',
-      requiredLevel: accessTierToLevel((ls as any).access_tier),
-      lessonType: (ls as any).lesson_type || 'video',
-      directPlayUrl: ls.direct_play_url || '',
-      isPreview: ls.is_preview || false,
-      thumbnail: '',
-    })),
+    lessons: sec.lessons.map(ls => {
+      const lessonTier = (ls as LessonRow & { access_tier?: string }).access_tier || 'free';
+      const canAccess = isStaffUser || meetsAccessTier(userTier, lessonTier as AccessTier);
+
+      return {
+        id: ls.id,
+        title: ls.title,
+        duration: ls.duration || '',
+        accessTier: lessonTier,
+        requiredLevel: accessTierToLevel(lessonTier),
+        lessonType: (ls as LessonRow & { lesson_type?: string }).lesson_type || 'video',
+        // Only expose play URL if user has access
+        directPlayUrl: canAccess ? (ls.direct_play_url || '') : '',
+        isPreview: ls.is_preview || false,
+        thumbnail: '',
+      };
+    }),
+  }));
+}
+
+/**
+ * Strip content from legacy/fallback chapters based on user access tier.
+ */
+function protectChapterContent(
+  chapters: Array<{ id: string; title: string; lessons: Array<Record<string, unknown>> }>,
+  userTier: AccessTier,
+  isStaffUser: boolean,
+) {
+  return chapters.map(ch => ({
+    ...ch,
+    lessons: (ch.lessons || []).map(ls => {
+      const lessonTier = (ls.accessTier as string) || 'free';
+      const canAccess = isStaffUser || meetsAccessTier(userTier, lessonTier as AccessTier);
+      return {
+        ...ls,
+        directPlayUrl: canAccess ? (ls.directPlayUrl || '') : '',
+        videoUrl: canAccess ? (ls.videoUrl || '') : '',
+      };
+    }),
   }));
 }
 
@@ -63,10 +100,25 @@ export async function GET(
     const { courseId } = params;
     if (!courseId) return NextResponse.json({ success: false, error: 'Missing courseId' }, { status: 400 });
 
+    // Determine user's access tier for content protection
+    let userTier: AccessTier = 'free';
+    let isStaffUser = false;
+    const session = await getSession();
+    if (session) {
+      const role = normalizeRole(session.role);
+      isStaffUser = isAdminLevelRole(role) || role === 'instructor';
+      if (!isStaffUser) {
+        const dbUser = await getUserByEmail(session.email);
+        if (dbUser?.id) {
+          userTier = await getEffectiveAccessTier(dbUser.id, courseId);
+        }
+      }
+    }
+
     // 1. Try normalized tables (source of truth)
     const sections = await getSectionsByCourse(courseId);
     if (sections && sections.length > 0) {
-      const chapters = sectionsToChapterFormat(sections);
+      const chapters = sectionsToChapterFormat(sections, userTier, isStaffUser);
       return NextResponse.json({
         success: true,
         chapters,
@@ -80,15 +132,14 @@ export async function GET(
     // 2. Fallback: try legacy JSONB chapters table
     const jsonbChapters = await getChaptersByCourse(courseId);
     if (jsonbChapters && jsonbChapters.length > 0) {
-      // Migrate to normalized tables in background
       migrateJsonbToNormalized(courseId, jsonbChapters).catch(() => {});
-
+      const protected_ = protectChapterContent(jsonbChapters, userTier, isStaffUser);
       return NextResponse.json({
         success: true,
-        chapters: jsonbChapters,
+        chapters: protected_,
         complete: true,
-        expectedChapters: jsonbChapters.length,
-        loadedChapters: jsonbChapters.length,
+        expectedChapters: protected_.length,
+        loadedChapters: protected_.length,
         source: 'jsonb_legacy',
       });
     }
@@ -96,15 +147,14 @@ export async function GET(
     // 3. Fallback: use hardcoded fallback data (seed data)
     const fallbackChapters = FALLBACK_CHAPTERS[courseId];
     if (fallbackChapters && fallbackChapters.length > 0) {
-      // Migrate to normalized tables in background
       migrateJsonbToNormalized(courseId, fallbackChapters).catch(() => {});
-
+      const protected_ = protectChapterContent(fallbackChapters, userTier, isStaffUser);
       return NextResponse.json({
         success: true,
-        chapters: fallbackChapters,
+        chapters: protected_,
         complete: true,
-        expectedChapters: fallbackChapters.length,
-        loadedChapters: fallbackChapters.length,
+        expectedChapters: protected_.length,
+        loadedChapters: protected_.length,
         source: 'fallback',
       });
     }
@@ -121,6 +171,16 @@ export async function POST(
   { params }: { params: { courseId: string } }
 ) {
   try {
+    // Require admin/instructor role to modify course content
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const role = normalizeRole(session.role);
+    if (!isAdminLevelRole(role) && role !== 'instructor') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     const { courseId } = params;
     if (!courseId) return NextResponse.json({ success: false, error: 'Missing courseId' }, { status: 400 });
 

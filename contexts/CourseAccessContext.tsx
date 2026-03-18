@@ -7,7 +7,7 @@ import type { AccessTier, CourseAccess } from '@/lib/types';
 interface CourseAccessContextType {
   /** All course access records for the current user */
   courseAccessList: CourseAccess[];
-  /** Check if user has any access (free/premium/vip) for a course */
+  /** Check if user has any paid access (premium/vip) for a course */
   hasAccess: (courseId: string) => boolean;
   /** Get the access tier for a specific course */
   getAccessTier: (courseId: string) => AccessTier;
@@ -68,7 +68,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const hasSynced = useRef(false);
 
-  // Fetch course access from server
+  // Fetch course access from server (source of truth)
   const refreshAccess = useCallback(async () => {
     try {
       const res = await fetch('/api/course-access');
@@ -82,13 +82,13 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Legacy: sync enrollments from server
+  // Sync from server when user logs in
   const syncFromServer = useCallback(async () => {
     try {
-      // Fetch new course access
+      // Fetch course_access (source of truth)
       await refreshAccess();
 
-      // Also fetch legacy enrollments for backward compat
+      // Also fetch legacy enrollments for progress data backward compat
       const res = await fetch('/api/enrollments');
       if (!res.ok) return;
       const data = await res.json();
@@ -147,7 +147,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
     }
   }, [orders, isLoaded]);
 
-  // Course access helpers
+  // Course access helpers (source of truth: course_access table)
   const hasAccess = useCallback((courseId: string) => {
     return courseAccessList.some(ca => ca.courseId === courseId && ca.status === 'active');
   }, [courseAccessList]);
@@ -162,7 +162,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
     return courseAccessList.find(ca => ca.courseId === courseId && ca.status === 'active') || null;
   }, [courseAccessList]);
 
-  // Legacy enrollment methods
+  // Enroll in free course only (creates enrollment record for progress tracking)
   const enrollCourse = useCallback((courseId: string) => {
     setEnrollments(prev => {
       if (prev.find(e => e.courseId === courseId)) return prev;
@@ -175,7 +175,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
       }];
     });
 
-    // Sync to server
+    // Sync to server (for free course enrollment tracking)
     fetch('/api/enrollments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -186,8 +186,9 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isEnrolled = useCallback((courseId: string) => {
-    // Check both new access list and legacy enrollments
+    // Check course_access first (source of truth for paid access)
     if (courseAccessList.some(ca => ca.courseId === courseId && ca.status === 'active')) return true;
+    // Fallback to legacy enrollments (for free courses)
     return enrollments.some(e => e.courseId === courseId);
   }, [courseAccessList, enrollments]);
 
@@ -223,7 +224,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Sync progress to server
+    // Sync progress to server via legacy enrollment API
     fetch('/api/enrollments/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -242,11 +243,11 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
     };
     setOrders(prev => [newOrder, ...prev]);
 
-    // Auto-enroll courses from the order (legacy compat)
-    orderData.courses.forEach(c => {
-      enrollCourse(c.id);
-    });
-  }, [enrollCourse]);
+    // NOTE: Do NOT auto-enroll here for paid courses.
+    // course_access is granted server-side in /api/orders.
+    // Only enroll for free courses (enrollment is used for progress tracking).
+    // The caller should call refreshAccess() after the order completes.
+  }, []);
 
   const updateOrderStatus = useCallback((orderId: string, status: LegacyOrder['status']) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));

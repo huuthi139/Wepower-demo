@@ -53,11 +53,19 @@ export async function submitOrder(order: OrderPayload): Promise<boolean> {
     '',
   ];
 
+  // Build courseItems with access tier for proper course_access grant
+  const courseItems = order.courses.map(c => ({
+    courseId: c.id,
+    courseTitle: c.title,
+    accessTier: (c as { accessTier?: string }).accessTier || 'premium',
+    price: c.price,
+  }));
+
   try {
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowData, orderId }),
+      body: JSON.stringify({ rowData, orderId, courseItems }),
     });
 
     if (!res.ok) {

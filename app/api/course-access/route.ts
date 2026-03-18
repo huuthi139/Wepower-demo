@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
 import { getCourseAccessByUser } from '@/lib/supabase/course-access';
 import { getSupabaseAdmin } from '@/lib/supabase/client';
-import type { CourseAccess, AccessTier } from '@/lib/types';
+import { courseAccessRowToFrontend } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,18 +30,7 @@ export async function GET() {
   }
 
   const rows = await getCourseAccessByUser(user.id);
-
-  const accessList: CourseAccess[] = rows.map(row => ({
-    id: row.id,
-    userId: row.user_id,
-    courseId: row.course_id,
-    accessTier: row.access_tier as AccessTier,
-    source: row.source as any,
-    status: row.status as any,
-    activatedAt: row.activated_at,
-    expiresAt: row.expires_at,
-    createdAt: row.created_at,
-  }));
+  const accessList = rows.map(courseAccessRowToFrontend);
 
   return NextResponse.json({ success: true, accessList });
 }

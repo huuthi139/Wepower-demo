@@ -8,6 +8,11 @@ export const progressKeys = {
   lesson: (courseId: string, lessonId: string) => ['lesson-progress', courseId, lessonId] as const,
 };
 
+/**
+ * Fetch legacy enrollments for progress data.
+ * NOTE: This is used for backward compatibility with the enrollment-based progress system.
+ * course_access is the source of truth for access control.
+ */
 export function useEnrollments() {
   return useQuery({
     queryKey: ['enrollments'],
@@ -21,6 +26,10 @@ export function useEnrollments() {
   });
 }
 
+/**
+ * Update progress via legacy enrollments API.
+ * NOTE: For new progress system, use useLessonAutosave from useLessonProgress.ts instead.
+ */
 export function useUpdateProgress() {
   const queryClient = useQueryClient();
 
@@ -43,6 +52,10 @@ export function useUpdateProgress() {
   });
 }
 
+/**
+ * @deprecated Use course_access via /api/course-access instead.
+ * This is kept for backward compatibility with components that still use enrollments.
+ */
 export function useEnrollCourse() {
   const queryClient = useQueryClient();
 

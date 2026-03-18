@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCourses } from '@/contexts/CoursesContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEnrollment } from '@/contexts/EnrollmentContext';
 import { useCourseAccess } from '@/contexts/CourseAccessContext';
 import type { MemberLevel, AccessTier } from '@/lib/types';
 import { meetsAccessTier, accessTierLabel } from '@/lib/types';
@@ -63,8 +62,7 @@ export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { enrollCourse, isEnrolled, markLessonComplete } = useEnrollment();
-  const { getAccessTier, getAccess } = useCourseAccess();
+  const { enrollCourse, isEnrolled, markLessonComplete, getAccessTier, getAccess } = useCourseAccess();
   const { courses, isLoading } = useCourses();
   const courseId = params.courseId as string;
   const courseAccessTier = user ? getAccessTier(courseId) : 'free' as AccessTier;
