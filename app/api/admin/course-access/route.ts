@@ -315,7 +315,7 @@ export async function POST(request: NextRequest) {
       targetTable: 'course_access',
       targetId: `${userId}::${courseId}`,
       entityKey: `${userId}::${courseId}`,
-      oldValue: null,
+      oldValue: undefined,
       newValue: { access_tier: accessTier, status: 'active', source: 'manual' },
       status: 'success',
     }).catch(() => {});
