@@ -278,7 +278,7 @@ export default function AdminDashboard() {
           originalPrice: course.originalPrice,
           rating: course.rating,
           reviewsCount: course.reviewsCount,
-          enrollmentsCount: course.enrollmentsCount,
+          // enrollmentsCount is computed from course_access, not stored via save
           duration: course.duration,
           lessonsCount: course.lessonsCount,
           badge: course.badge,
