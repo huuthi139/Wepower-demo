@@ -132,7 +132,6 @@ export async function upsertCourse(course: {
   original_price?: number;
   rating?: number;
   reviews_count?: number;
-  enrollments_count?: number;
   duration?: number;
   lessons_count?: number;
   badge?: string;
@@ -153,7 +152,6 @@ export async function upsertCourse(course: {
     original_price: course.original_price ?? null,
     rating: course.rating ?? 0,
     reviews_count: course.reviews_count ?? 0,
-    enrollments_count: course.enrollments_count ?? 0,
     duration: course.duration ?? 0,
     lessons_count: course.lessons_count ?? 0,
     badge: course.badge || null,
@@ -189,7 +187,6 @@ export async function bulkUpsertCourses(courses: Array<{
   original_price?: number;
   rating?: number;
   reviews_count?: number;
-  enrollments_count?: number;
   duration?: number;
   lessons_count?: number;
   badge?: string;
@@ -209,7 +206,6 @@ export async function bulkUpsertCourses(courses: Array<{
     original_price: c.original_price ?? null,
     rating: c.rating ?? 0,
     reviews_count: c.reviews_count ?? 0,
-    enrollments_count: c.enrollments_count ?? 0,
     duration: c.duration ?? 0,
     lessons_count: c.lessons_count ?? 0,
     badge: c.badge || null,

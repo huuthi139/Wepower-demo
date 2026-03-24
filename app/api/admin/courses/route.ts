@@ -3,6 +3,8 @@ import { requireAdmin, AuthError } from '@/lib/auth/guards';
 import { invalidateCoursesCache } from '@/lib/supabase/courses-cache';
 import { logger } from '@/lib/telemetry/logger';
 
+export const dynamic = 'force-dynamic';
+
 function authErrorResponse(error: unknown) {
   if (error instanceof AuthError) {
     return NextResponse.json(
@@ -58,7 +60,6 @@ export async function POST(request: NextRequest) {
       original_price: body.originalPrice ? Number(body.originalPrice) : undefined,
       rating: Number(body.rating) || 0,
       reviews_count: Number(body.reviewsCount) || 0,
-      enrollments_count: Number(body.enrollmentsCount) || 0,
       duration: Number(body.duration) || 0,
       lessons_count: Number(body.lessonsCount) || 0,
       badge: body.badge || undefined,
