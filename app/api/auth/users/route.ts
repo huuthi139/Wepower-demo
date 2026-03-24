@@ -3,6 +3,9 @@ import { getAllUsers } from '@/lib/supabase/users';
 import { getSupabaseAdmin } from '@/lib/supabase/client';
 import { NextResponse } from 'next/server';
 
+// Force Vercel to always run this route dynamically (no cache)
+export const dynamic = 'force-dynamic';
+
 async function handleFetchUsers() {
   try {
     await requireAdmin();

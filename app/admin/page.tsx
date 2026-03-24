@@ -434,6 +434,11 @@ export default function AdminDashboard() {
     const course = courses.find(c => c.id === courseId);
     if (!course) return;
 
+    console.log('[DEBUG] handleAddCourseToStudent called');
+    console.log('[DEBUG] userId being sent:', studentId);
+    console.log('[DEBUG] userId type:', typeof studentId);
+    console.log('[DEBUG] courseId being sent:', courseId);
+
     try {
       const res = await fetch('/api/admin/course-access', {
         method: 'POST',
