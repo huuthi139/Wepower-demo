@@ -65,9 +65,23 @@ export async function getAllCourses(): Promise<SupabaseCourse[]> {
   console.log(`[Courses] course_access rows: ${accessRows.length}, studentCountMap:`, JSON.stringify(studentCountMap));
 
   const courses = (coursesRes.data || []) as SupabaseCourse[];
+
+  // DEBUG: Log raw enrollments_count from Supabase BEFORE override
+  console.log('[ENROLLMENTS DEBUG] Raw from Supabase (before override):', courses.map(c => ({
+    id: c.id,
+    raw_enrollments_count: (c as any).enrollments_count,
+    has_field: 'enrollments_count' in c,
+  })));
+
   for (const course of courses) {
     course.enrollments_count = studentCountMap[course.id] || 0;
   }
+
+  // DEBUG: Log final enrollments_count AFTER override
+  console.log('[ENROLLMENTS DEBUG] Final (after override):', courses.map(c => ({
+    id: c.id,
+    enrollments_count: c.enrollments_count,
+  })));
 
   return courses;
 }
