@@ -3,6 +3,9 @@ import { hasAdminAccess } from '@/lib/utils/auth';
 import { getSupabaseAdmin } from '@/lib/supabase/client';
 import { writeAuditLog } from '@/lib/telemetry/audit';
 
+// Force Vercel to always run this route dynamically (no cache)
+export const dynamic = 'force-dynamic';
+
 async function verifyAdmin(request: NextRequest): Promise<{ isAdmin: boolean; userId?: string }> {
   try {
     const token = request.cookies.get('wedu-token')?.value;
@@ -287,6 +290,9 @@ export async function POST(request: NextRequest) {
 
   const userId = body.user_id as string;
   const courseId = body.course_id as string;
+  console.log('[course-access POST] userId received:', userId);
+  console.log('[course-access POST] userId type:', typeof userId);
+  console.log('[course-access POST] courseId received:', courseId);
   if (!userId || !courseId) {
     return NextResponse.json({ success: false, error: 'user_id and course_id are required' }, { status: 400 });
   }
@@ -299,7 +305,10 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
       .single();
 
+    console.log('[course-access POST] user query result:', JSON.stringify({ user, userErr }));
+
     if (userErr || !user) {
+      console.log('[course-access POST] User not found! userId:', userId, 'error:', userErr?.message);
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
