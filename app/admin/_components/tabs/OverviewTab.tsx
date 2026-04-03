@@ -1,216 +1,439 @@
 'use client';
 
-import type { MemberLevel } from '@/lib/types';
-import { formatPrice } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 
-interface AdminOrder {
-  id: string;
-  name: string;
-  email: string;
-  course: string;
-  amount: number;
-  status: string;
-  date: string;
-  method: string;
+// Lazy load Recharts to avoid SSR issues
+const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
+const PieChart = dynamic(() => import('recharts').then(m => m.PieChart), { ssr: false });
+const Pie = dynamic(() => import('recharts').then(m => m.Pie), { ssr: false });
+const Cell = dynamic(() => import('recharts').then(m => m.Cell), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
+
+interface DashboardData {
+  overview: {
+    total_users: number;
+    new_users_today: number;
+    new_users_week: number;
+    total_courses: number;
+    total_lessons: number;
+    total_vip: number;
+    total_premium: number;
+    total_free: number;
+  };
+  top_courses: {
+    course_id: string;
+    title: string;
+    student_count: number;
+    lessons_count: number;
+  }[];
+  lesson_progress: {
+    most_watched_lessons: {
+      lesson_id: string;
+      title: string;
+      viewer_count: number;
+    }[];
+    total_watch_time_hours: number;
+    avg_completion_rate: number;
+  };
+  recent_enrollments: {
+    id: string;
+    user_name: string;
+    user_email: string;
+    course_title: string;
+    access_tier: string;
+    created_at: string;
+  }[];
+  active_learners_today: number;
+  users_by_day: { date: string; count: number }[];
+  tier_distribution: { free: number; premium: number; vip: number };
+  top_active_users: {
+    user_id: string;
+    name: string;
+    email: string;
+    lessons_completed: number;
+    total_watch_seconds: number;
+  }[];
 }
 
-interface OverviewTabProps {
-  totalRevenue: number;
-  registeredCount: number;
-  studentsCount: number;
-  coursesCount: number;
-  ordersCount: number;
-  vipCount: number;
-  premiumCount: number;
-  freeCount: number;
-  recentOrders: AdminOrder[];
-  onViewAllOrders: () => void;
-  LevelBadge: React.ComponentType<{ level: MemberLevel }>;
+const PIE_COLORS = ['#9333ea', '#00D4AA', '#eab308']; // purple for Free, teal for Premium, yellow for VIP
+
+function formatTimeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins} phút trước`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  return `${days} ngày trước`;
 }
 
-export function OverviewTab({
-  totalRevenue,
-  registeredCount,
-  studentsCount,
-  coursesCount,
-  ordersCount,
-  vipCount,
-  premiumCount,
-  freeCount,
-  recentOrders,
-  onViewAllOrders,
-  LevelBadge,
-}: OverviewTabProps) {
+function TierBadge({ tier }: { tier: string }) {
+  const t = tier?.toLowerCase();
+  const styles =
+    t === 'vip' ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-gold border-gold/30' :
+    t === 'premium' ? 'bg-teal/10 text-teal border-teal/20' :
+    'bg-white/5 text-gray-400 border-white/10';
+  return (
+    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold border ${styles}`}>
+      {tier?.toUpperCase() || 'FREE'}
+    </span>
+  );
+}
+
+// Skeleton loader
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-white/10 rounded-lg ${className}`} />;
+}
+
+function StatCardSkeleton() {
+  return (
+    <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
+      <Skeleton className="w-10 h-10 rounded-lg mb-3" />
+      <Skeleton className="w-16 h-7 mb-2" />
+      <Skeleton className="w-20 h-4" />
+    </div>
+  );
+}
+
+export function OverviewTab() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Failed to fetch');
+      setData(json.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lỗi tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(fetchDashboard, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchDashboard]);
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <p className="text-gray-400 mb-4">{error}</p>
+        <button
+          onClick={fetchDashboard}
+          className="px-6 py-2.5 bg-teal/20 text-teal border border-teal/30 rounded-lg hover:bg-teal/30 transition-colors font-medium"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  if (loading || !data) {
+    return (
+      <div className="space-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="lg:col-span-2 h-80" />
+          <Skeleton className="h-80" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  const { overview, top_courses, lesson_progress, recent_enrollments, active_learners_today, users_by_day, tier_distribution, top_active_users } = data;
+
+  const pieData = [
+    { name: 'Free', value: overview.total_free },
+    { name: 'Premium', value: overview.total_premium },
+    { name: 'VIP', value: overview.total_vip },
+  ];
+
+  const statCards = [
+    { icon: '👥', value: overview.total_users, label: 'Học viên', sub: `+${overview.new_users_today} hôm nay`, gradient: 'from-teal/20 to-teal/5', border: 'border-teal/20', color: 'text-white' },
+    { icon: '⭐', value: overview.total_vip, label: 'VIP', sub: `${overview.total_users ? Math.round(overview.total_vip / overview.total_users * 100) : 0}%`, gradient: 'from-gold/20 to-amber-500/5', border: 'border-gold/20', color: 'text-gold' },
+    { icon: '💎', value: overview.total_premium, label: 'Premium', sub: `${overview.total_users ? Math.round(overview.total_premium / overview.total_users * 100) : 0}%`, gradient: 'from-teal/15 to-teal/5', border: 'border-teal/20', color: 'text-teal' },
+    { icon: '📚', value: overview.total_courses, label: 'Khoá học', sub: 'đang hoạt động', gradient: 'from-purple-500/20 to-purple-500/5', border: 'border-purple-500/20', color: 'text-white' },
+    { icon: '🎬', value: overview.total_lessons, label: 'Bài học', sub: `${active_learners_today} đang học hôm nay`, gradient: 'from-blue-500/20 to-blue-500/5', border: 'border-blue-500/20', color: 'text-white' },
+    { icon: '⏱', value: `${lesson_progress.total_watch_time_hours}h`, label: 'Tổng giờ xem', sub: `Hoàn thành TB: ${lesson_progress.avg_completion_rate}%`, gradient: 'from-orange-500/20 to-orange-500/5', border: 'border-orange-500/20', color: 'text-white' },
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Stats Cards - Row 1 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-gradient-to-br from-teal/20 to-red/5 border border-teal/20 rounded-xl p-5">
-          <div className="w-10 h-10 bg-teal/20 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      {/* ROW 1 — Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {statCards.map((card, i) => (
+          <div
+            key={i}
+            className={`bg-gradient-to-br ${card.gradient} border ${card.border} rounded-xl p-5 hover:shadow-lg hover:shadow-teal/5 transition-all duration-300 group`}
+          >
+            <div className="text-2xl mb-3">{card.icon}</div>
+            <div className={`text-2xl font-bold ${card.color} mb-1`}>{card.value}</div>
+            <p className="text-sm text-gray-400">{card.label}</p>
+            {card.sub && <p className="text-xs text-gray-500 mt-1">{card.sub}</p>}
           </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{formatPrice(totalRevenue)}</div>
-          <p className="text-xs text-gray-400">Doanh thu</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-xl p-5">
-          <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{registeredCount}</div>
-          <p className="text-xs text-gray-400">Người đăng ký</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/20 rounded-xl p-5">
-          <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{studentsCount}</div>
-          <p className="text-xs text-gray-400">Học viên</p>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
-          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{coursesCount}</div>
-          <p className="text-xs text-gray-400">Khóa học</p>
-        </div>
+        ))}
       </div>
 
-      {/* Stats Cards - Row 2: Membership breakdown & Orders */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-gradient-to-br from-gold/15 to-amber-500/5 border border-gold/20 rounded-xl p-5">
-          <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
+      {/* ROW 2 — Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Line Chart — User Growth */}
+        <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-white">Học viên mới 30 ngày</h3>
+            <span className="text-xs text-gray-500">+{overview.new_users_week} tuần này</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-gold mb-1">{vipCount}</div>
-          <p className="text-xs text-gray-400">Thành viên VIP</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={users_by_day}>
+                <defs>
+                  <linearGradient id="tealGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00D4AA" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#00D4AA" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v) => String(v).slice(5)}
+                  stroke="#4b5563"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis stroke="#4b5563" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+                  labelFormatter={(v) => `Ngày ${v}`}
+                  formatter={(value) => [`${value} người`, 'Đăng ký']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#00D4AA"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 5, fill: '#00D4AA', stroke: '#0A0F1C', strokeWidth: 2 }}
+                  fill="url(#tealGradient)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-gradient-to-br from-teal/15 to-teal/5 border border-teal/20 rounded-xl p-5">
-          <div className="w-10 h-10 bg-teal/20 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
+        {/* Pie Chart — Membership Distribution */}
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
+          <h3 className="text-lg font-bold text-white mb-6">Phân bổ thành viên</h3>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={4}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {pieData.map((_, index) => (
+                    <Cell key={index} fill={PIE_COLORS[index]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+                  formatter={(value, name) => [`${value} người`, name]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-teal mb-1">{premiumCount}</div>
-          <p className="text-xs text-gray-400">Thành viên Premium</p>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
-          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{freeCount}</div>
-          <p className="text-xs text-gray-400">Thành viên Free</p>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
-          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>
-          </div>
-          <div className="text-xl md:text-2xl font-bold text-white mb-1">{ordersCount}</div>
-          <p className="text-xs text-gray-400">Đơn hàng</p>
-        </div>
-      </div>
-
-      {/* Member Level Distribution */}
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-5">Phân bổ hạng thành viên</h3>
-        <div className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <LevelBadge level="VIP" />
-                <span className="text-sm text-gray-400">{vipCount} người</span>
+          <div className="flex justify-center gap-4 mt-2">
+            {pieData.map((entry, i) => (
+              <div key={entry.name} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i] }} />
+                <span className="text-xs text-gray-400">{entry.name} ({entry.value})</span>
               </div>
-              <span className="text-sm text-white font-bold">{registeredCount ? Math.round(vipCount / registeredCount * 100) : 0}%</span>
-            </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-gold to-amber-500 rounded-full" style={{ width: `${registeredCount ? vipCount / registeredCount * 100 : 0}%` }} />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <LevelBadge level="Premium" />
-                <span className="text-sm text-gray-400">{premiumCount} người</span>
-              </div>
-              <span className="text-sm text-white font-bold">{registeredCount ? Math.round(premiumCount / registeredCount * 100) : 0}%</span>
-            </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-teal rounded-full" style={{ width: `${registeredCount ? premiumCount / registeredCount * 100 : 0}%` }} />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <LevelBadge level="Free" />
-                <span className="text-sm text-gray-400">{freeCount} người</span>
-              </div>
-              <span className="text-sm text-white font-bold">{registeredCount ? Math.round(freeCount / registeredCount * 100) : 0}%</span>
-            </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-gray-500 rounded-full" style={{ width: `${registeredCount ? freeCount / registeredCount * 100 : 0}%` }} />
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Recent Orders (overview) */}
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Đơn hàng gần đây</h3>
-          <button onClick={onViewAllOrders} className="text-sm text-teal hover:underline">Xem tất cả</button>
+      {/* ROW 3 — Top Courses & Most Watched Lessons */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 5 Courses */}
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
+          <h3 className="text-lg font-bold text-white mb-6">Top 5 Khoá học</h3>
+          {top_courses.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-8">Chưa có dữ liệu</p>
+          ) : (
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={top_courses} layout="vertical" margin={{ left: 0, right: 20 }}>
+                  <defs>
+                    <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#00D4AA" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#00D4AA" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis type="number" stroke="#4b5563" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="title"
+                    width={140}
+                    stroke="#4b5563"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => { const s = String(v); return s.length > 20 ? s.slice(0, 20) + '...' : s; }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+                    formatter={(value) => [`${value} học viên`, 'Số học viên']}
+                  />
+                  <Bar dataKey="student_count" fill="url(#barGradient)" radius={[0, 6, 6, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/[0.06]">
-                <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Mã đơn</th>
-                <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khách hàng</th>
-                <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khóa học</th>
-                <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Số tiền</th>
-                <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.slice(0, 5).map(order => (
-                <tr key={order.id} className="border-b border-white/[0.06]/50 hover:bg-white/[0.02]">
-                  <td className="p-4 text-sm text-white font-mono">{order.id}</td>
-                  <td className="p-4">
-                    <div className="text-sm text-white">{order.name}</div>
-                    <div className="text-xs text-gray-500">{order.email}</div>
-                  </td>
-                  <td className="p-4 text-sm text-gray-300 max-w-[200px] truncate">{order.course}</td>
-                  <td className="p-4 text-sm text-gold font-semibold">{formatPrice(order.amount)}</td>
-                  <td className="p-4">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      order.status === 'Hoàn thành' ? 'bg-green-500/10 text-green-400' :
-                      order.status === 'Đang chờ' ? 'bg-gold/10 text-gold' :
-                      'bg-teal/10 text-teal'
-                    }`}>{order.status}</span>
-                  </td>
-                </tr>
+
+        {/* Top 10 Most Watched Lessons */}
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-white/[0.06]">
+            <h3 className="text-lg font-bold text-white">Top 10 Bài học xem nhiều nhất</h3>
+          </div>
+          {lesson_progress.most_watched_lessons.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-8">Chưa có dữ liệu</p>
+          ) : (
+            <div className="divide-y divide-white/[0.06]">
+              {lesson_progress.most_watched_lessons.map((lesson, i) => (
+                <div key={lesson.lesson_id} className="flex items-center gap-3 px-6 py-3 hover:bg-white/[0.02] transition-colors">
+                  <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+                    i < 3 ? 'bg-teal/20 text-teal' : 'bg-white/10 text-gray-400'
+                  }`}>{i + 1}</span>
+                  <span className="text-sm text-gray-300 flex-1 truncate">{lesson.title}</span>
+                  <span className="text-xs text-teal font-semibold whitespace-nowrap">{lesson.viewer_count} lượt</span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* ROW 4 — Recent Enrollments */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-white/[0.06]">
+          <h3 className="text-lg font-bold text-white">10 đăng ký khoá học gần đây</h3>
+        </div>
+        {recent_enrollments.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-8">Chưa có đăng ký mới</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Email</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Khoá học</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tier</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Thời gian</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent_enrollments.map(enrollment => (
+                  <tr key={enrollment.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 text-sm text-white">{enrollment.user_name}</td>
+                    <td className="p-4 text-sm text-gray-400">{enrollment.user_email}</td>
+                    <td className="p-4 text-sm text-gray-300 max-w-[200px] truncate">{enrollment.course_title}</td>
+                    <td className="p-4"><TierBadge tier={enrollment.access_tier} /></td>
+                    <td className="p-4 text-xs text-gray-500">{formatTimeAgo(enrollment.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ROW 5 — Top Active Users */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-white/[0.06]">
+          <h3 className="text-lg font-bold text-white">Top 10 Học viên học nhiều nhất</h3>
+        </div>
+        {top_active_users.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-8">Chưa có dữ liệu</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">#</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Tên</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Email</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Bài đã học</th>
+                  <th className="text-left p-4 text-xs font-semibold text-gray-400 uppercase">Giờ học</th>
+                </tr>
+              </thead>
+              <tbody>
+                {top_active_users.map((user, i) => (
+                  <tr key={user.user_id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4">
+                      <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${
+                        i < 3 ? 'bg-gold/20 text-gold' : 'bg-white/10 text-gray-400'
+                      }`}>{i + 1}</span>
+                    </td>
+                    <td className="p-4 text-sm text-white font-medium">{user.name}</td>
+                    <td className="p-4 text-sm text-gray-400">{user.email}</td>
+                    <td className="p-4 text-sm text-teal font-semibold">{user.lessons_completed}</td>
+                    <td className="p-4 text-sm text-gray-300">{Math.round(user.total_watch_seconds / 3600 * 10) / 10}h</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Access tier distribution mini stat */}
+      <div className="grid grid-cols-3 gap-4">
+        {(['free', 'premium', 'vip'] as const).map(tier => (
+          <div key={tier} className={`rounded-xl p-4 text-center border ${
+            tier === 'vip' ? 'bg-gold/10 border-gold/20' :
+            tier === 'premium' ? 'bg-teal/10 border-teal/20' :
+            'bg-white/[0.03] border-white/10'
+          }`}>
+            <div className={`text-xl font-bold ${
+              tier === 'vip' ? 'text-gold' : tier === 'premium' ? 'text-teal' : 'text-gray-300'
+            }`}>{tier_distribution[tier]}</div>
+            <div className="text-xs text-gray-400 mt-1">Quyền truy cập {tier.toUpperCase()}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

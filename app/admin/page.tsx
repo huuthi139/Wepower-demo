@@ -776,19 +776,7 @@ export default function AdminDashboard() {
 
         {/* ============ OVERVIEW TAB ============ */}
         {activeTab === 'overview' && (
-          <OverviewTab
-            totalRevenue={totalRevenue}
-            registeredCount={registeredCount}
-            studentsCount={actualStudentsCount}
-            coursesCount={courses.length}
-            ordersCount={recentOrders.length}
-            vipCount={vipCount}
-            premiumCount={premiumCount}
-            freeCount={freeCount}
-            recentOrders={recentOrders}
-            onViewAllOrders={() => setActiveTab('orders')}
-            LevelBadge={LevelBadge}
-          />
+          <OverviewTab />
         )}
 
         {/* ============ COURSES TAB (CRUD) ============ */}
