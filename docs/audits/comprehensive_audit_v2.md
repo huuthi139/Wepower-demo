@@ -341,19 +341,35 @@ Top offenders:
 - `lib/utils/chapters.ts` — `any[]` input types
 - `scripts/*.ts` — acceptable for scripts
 
-### Dead Files
-| File | Reason |
-|------|--------|
-| `lib/fallback-data.ts` | Not imported anywhere |
-| `lib/mockData.ts` | Not imported anywhere |
-| `lib/legacy/googleSheets-courses.ts.deprecated` | Deprecated |
-| `lib/legacy/sheetSync.ts.deprecated` | Deprecated |
-| `scripts/audit-course-access.ts` | One-time script, done |
-| `scripts/execute-cleanup.ts` | One-time script, done |
-| `scripts/fix-course-access.ts` | One-time script, done |
-| `scripts/migrate-chapters-to-normalized.ts` | Migration script, done |
-| `scripts/migrate-curl.ts` | Migration script, done |
-| `public/login.html` | Static HTML login page — replaced by Next.js |
+### Dead Files (~643 lines removable)
+| File | Lines | Reason |
+|------|-------|--------|
+| `hooks/useProfile.ts` | 46 | Not imported anywhere |
+| `hooks/useCourseProgress.ts` | 79 | Not imported anywhere |
+| `hooks/useLessonProgress.ts` | 134 | Not imported anywhere |
+| `hooks/useToast.tsx` | 35 | Not imported anywhere |
+| `lib/fallback-data.ts` | 276 | Not imported anywhere |
+| `lib/validation.ts` | 73 | Not imported anywhere |
+| `lib/supabase/profiles.ts` | 80 | Not imported anywhere |
+| `lib/mockData.ts` | 4 | Deprecated re-export |
+| `lib/googleSheets.ts` | 6 | Deprecated re-export |
+| `lib/legacy/googleSheets-courses.ts.deprecated` | — | Deprecated |
+| `lib/legacy/sheetSync.ts.deprecated` | — | Deprecated |
+| `scripts/audit-course-access.ts` | — | One-time script, done |
+| `scripts/execute-cleanup.ts` | — | One-time script, done |
+| `scripts/fix-course-access.ts` | 369 | One-time script, done |
+| `scripts/migrate-chapters-to-normalized.ts` | 643 | Migration script, done |
+| `scripts/migrate-curl.ts` | 449 | Migration script, done |
+| `public/login.html` | — | Static HTML — replaced by Next.js |
+
+### Unnecessary Folders
+| Folder | Content | Action |
+|--------|---------|--------|
+| `lib/legacy/` | 2 deprecated files | Delete |
+| `lib/api/` | 1 file (47 lines) | Merge `response.ts` to `lib/utils/` |
+| `lib/import/` | 1 file (116 lines) | Merge to `lib/supabase/` |
+| `lib/progress/` | 1 file (165 lines) | Merge to `lib/supabase/` |
+| `supabase/.temp/` | Empty CLI artifact | Delete |
 
 ### Unhandled Promises (16 instances)
 | Pattern | File | Risk |
@@ -512,7 +528,7 @@ Background migration `migrateJsonbToNormalized()` chạy tự động khi fallba
 | Total files (excl. node_modules/.git/.next) | 193 |
 | Total lines of code (TS/TSX/JS/CSS/SQL) | ~26,302 |
 | Files > 500 lines | 10 |
-| Dead files | 10 |
+| Dead files | 17 (~643 removable lines) |
 | Security issues (Critical) | 7 |
 | Security issues (Important) | 8 |
 | Security issues (Minor) | 3 |
