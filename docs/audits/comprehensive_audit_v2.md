@@ -1,0 +1,382 @@
+# WEDU Platform - Comprehensive Audit V2
+**Date:** 2026-04-03
+**Scope:** Performance, UX, Cost, Security, Data Flow
+
+---
+
+## EXECUTIVE SUMMARY
+
+5 điểm quan trọng nhất cần fix ngay:
+
+1. **CRITICAL SECURITY: `fallback-secret` trong auth routes** — `forgot-password/route.ts:5` và `reset-password/route.ts:5` dùng `process.env.JWT_SECRET || 'fallback-secret'`. Nếu env thiếu, ai cũng forge được reset token.
+2. **RLS Policies = allow all** — Mọi table đều có policy `USING (true) WITH CHECK (true)`. Dù dùng service_role key, nếu anon key bị lộ → toàn bộ DB exposed.
+3. **Password reset token không bị invalidate sau khi dùng** — Token JWT 1h có thể reuse nhiều lần trong window đó.
+4. **Duplicate enrollment systems** — `enrollments` (email-based) + `course_enrollments` (user_id-based) + `course_access` (tier-based) = 3 hệ thống song song, data không đồng bộ.
+5. **Không có pagination trên admin endpoints** — `getAllUsers()`, `getAllOrders()` fetch toàn bộ table, sẽ crash khi scale.
+
+---
+
+## 1. PERFORMANCE ISSUES
+
+### 1.1 N+1 Queries
+| File | Line | Vấn đề | Cách fix |
+|------|------|--------|----------|
+| `lib/supabase/courses.ts` | 56-76 | `getAllCourses()` fetch ALL lessons rồi loop đếm per course | Dùng SQL aggregation hoặc view |
+| `app/api/orders/route.ts` | 73-108 | Loop `grantCourseAccess()` per course trong order | Batch insert với `Promise.all()` |
+| `app/api/chapters/[courseId]/route.ts` | 243-305 | Loop insert từng section + từng lesson tuần tự | Batch insert sections rồi batch insert lessons |
+
+### 1.2 Missing Pagination
+| File | Function | Fix |
+|------|----------|-----|
+| `lib/supabase/users.ts:132` | `getAllUsers()` — no limit | Add `.range(offset, offset+limit)` |
+| `lib/supabase/orders.ts:66` | `getAllOrders()` — no limit | Add `.range(offset, offset+limit)` |
+| `lib/supabase/reviews.ts:20` | `getReviewsByCourse()` — no limit | Add `.limit(20)` |
+| `lib/supabase/enrollments.ts:20` | `getEnrollmentsByUser()` — no limit | Add `.limit(50)` |
+
+### 1.3 select('*') — Fetch quá nhiều data
+26 chỗ dùng `.select('*')` trong codebase. Quan trọng nhất:
+
+| File | Line | Nên select |
+|------|------|-----------|
+| `lib/supabase/users.ts` | 29, 52, 136 | Exclude `password_hash` khi không cần |
+| `lib/supabase/sections.ts` | 16, 25 | Select fields cần cho display |
+| `lib/supabase/course-access.ts` | 20, 40, 82 | Select: `id, course_id, access_tier, status` |
+| `lib/progress/service.ts` | 44, 61, 77 | Select fields cần thiết |
+
+### 1.4 Frontend Performance
+| Vấn đề | File | Chi tiết |
+|--------|------|----------|
+| Auto-refetch mỗi 60s | `contexts/CoursesContext.tsx:43` | 100 users = ~1.7 req/s liên tục. Nên tăng lên 5-10 phút |
+| React Query có nhưng không dùng | `package.json:20` | `@tanstack/react-query` đã install nhưng contexts dùng manual fetch |
+| Sequential context fetches | `contexts/CourseAccessContext.tsx` | 2 API calls tuần tự, nên `Promise.all()` |
+
+### 1.5 Bundle/Config
+| Vấn đề | File | Fix |
+|--------|------|-----|
+| Không remove console.log production | `next.config.js` | Add `compiler: { removeConsole: true }` |
+| Thiếu image format optimization | `next.config.js` | Add `formats: ['image/avif', 'image/webp']` |
+| Image: chỉ whitelist unsplash | `next.config.js:5` | Thêm Bunny CDN domain |
+
+---
+
+## 2. SECURITY ISSUES
+
+### Critical
+| # | File:Line | Vấn đề | Fix |
+|---|-----------|--------|-----|
+| S1 | `app/api/auth/forgot-password/route.ts:5` | `JWT_SECRET \|\| 'fallback-secret'` — nếu env thiếu, secret = public | Remove fallback, throw error |
+| S2 | `app/api/auth/reset-password/route.ts:5` | Same — `'fallback-secret'` | Remove fallback, throw error |
+| S3 | `supabase/migrations/003_normalize_and_rls.sql` | ALL RLS policies = `USING (true)`. Nếu anon key lộ → full DB access | Implement proper per-user RLS |
+| S4 | `lib/auth/password.ts:22` | Legacy plaintext password compare: `return plaintext === stored` | Remove sau khi migrate xong |
+
+### Important
+| # | File:Line | Vấn đề | Fix |
+|---|-----------|--------|-----|
+| S5 | `app/api/auth/register/route.ts:25` | Password min length = 6, no complexity | Tăng lên 8+, yêu cầu mixed chars |
+| S6 | `lib/auth/jwt.ts:20` | JWT expire = 7 days, no refresh mechanism | Giảm xuống 24h + implement refresh token |
+| S7 | Reset password flow | Token không bị invalidate sau khi dùng — reusable trong 1h | Lưu used tokens vào DB hoặc dùng one-time token |
+| S8 | `lib/rate-limit.ts:19` | Rate limiting disabled khi thiếu Redis config — fails open | Log warning + implement in-memory fallback |
+| S9 | `app/api/auth/me/route.ts:28-35` | Auto-create profile với `passwordHash: ''` — empty password hash | Dùng LOCKED_PASSWORD_SENTINEL |
+
+### Minor
+| # | File:Line | Vấn đề | Fix |
+|---|-----------|--------|-----|
+| S10 | `middleware.ts:117-119` | CSP cho phép `'unsafe-inline' 'unsafe-eval'` | Dùng nonce-based CSP |
+| S11 | `app/api/auth/login/route.ts:33` | Username → email append `@wedu.vn` có thể bị abuse | Validate username format |
+| S12 | Multiple admin API routes | Một số admin routes không check auth riêng (dựa vào middleware) | Double-check auth trong route handler |
+
+---
+
+## 3. AUTH & PASSWORD RESET
+
+### Trạng thái hoạt động
+| Flow | Status | Chi tiết |
+|------|--------|----------|
+| Register | ✅ Working | Hash bcrypt, tạo session, gửi welcome email |
+| Login | ✅ Working | Verify bcrypt, tạo JWT 7d, set httpOnly cookie |
+| Logout | ✅ Working | Delete cookie server-side + clear localStorage client |
+| Forgot Password | ⚠️ Partial | Gửi email với JWT reset token 1h — nhưng dùng fallback-secret |
+| Reset Password | ⚠️ Partial | Verify token + update hash — nhưng token reusable |
+| Change Password | ✅ Working | Verify old password + update hash |
+| Multi-tab sync | ✅ Working | BroadcastChannel cho login/logout sync |
+
+### Bugs phát hiện
+1. **`fallback-secret` trong forgot-password và reset-password** — khác với `lib/auth/jwt.ts` dùng `getSecret()` có validation. Hai file auth dùng inline secret.
+2. **Register không set cookie trực tiếp** — gọi `createSession()` nhưng đó dùng `cookies()` từ next/headers, có thể không work trong POST route handler context.
+3. **`/api/auth/me` auto-create profile với empty passwordHash** — nên dùng `LOCKED_PASSWORD_SENTINEL`.
+
+### Recommendations
+- Unify JWT secret handling: dùng `getSecret()` từ `lib/auth/jwt.ts` ở mọi nơi
+- Implement one-time reset token (store in DB, delete after use)
+- Add password complexity requirements
+- Reduce JWT expiry to 24h + add refresh endpoint
+
+---
+
+## 4. DATA FLOW ISSUES
+
+### 4.1 Database Tables (from migrations 001-009)
+
+**Active tables:**
+| Table | Purpose | Status |
+|-------|---------|--------|
+| `users` | User profiles + auth | Active |
+| `courses` | Course catalog | Active |
+| `course_sections` | Normalized sections | Active (source of truth) |
+| `lessons` | Normalized lessons | Active (source of truth) |
+| `course_access` | Per-course access control | Active |
+| `lesson_progress` | Per-lesson watch progress | Active |
+| `course_progress` | Aggregated course progress | Active |
+| `lesson_notes` | User notes on lessons | Active |
+| `orders` | Purchase orders | Active |
+| `order_items` | Normalized order line items | Active |
+| `reviews` | Course reviews | Active |
+| `videos` | Video library registry | Active |
+| `audit_logs` | System audit trail | Active |
+| `lesson_resources` | Lesson attachments | Active (empty?) |
+
+**Legacy/Duplicate tables:**
+| Table | Problem | Recommendation |
+|-------|---------|---------------|
+| `enrollments` | Email-based, replaced by `course_access` | Deprecate, migrate remaining refs |
+| `course_enrollments` | User-id based, replaced by `course_access` | Deprecate |
+| `chapters` | JSONB blob, replaced by `course_sections` + `lessons` | Deprecate |
+| `course_chapters` | Migration 004 created but not used in code | Drop |
+| `course_sessions` | Migration 004 created but not used in code | Drop |
+
+### 4.2 Duplicate Data — 3 Enrollment Systems
+```
+enrollments (migration 001)     → email + course_id → legacy
+course_enrollments (migration 002) → user_id + course_id → intermediate
+course_access (migration 004)    → user_id + course_id + tier → current
+```
+Code still reads from ALL THREE:
+- `lib/supabase/enrollments.ts` → reads `enrollments`
+- `contexts/EnrollmentContext.tsx` → calls `/api/enrollments`
+- `lib/supabase/course-access.ts` → reads `course_access`
+- `contexts/CourseAccessContext.tsx` → calls `/api/course-access`
+
+**Fix:** Consolidate to `course_access` only. Remove `enrollments` and `course_enrollments` references.
+
+### 4.3 Duplicate Content — 3 Chapter/Lesson Systems
+```
+chapters table (JSONB blob)     → legacy
+course_sections + lessons       → normalized (source of truth)
+fallback-chapters.ts            → hardcoded fallback
+```
+The chapters API (`app/api/chapters/[courseId]/route.ts`) tries all 3 sources with fallback chain. Background migration runs on first access to convert old → new format.
+
+### 4.4 Cache
+- `lib/supabase/courses-cache.ts` — **DISABLED** (all functions are no-ops)
+- `localStorage` — only used for legacy cleanup on logout
+- No server-side caching active
+
+### 4.5 Data Flow Diagrams
+
+**User đăng ký:**
+```
+Client → POST /api/auth/register
+  → hashPassword() → createUserProfile() in users table
+  → createSession() sets httpOnly cookie
+  → sendWelcomeEmail() via Resend (non-blocking)
+```
+
+**User mua khoá:**
+```
+Client → POST /api/orders
+  → createOrder() in orders table
+  → Loop: grantCourseAccess() in course_access table
+  → Loop: insert order_items
+```
+
+**User xem bài:**
+```
+Client → GET /api/chapters/[courseId]
+  → getSession() check auth
+  → getEffectiveAccessTier() from course_access
+  → getSectionsByCourse() from course_sections + lessons
+  → Filter content based on tier
+  → Return chapters with protected content
+```
+
+---
+
+## 5. UX ISSUES
+
+### Broken/Incomplete Flows
+| Flow | Issue | File |
+|------|-------|------|
+| Email verification | Không có — register xong login luôn | `app/api/auth/register/route.ts` |
+| Payment integration | Chỉ tạo order "Đang chờ xử lý" — không có payment gateway | `app/api/orders/route.ts` |
+| Certificate generation | Page exists nhưng chưa implement | `app/certificates/page.tsx` |
+| Community page | Static placeholder | `app/community/page.tsx` |
+
+### Missing States
+| Vấn đề | File |
+|--------|------|
+| Error boundary chỉ catch render errors, không handle API failures | `components/ErrorBoundary.tsx` |
+| No offline/network error handling | Across all contexts |
+| No retry mechanism for failed API calls | `contexts/*.tsx` |
+
+### Mobile
+- Tailwind responsive classes present (`md:`, `lg:` prefixes used)
+- Header has mobile menu toggle
+- No specific touch target size issues found (buttons use standard padding)
+
+---
+
+## 6. COST OPTIMIZATION
+
+### Quick Wins
+| Vấn đề | Impact | Fix |
+|--------|--------|-----|
+| CoursesContext refetch mỗi 60s | ~1440 req/user/day | Tăng interval lên 5-10 phút |
+| `select('*')` 26 chỗ | Bandwidth lãng phí | Select specific columns |
+| Courses cache disabled | Mỗi request = DB query | Enable cache với TTL 5 phút |
+| Welcome email gửi fire-and-forget | Email cost nếu fail silently | Log failures, implement retry queue |
+
+### Long Term
+| Vấn đề | Fix |
+|--------|-----|
+| Migrate manual fetch → React Query | Dedup requests, smart caching |
+| Implement ISR cho course pages | Giảm serverless invocations |
+| Add CDN caching headers | Giảm Vercel bandwidth |
+| Consolidate 3 enrollment systems → 1 | Giảm duplicate DB queries |
+
+### External Services
+| Service | Usage | Status |
+|---------|-------|--------|
+| Supabase | DB + Auth storage | Active (service_role key) |
+| Resend | Welcome + Reset emails | Active |
+| Upstash Redis | Rate limiting | Optional (fails open if missing) |
+| Bunny.net | Video CDN + streaming | Active (via iframe embed) |
+
+---
+
+## 7. CODE QUALITY
+
+### Top 10 Files Cần Refactor (by size + complexity)
+| # | File | Lines | Vấn đề |
+|---|------|-------|--------|
+| 1 | `app/admin/courses/[id]/page.tsx` | 1703 | Quá lớn — cần tách components |
+| 2 | `app/api/admin/import-sheet/route.ts` | 1196 | Quá lớn — tách validation, mapping, import logic |
+| 3 | `app/admin/page.tsx` | 1145 | Quá lớn — đã có tabs nhưng file vẫn lớn |
+| 4 | `app/learn/[courseId]/page.tsx` | 815 | Tách video player, sidebar, progress components |
+| 5 | `app/courses/[id]/page.tsx` | 794 | Tách course detail sections |
+| 6 | `app/community/page.tsx` | 645 | Static content — không cần phức tạp |
+| 7 | `lib/types/index.ts` | 634 | Tách theo domain: auth.types, course.types, etc. |
+| 8 | `components/layout/Header.tsx` | 517 | Tách navigation, mobile menu, user menu |
+| 9 | `app/profile/page.tsx` | 509 | Tách profile sections |
+| 10 | `app/admin/course-access/page.tsx` | 500 | Tách table + form components |
+
+### console.log trong Production Code
+| File | Count | Action |
+|------|-------|--------|
+| `lib/email/send.ts` | 6 | Replace với logger |
+| `lib/supabase/bootstrap.ts` | 2 | Replace với logger |
+| `lib/supabase/users.ts` | 1 | Replace với logger |
+| `app/admin/page.tsx` | Multiple | Remove |
+| `app/api/admin/course-access/route.ts` | Multiple | Replace với logger |
+| `app/api/chapters/[courseId]/route.ts` | 3 | Replace với logger |
+
+### TypeScript `any` Usage: 52 instances
+Top offenders:
+- `lib/supabase/courses.ts` — `as any[]`, `(row: any)`
+- `app/api/chapters/[courseId]/route.ts` — `chapters: any[]`, `catch (error: any)`
+- `lib/fallback-chapters.ts` — `any[]` cho chapter data
+- `lib/utils/chapters.ts` — `any[]` input types
+- `scripts/*.ts` — acceptable for scripts
+
+### Dead Files
+| File | Reason |
+|------|--------|
+| `lib/fallback-data.ts` | Not imported anywhere |
+| `lib/mockData.ts` | Not imported anywhere |
+| `lib/legacy/googleSheets-courses.ts.deprecated` | Deprecated |
+| `lib/legacy/sheetSync.ts.deprecated` | Deprecated |
+| `scripts/audit-course-access.ts` | One-time script, done |
+| `scripts/execute-cleanup.ts` | One-time script, done |
+| `scripts/fix-course-access.ts` | One-time script, done |
+| `scripts/migrate-chapters-to-normalized.ts` | Migration script, done |
+| `scripts/migrate-curl.ts` | Migration script, done |
+| `public/login.html` | Static HTML login page — replaced by Next.js |
+
+### Hardcoded Values
+| File:Line | Value | Fix |
+|-----------|-------|-----|
+| `app/api/auth/forgot-password/route.ts:5` | `'fallback-secret'` | Remove |
+| `app/api/auth/reset-password/route.ts:5` | `'fallback-secret'` | Remove |
+| `lib/email/send.ts:29` | `'https://wedu.vn'` as fallback | Move to config |
+| `app/api/auth/login/route.ts:33` | `'@wedu.vn'` domain | Move to config constant |
+| `lib/auth/jwt.ts:20` | `'7d'` expiration | Move to config |
+
+---
+
+## 8. PRIORITY ACTION LIST
+
+### P0 — Fix ngay (blocking/security)
+
+| # | Issue | File:Line | Fix |
+|---|-------|-----------|-----|
+| P0-1 | Remove `'fallback-secret'` | `app/api/auth/forgot-password/route.ts:5` | Import `getSecret()` từ `lib/auth/jwt.ts` hoặc throw error |
+| P0-2 | Remove `'fallback-secret'` | `app/api/auth/reset-password/route.ts:5` | Same |
+| P0-3 | Remove plaintext password compare | `lib/auth/password.ts:22` | Remove `return plaintext === stored` line |
+| P0-4 | Fix auto-create profile empty password | `app/api/auth/me/route.ts:32` | Use `LOCKED_PASSWORD_SENTINEL` |
+
+### P1 — Fix trong tuần (important)
+
+| # | Issue | File | Fix |
+|---|-------|------|-----|
+| P1-1 | Implement one-time reset tokens | `app/api/auth/reset-password/route.ts` | Store token hash in DB, delete after use |
+| P1-2 | Add pagination to admin endpoints | `lib/supabase/users.ts`, `orders.ts` | Add limit/offset params |
+| P1-3 | Consolidate enrollment systems | `lib/supabase/enrollments.ts` | Migrate all refs to `course_access` |
+| P1-4 | Implement proper RLS policies | `supabase/migrations/` | Per-user read policies, admin-only write |
+| P1-5 | Reduce CoursesContext refetch | `contexts/CoursesContext.tsx:43` | Change 60s → 300s or use React Query |
+| P1-6 | Tăng password min length | `app/api/auth/register/route.ts:25` | 6 → 8, add complexity check |
+| P1-7 | Giảm JWT expiry | `lib/auth/jwt.ts:20` | 7d → 24h + refresh token |
+
+### P2 — Fix trong tháng (nice to have)
+
+| # | Issue | File | Fix |
+|---|-------|------|-----|
+| P2-1 | Migrate contexts to React Query | `contexts/*.tsx` | Already in package.json |
+| P2-2 | Replace `select('*')` with specific columns | 26 locations | Reduce payload size |
+| P2-3 | Enable courses cache | `lib/supabase/courses-cache.ts` | Implement TTL-based cache |
+| P2-4 | Refactor large files | Top 10 list above | Extract components |
+| P2-5 | Remove dead files | 10 files listed above | Delete |
+| P2-6 | Add image format optimization | `next.config.js` | `formats: ['image/avif', 'image/webp']` |
+| P2-7 | Batch insert in chapters POST | `app/api/chapters/[courseId]/route.ts` | Replace loop with batch |
+| P2-8 | Drop unused tables | `course_chapters`, `course_sessions` | Migration to drop |
+
+### P3 — Technical debt
+
+| # | Issue | Fix |
+|---|-------|-----|
+| P3-1 | 52 `any` type instances | Add proper TypeScript types |
+| P3-2 | console.log in production | Replace with logger or remove |
+| P3-3 | Add nonce-based CSP | Replace `unsafe-inline`/`unsafe-eval` |
+| P3-4 | Add email verification on register | Implement verify email flow |
+| P3-5 | Implement payment gateway | Replace manual order approval |
+| P3-6 | Add in-memory rate limit fallback | When Redis unavailable |
+| P3-7 | Remove legacy `chapters` table usage | After confirming all data migrated |
+| P3-8 | Add bundle analyzer | `next.config.js` webpack config |
+
+---
+
+## STATS SUMMARY
+
+| Metric | Value |
+|--------|-------|
+| Total files (excl. node_modules/.git/.next) | 193 |
+| Total lines of code (TS/TSX/JS/CSS/SQL) | ~26,302 |
+| Files > 500 lines | 10 |
+| Dead files | 10 |
+| Security issues (Critical) | 4 |
+| Security issues (Important) | 5 |
+| Security issues (Minor) | 3 |
+| Performance issues | 15+ |
+| `select('*')` instances | 26 |
+| `any` type instances | 52 |
+| console.log in production | 12+ files |
+| Legacy/duplicate tables | 5 |
+| Duplicate enrollment systems | 3 |
