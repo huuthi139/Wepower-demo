@@ -242,6 +242,13 @@ Google Sheet → webhook /api/webhook/sheet-sync (DEPRECATED)
 | Payment integration | Chỉ tạo order "Đang chờ xử lý" — không có payment gateway | `app/api/orders/route.ts` |
 | Certificate generation | Page exists nhưng chưa implement | `app/certificates/page.tsx` |
 | Community page | Static placeholder | `app/community/page.tsx` |
+| Social login | Buttons hiển thị nhưng showToast "in development" | `app/login/page.tsx`, `app/register/page.tsx` |
+| Remember me | Checkbox có state nhưng không dùng cho session persistence | `app/login/page.tsx` |
+| Course not found | Render empty content, không có "not found" message | `app/courses/[id]/page.tsx` |
+| Custom 404 page | Không có | N/A |
+| Lesson comments | Lưu trong localStorage — mất khi clear/đổi device | `app/learn/[courseId]/page.tsx` |
+| Profile extra fields | Bio, location, occupation lưu localStorage, không sync server | `app/profile/page.tsx` |
+| Order confirmation email | Resend integrated nhưng không wire vào checkout | `app/checkout/page.tsx` |
 
 ### Missing States
 | Vấn đề | File |
@@ -249,11 +256,22 @@ Google Sheet → webhook /api/webhook/sheet-sync (DEPRECATED)
 | Error boundary chỉ catch render errors, không handle API failures | `components/ErrorBoundary.tsx` |
 | No offline/network error handling | Across all contexts |
 | No retry mechanism for failed API calls | `contexts/*.tsx` |
+| Admin pages không có loading states | `app/admin/page.tsx` |
+| Admin dashboard fetch all tabs data upfront | `app/admin/page.tsx` |
+
+### Positive UX
+- Course filtering: advanced filters, debounced search (250ms), sort options
+- Skeleton loading cards trên courses page
+- Responsive grid: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+- Touch targets đạt 44px minimum (`h-12`, `h-10`)
+- Image optimized với `next/image` + lazy loading + responsive sizes
+- Multi-tab auth sync via BroadcastChannel
 
 ### Mobile
 - Tailwind responsive classes present (`md:`, `lg:` prefixes used)
-- Header has mobile menu toggle
-- No specific touch target size issues found (buttons use standard padding)
+- Header has mobile menu toggle with body scroll lock
+- Footer links collapse to 2-column on mobile
+- Modals dùng fixed positioning — có thể không scrollable trên small screens
 
 ---
 
@@ -266,6 +284,9 @@ Google Sheet → webhook /api/webhook/sheet-sync (DEPRECATED)
 | `select('*')` 26 chỗ | Bandwidth lãng phí | Select specific columns |
 | Courses cache disabled | Mỗi request = DB query | Enable cache với TTL 5 phút |
 | Welcome email gửi fire-and-forget | Email cost nếu fail silently | Log failures, implement retry queue |
+| Home page fetch all courses, chỉ hiện 6 | Thừa data | Add `/api/courses?limit=6` |
+| Google Fonts load all weights (100-1000) | Extra bandwidth | Chỉ load 400, 500, 600, 700 |
+| No Cache-Control headers trên chapters API | Repeated DB queries | Add `Cache-Control: max-age=3600` |
 
 ### Long Term
 | Vấn đề | Fix |
