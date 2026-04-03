@@ -68,22 +68,28 @@
 | S2 | `app/api/auth/reset-password/route.ts:5` | Same — `'fallback-secret'` | Remove fallback, throw error |
 | S3 | `supabase/migrations/003_normalize_and_rls.sql` | ALL RLS policies = `USING (true)`. Nếu anon key lộ → full DB access | Implement proper per-user RLS |
 | S4 | `lib/auth/password.ts:22` | Legacy plaintext password compare: `return plaintext === stored` | Remove sau khi migrate xong |
+| S5 | `app/api/admin/bootstrap/route.ts` | POST /api/admin/bootstrap — NO AUTH. Ai cũng tạo được admin account | Add auth guard hoặc disable production |
+| S6 | `app/api/admin/seed-admin/route.ts` | POST /api/admin/seed-admin — NO AUTH. Reset admin password to default | Add auth guard. Account takeover risk |
+| S7 | `app/api/admin/setup-db/route.ts` | GET/POST — NO AUTH. Expose DB structure + Supabase project URL | Add requireAdmin() check |
 
 ### Important
 | # | File:Line | Vấn đề | Fix |
 |---|-----------|--------|-----|
-| S5 | `app/api/auth/register/route.ts:25` | Password min length = 6, no complexity | Tăng lên 8+, yêu cầu mixed chars |
-| S6 | `lib/auth/jwt.ts:20` | JWT expire = 7 days, no refresh mechanism | Giảm xuống 24h + implement refresh token |
-| S7 | Reset password flow | Token không bị invalidate sau khi dùng — reusable trong 1h | Lưu used tokens vào DB hoặc dùng one-time token |
-| S8 | `lib/rate-limit.ts:19` | Rate limiting disabled khi thiếu Redis config — fails open | Log warning + implement in-memory fallback |
-| S9 | `app/api/auth/me/route.ts:28-35` | Auto-create profile với `passwordHash: ''` — empty password hash | Dùng LOCKED_PASSWORD_SENTINEL |
+| S8 | `app/api/auth/register/route.ts:25` | Password min length = 6, no complexity | Tăng lên 8+, yêu cầu mixed chars |
+| S9 | `lib/auth/jwt.ts:20` | JWT expire = 7 days, no refresh mechanism | Giảm xuống 24h + implement refresh token |
+| S10 | Reset password flow | Token không bị invalidate sau khi dùng — reusable trong 1h | Lưu used tokens vào DB hoặc dùng one-time token |
+| S11 | `lib/rate-limit.ts:19` | Rate limiting disabled khi thiếu Redis config — fails open | Log warning + implement in-memory fallback |
+| S12 | `app/api/auth/me/route.ts:28-35` | Auto-create profile với `passwordHash: ''` — empty password hash | Dùng LOCKED_PASSWORD_SENTINEL |
+| S13 | `middleware.ts:35` | IP detection dùng `x-forwarded-for` — có thể spoof để bypass rate limit | Validate proxy headers |
+| S14 | `app/api/auth/change-password/route.ts` | Không invalidate existing sessions sau password change | Token cũ vẫn valid 7 ngày |
+| S15 | `app/api/auth/me/route.ts:24-50` | Auto-create user nếu deleted khỏi DB nhưng JWT vẫn valid | Privilege escalation risk nếu admin bị xoá |
 
 ### Minor
 | # | File:Line | Vấn đề | Fix |
 |---|-----------|--------|-----|
-| S10 | `middleware.ts:117-119` | CSP cho phép `'unsafe-inline' 'unsafe-eval'` | Dùng nonce-based CSP |
-| S11 | `app/api/auth/login/route.ts:33` | Username → email append `@wedu.vn` có thể bị abuse | Validate username format |
-| S12 | Multiple admin API routes | Một số admin routes không check auth riêng (dựa vào middleware) | Double-check auth trong route handler |
+| S16 | `middleware.ts:117-119` | CSP cho phép `'unsafe-inline' 'unsafe-eval'` | Dùng nonce-based CSP |
+| S17 | `app/api/auth/login/route.ts:33` | Username → email append `@wedu.vn` có thể bị abuse | Validate username format |
+| S18 | `app/api/webhook/sheet-sync/route.ts:11` | CORS `Access-Control-Allow-Origin: '*'` trên deprecated endpoint | Remove CORS headers |
 
 ---
 
@@ -322,6 +328,9 @@ Top offenders:
 | P0-2 | Remove `'fallback-secret'` | `app/api/auth/reset-password/route.ts:5` | Same |
 | P0-3 | Remove plaintext password compare | `lib/auth/password.ts:22` | Remove `return plaintext === stored` line |
 | P0-4 | Fix auto-create profile empty password | `app/api/auth/me/route.ts:32` | Use `LOCKED_PASSWORD_SENTINEL` |
+| P0-5 | Add auth to /api/admin/bootstrap | `app/api/admin/bootstrap/route.ts` | Add requireAdmin() or disable in production |
+| P0-6 | Add auth to /api/admin/seed-admin | `app/api/admin/seed-admin/route.ts` | Add requireAdmin() — account takeover risk |
+| P0-7 | Add auth to /api/admin/setup-db | `app/api/admin/setup-db/route.ts` | Add requireAdmin() — info disclosure |
 
 ### P1 — Fix trong tuần (important)
 
@@ -371,8 +380,8 @@ Top offenders:
 | Total lines of code (TS/TSX/JS/CSS/SQL) | ~26,302 |
 | Files > 500 lines | 10 |
 | Dead files | 10 |
-| Security issues (Critical) | 4 |
-| Security issues (Important) | 5 |
+| Security issues (Critical) | 7 |
+| Security issues (Important) | 8 |
 | Security issues (Minor) | 3 |
 | Performance issues | 15+ |
 | `select('*')` instances | 26 |
