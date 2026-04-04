@@ -188,6 +188,8 @@ export default function LearnPage() {
       .then(data => {
         if (!cancelled && data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
           const normalized = normalizeChapters(data.chapters);
+          console.log('CHAPTERS:', normalized);
+          console.log('FIRST LESSON:', normalized[0]?.lessons[0]);
           setChapters(normalized);
           try { localStorage.setItem(`wedu-chapters-${courseId}`, JSON.stringify(normalized)); } catch (error) { console.error('[LearnPage] localStorage error:', error instanceof Error ? error.message : String(error)); }
         }
@@ -435,8 +437,8 @@ export default function LearnPage() {
         {/* Video Area */}
         <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? '' : ''}`}>
           {/* Video Player */}
-          <div className="relative bg-black">
-            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, overflow: 'hidden', backgroundColor: '#000' }}>
+          <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
+            <div className="relative w-full h-full">
               {currentLesson && !isLessonAccessible(currentLesson) ? (
                 /* Access denied overlay */
                 <div className="absolute inset-0 flex items-center justify-center bg-white/[0.03]">
@@ -464,9 +466,9 @@ export default function LearnPage() {
                       ref={iframeRef}
                       key={currentLesson.directPlayUrl}
                       src={normalizeBunnyEmbedUrl(currentLesson.directPlayUrl)}
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                      loading="lazy"
-                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                      className="w-full h-full"
+                      style={{ border: 'none', display: 'block' }}
+                      allow="autoplay; fullscreen"
                       allowFullScreen
                     />
                 ) : (
@@ -475,8 +477,8 @@ export default function LearnPage() {
                     src={currentLesson.directPlayUrl}
                     controls
                     autoPlay
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                    className="bg-dark"
+                    className="w-full h-full bg-dark"
+                    style={{ display: 'block' }}
                     controlsList="nodownload"
                     playsInline
                     onEnded={handleVideoEnded}
