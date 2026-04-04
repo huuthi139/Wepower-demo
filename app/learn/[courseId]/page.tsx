@@ -10,6 +10,7 @@ import type { MemberLevel, AccessTier } from '@/lib/types';
 import { meetsAccessTier, accessTierLabel } from '@/lib/types';
 import { isEmbedUrl, normalizeBunnyEmbedUrl, normalizeChapters, type Chapter, type Lesson } from '@/lib/utils/chapters';
 import { canAccessLesson, isStaff, getLessonCTALabel } from '@/lib/access-control';
+import { useVideoDurations, formatSecondsToMMSS, formatSecondsFull } from '@/lib/hooks/useVideoDurations';
 
 const defaultChapters: Chapter[] = [];
 
@@ -196,6 +197,10 @@ export default function LearnPage() {
       });
     return () => { cancelled = true; };
   }, [courseId]);
+
+  // Probe video durations from Bunny CDN
+  const allLessonsFlat = chapters.flatMap(ch => ch.lessons);
+  const videoDurations = useVideoDurations(allLessonsFlat);
 
   // Build user profile for access checks
   const userProfile = user ? {
@@ -506,14 +511,14 @@ export default function LearnPage() {
                   {currentChapter && (
                     <span className="text-gray-500">{currentChapter.title}</span>
                   )}
-                  {currentLesson?.duration && currentLesson.duration !== '00:00' && (
+                  {currentLesson && videoDurations[currentLesson.id] ? (
                     <span className="flex items-center gap-1 text-gray-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {currentLesson.duration}
+                      {formatSecondsToMMSS(videoDurations[currentLesson.id])}
                     </span>
-                  )}
+                  ) : null}
                   {currentLesson && (
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                       currentLesson.accessTier === 'vip'
@@ -633,9 +638,9 @@ export default function LearnPage() {
                                 <div className="min-w-0 flex-1">
                                   <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    {lesson.duration && lesson.duration !== '00:00' && (
-                                      <span className="text-xs text-gray-500">{lesson.duration}</span>
-                                    )}
+                                    {videoDurations[lesson.id] ? (
+                                      <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                                    ) : null}
                                     <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                                   </div>
                                 </div>
@@ -744,7 +749,13 @@ export default function LearnPage() {
           {/* Sidebar Header */}
           <div className="p-4 border-b border-white/10 flex-shrink-0">
             <h3 className="text-white font-bold text-sm mb-1">Nội dung khóa học</h3>
-            <p className="text-gray-500 text-xs">{totalLessons} bài học</p>
+            <p className="text-gray-500 text-xs">
+              {totalLessons} bài học
+              {(() => {
+                const totalSec = allLessonsFlat.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                return totalSec > 0 ? ` · ${formatSecondsFull(totalSec)}` : '';
+              })()}
+            </p>
           </div>
 
           {/* Lessons List */}
@@ -770,7 +781,13 @@ export default function LearnPage() {
                       </svg>
                       <span className="text-white text-xs font-semibold truncate">{chapter.title}</span>
                     </div>
-                    <span className="text-gray-500 text-xs flex-shrink-0 ml-2">{chapter.lessons.length} bài</span>
+                    <span className="text-gray-500 text-xs flex-shrink-0 ml-2">
+                      {chapter.lessons.length} bài
+                      {(() => {
+                        const chSec = chapter.lessons.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                        return chSec > 0 ? ` · ${formatSecondsFull(chSec)}` : '';
+                      })()}
+                    </span>
                   </button>
 
                   {/* Lessons */}
@@ -819,9 +836,9 @@ export default function LearnPage() {
                             {lesson.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            {lesson.duration && lesson.duration !== '00:00' && (
-                              <span className="text-xs text-gray-500">{lesson.duration}</span>
-                            )}
+                            {videoDurations[lesson.id] ? (
+                              <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                            ) : null}
                             <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                           </div>
                         </div>
@@ -842,7 +859,13 @@ export default function LearnPage() {
               <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                 <div>
                   <h3 className="text-white font-bold text-sm">Nội dung khóa học</h3>
-                  <p className="text-gray-500 text-xs">{totalLessons} bài học</p>
+                  <p className="text-gray-500 text-xs">
+                    {totalLessons} bài học
+                    {(() => {
+                      const totalSec = allLessonsFlat.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                      return totalSec > 0 ? ` · ${formatSecondsFull(totalSec)}` : '';
+                    })()}
+                  </p>
                 </div>
                 <button onClick={() => setSidebarOpen(false)} className="p-1 text-gray-400 hover:text-white">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -870,7 +893,13 @@ export default function LearnPage() {
                           </svg>
                           <span className="text-white text-xs font-semibold truncate">{chapter.title}</span>
                         </div>
-                        <span className="text-gray-500 text-xs flex-shrink-0 ml-2">{chapter.lessons.length} bài</span>
+                        <span className="text-gray-500 text-xs flex-shrink-0 ml-2">
+                          {chapter.lessons.length} bài
+                          {(() => {
+                            const chSec = chapter.lessons.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                            return chSec > 0 ? ` · ${formatSecondsFull(chSec)}` : '';
+                          })()}
+                        </span>
                       </button>
                       {isExpanded && chapter.lessons.map((lesson, lessonIdx) => {
                         const isActive = lesson.id === currentLessonId;
@@ -901,9 +930,9 @@ export default function LearnPage() {
                             <div className="min-w-0 flex-1">
                               <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                {lesson.duration && lesson.duration !== '00:00' && (
-                                  <span className="text-xs text-gray-500">{lesson.duration}</span>
-                                )}
+                                {videoDurations[lesson.id] ? (
+                                  <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                                ) : null}
                                 <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                               </div>
                             </div>
