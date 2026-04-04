@@ -12,6 +12,7 @@ export interface Lesson {
   directPlayUrl: string;
   thumbnail?: string;
   content?: string;
+  durationSeconds: number;
   documentUrl?: string;
   imageUrl?: string;
   /** @deprecated Use accessTier instead */
@@ -92,6 +93,7 @@ export function normalizeChapters(chapters: any[]): Chapter[] {
       content: ls.content || '',
       documentUrl: ls.documentUrl || '',
       imageUrl: ls.imageUrl || '',
+      durationSeconds: ls.durationSeconds || ls.duration_seconds || 0,
     })),
   }));
 }

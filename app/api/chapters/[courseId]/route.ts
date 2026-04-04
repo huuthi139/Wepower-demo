@@ -58,6 +58,7 @@ function sectionsToChapterFormat(
         id: ls.id,
         title: ls.title,
         duration: ls.duration || '',
+        durationSeconds: ls.duration_seconds || 0,
         accessTier: lessonTier,
         requiredLevel: accessTierToLevel(lessonTier),
         lessonType: lType,
