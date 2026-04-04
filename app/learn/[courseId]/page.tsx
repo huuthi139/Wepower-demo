@@ -10,7 +10,7 @@ import type { MemberLevel, AccessTier } from '@/lib/types';
 import { meetsAccessTier, accessTierLabel } from '@/lib/types';
 import { isEmbedUrl, normalizeBunnyEmbedUrl, normalizeChapters, type Chapter, type Lesson } from '@/lib/utils/chapters';
 import { canAccessLesson, isStaff, getLessonCTALabel } from '@/lib/access-control';
-import { useVideoDurations, formatSecondsToMMSS, formatSecondsFull } from '@/lib/hooks/useVideoDurations';
+import { formatSecondsToMMSS, formatSecondsFull } from '@/lib/hooks/useVideoDurations';
 
 const defaultChapters: Chapter[] = [];
 
@@ -198,9 +198,7 @@ export default function LearnPage() {
     return () => { cancelled = true; };
   }, [courseId]);
 
-  // Probe video durations from Bunny CDN
   const allLessonsFlat = chapters.flatMap(ch => ch.lessons);
-  const videoDurations = useVideoDurations(allLessonsFlat);
 
   // Build user profile for access checks
   const userProfile = user ? {
@@ -437,11 +435,11 @@ export default function LearnPage() {
         {/* Video Area */}
         <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? '' : ''}`}>
           {/* Video Player */}
-          <div className="relative bg-dark flex items-center justify-center">
-            <div className="relative aspect-video w-full max-h-[calc(100vh-64px)]">
+          <div className="relative bg-black">
+            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, overflow: 'hidden', backgroundColor: '#000' }}>
               {currentLesson && !isLessonAccessible(currentLesson) ? (
                 /* Access denied overlay */
-                <div className="w-full h-full flex items-center justify-center bg-white/[0.03]">
+                <div className="absolute inset-0 flex items-center justify-center bg-white/[0.03]">
                   <div className="text-center p-8">
                     <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -462,32 +460,30 @@ export default function LearnPage() {
                 </div>
               ) : currentLesson?.directPlayUrl ? (
                 isEmbedUrl(currentLesson.directPlayUrl) ? (
-                  <div className="relative w-full h-full">
-                    <iframe
+                  <iframe
                       ref={iframeRef}
                       key={currentLesson.directPlayUrl}
                       src={normalizeBunnyEmbedUrl(currentLesson.directPlayUrl)}
-                      className="absolute inset-0 w-full h-full"
-                      style={{ border: 'none' }}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                       loading="lazy"
                       allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                       allowFullScreen
                     />
-                  </div>
                 ) : (
                   <video
                     key={currentLesson.directPlayUrl}
                     src={currentLesson.directPlayUrl}
                     controls
                     autoPlay
-                    className="w-full h-full bg-dark"
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                    className="bg-dark"
                     controlsList="nodownload"
                     playsInline
                     onEnded={handleVideoEnded}
                   />
                 )
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-white/[0.03]">
+                <div className="absolute inset-0 flex items-center justify-center bg-white/[0.03]">
                   <div className="text-center">
                     <svg className="w-16 h-16 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -511,12 +507,12 @@ export default function LearnPage() {
                   {currentChapter && (
                     <span className="text-gray-500">{currentChapter.title}</span>
                   )}
-                  {currentLesson && videoDurations[currentLesson.id] ? (
+                  {currentLesson && (currentLesson.durationSeconds || (currentLesson.duration && currentLesson.duration !== '00:00')) ? (
                     <span className="flex items-center gap-1 text-gray-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {formatSecondsToMMSS(videoDurations[currentLesson.id])}
+                      {currentLesson.durationSeconds ? formatSecondsToMMSS(currentLesson.durationSeconds) : currentLesson.duration}
                     </span>
                   ) : null}
                   {currentLesson && (
@@ -638,8 +634,10 @@ export default function LearnPage() {
                                 <div className="min-w-0 flex-1">
                                   <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    {videoDurations[lesson.id] ? (
-                                      <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                                    {lesson.durationSeconds ? (
+                                      <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
+                                    ) : lesson.duration && lesson.duration !== '00:00' ? (
+                                      <span className="text-xs text-gray-500">{lesson.duration}</span>
                                     ) : null}
                                     <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                                   </div>
@@ -752,7 +750,7 @@ export default function LearnPage() {
             <p className="text-gray-500 text-xs">
               {totalLessons} bài học
               {(() => {
-                const totalSec = allLessonsFlat.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                const totalSec = allLessonsFlat.reduce((s, ls) => s + (ls.durationSeconds || 0), 0);
                 return totalSec > 0 ? ` · ${formatSecondsFull(totalSec)}` : '';
               })()}
             </p>
@@ -784,7 +782,7 @@ export default function LearnPage() {
                     <span className="text-gray-500 text-xs flex-shrink-0 ml-2">
                       {chapter.lessons.length} bài
                       {(() => {
-                        const chSec = chapter.lessons.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                        const chSec = chapter.lessons.reduce((s, ls) => s + (ls.durationSeconds || 0), 0);
                         return chSec > 0 ? ` · ${formatSecondsFull(chSec)}` : '';
                       })()}
                     </span>
@@ -836,8 +834,10 @@ export default function LearnPage() {
                             {lesson.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            {videoDurations[lesson.id] ? (
-                              <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                            {lesson.durationSeconds ? (
+                              <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
+                            ) : lesson.duration && lesson.duration !== '00:00' ? (
+                              <span className="text-xs text-gray-500">{lesson.duration}</span>
                             ) : null}
                             <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                           </div>
@@ -862,7 +862,7 @@ export default function LearnPage() {
                   <p className="text-gray-500 text-xs">
                     {totalLessons} bài học
                     {(() => {
-                      const totalSec = allLessonsFlat.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                      const totalSec = allLessonsFlat.reduce((s, ls) => s + (ls.durationSeconds || 0), 0);
                       return totalSec > 0 ? ` · ${formatSecondsFull(totalSec)}` : '';
                     })()}
                   </p>
@@ -896,7 +896,7 @@ export default function LearnPage() {
                         <span className="text-gray-500 text-xs flex-shrink-0 ml-2">
                           {chapter.lessons.length} bài
                           {(() => {
-                            const chSec = chapter.lessons.reduce((s, ls) => s + (videoDurations[ls.id] || 0), 0);
+                            const chSec = chapter.lessons.reduce((s, ls) => s + (ls.durationSeconds || 0), 0);
                             return chSec > 0 ? ` · ${formatSecondsFull(chSec)}` : '';
                           })()}
                         </span>
@@ -930,8 +930,10 @@ export default function LearnPage() {
                             <div className="min-w-0 flex-1">
                               <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                {videoDurations[lesson.id] ? (
-                                  <span className="text-xs text-gray-500">{formatSecondsToMMSS(videoDurations[lesson.id])}</span>
+                                {lesson.durationSeconds ? (
+                                  <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
+                                ) : lesson.duration && lesson.duration !== '00:00' ? (
+                                  <span className="text-xs text-gray-500">{lesson.duration}</span>
                                 ) : null}
                                 <LevelBadgeSmall level={lesson.requiredLevel} accessTier={lesson.accessTier} />
                               </div>

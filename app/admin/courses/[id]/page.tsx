@@ -489,6 +489,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       content: lessonType === 'text' ? lessonContent.trim() : '',
       documentUrl: lessonType === 'pdf' ? lessonDocumentUrl.trim() : '',
       imageUrl: lessonType === 'image' ? lessonImageUrl.trim() : '',
+      durationSeconds: 0,
     };
     updateChapters(
       chapters.map((ch) =>
