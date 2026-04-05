@@ -922,11 +922,30 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                               <circle cx="15" cy="19" r="1.5" />
                             </svg>
                           </div>
-                          {lesson.thumbnail ? (
+                          {/* Lesson type icon */}
+                          {lesson.lessonType === 'text' ? (
+                            <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-blue-500/10">
+                              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                          ) : lesson.lessonType === 'pdf' ? (
+                            <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-red-500/10">
+                              <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          ) : lesson.lessonType === 'image' ? (
+                            <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-purple-500/10">
+                              <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          ) : lesson.thumbnail ? (
                             <button
                               onClick={() => lesson.directPlayUrl && setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
                               className="w-10 h-7 rounded overflow-hidden flex-shrink-0 relative group"
-                              title={lesson.directPlayUrl ? 'Xem trước video' : 'Thumbnail'}
+                              title={lesson.directPlayUrl ? 'Xem truoc video' : 'Thumbnail'}
                               style={{ cursor: lesson.directPlayUrl ? 'pointer' : 'default' }}
                             >
                               <img
@@ -947,7 +966,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                             <button
                               onClick={() => setPreviewVideo({ directPlayUrl: lesson.directPlayUrl, title: lesson.title })}
                               className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 hover:bg-green-500/25 transition-colors cursor-pointer"
-                              title="Xem trước video"
+                              title="Xem truoc video"
                             >
                               <svg className="w-3.5 h-3.5 text-green-400 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
@@ -965,13 +984,24 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                             <div className="flex items-center gap-3 mt-0.5">
                               <LevelBadge level={lesson.requiredLevel} />
                               {lesson.duration && <span className="text-xs text-gray-500">{lesson.duration}</span>}
-                              {lesson.directPlayUrl ? (
-                                <span className="text-xs text-green-400">Đã có video</span>
-                              ) : (
-                                <span className="text-xs text-gold">Chưa có video</span>
+                              {/* Content type badges - show all that exist */}
+                              {lesson.directPlayUrl && lesson.lessonType === 'video' && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 font-medium">Video</span>
                               )}
-                              {lesson.thumbnail && (
-                                <span className="text-xs text-purple-400">Có thumbnail</span>
+                              {lesson.content && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">Text</span>
+                              )}
+                              {lesson.lessonType === 'pdf' && lesson.directPlayUrl && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-medium">PDF</span>
+                              )}
+                              {lesson.lessonType === 'image' && lesson.directPlayUrl && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium">Hinh</span>
+                              )}
+                              {!lesson.directPlayUrl && !lesson.content && (
+                                <span className="text-xs text-gold">Chua co noi dung</span>
+                              )}
+                              {lesson.lessonType === 'video' && !lesson.directPlayUrl && (
+                                <span className="text-xs text-gold">Chua co video</span>
                               )}
                             </div>
                           </div>
@@ -1175,6 +1205,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 />
               </div>
 
+              {/* Text content - always visible for all types */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Noi dung bai hoc
+                  </span>
+                </label>
+                <textarea
+                  value={lessonContent}
+                  onChange={(e) => setLessonContent(e.target.value)}
+                  placeholder="Nhap noi dung bai hoc (ho tro Markdown)..."
+                  rows={lessonType === 'text' ? 8 : 3}
+                  className="w-full px-3 py-2 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors resize-y"
+                />
+              </div>
+
               {/* VIDEO fields */}
               {lessonType === 'video' && (
                 <>
@@ -1228,26 +1277,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 </>
               )}
 
-              {/* TEXT fields */}
-              {lessonType === 'text' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Nội dung bài học
-                    </span>
-                  </label>
-                  <textarea
-                    value={lessonContent}
-                    onChange={(e) => setLessonContent(e.target.value)}
-                    placeholder="Nhập nội dung bài học (hỗ trợ Markdown)..."
-                    rows={8}
-                    className="w-full px-3 py-2 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors resize-y"
-                  />
-                </div>
-              )}
+              {/* Text content section always visible - moved to after title */}
 
               {/* PDF fields */}
               {lessonType === 'pdf' && (
@@ -1420,6 +1450,25 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 />
               </div>
 
+              {/* Text content - always visible for all types */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Noi dung bai hoc
+                  </span>
+                </label>
+                <textarea
+                  value={lessonContent}
+                  onChange={(e) => setLessonContent(e.target.value)}
+                  placeholder="Nhap noi dung bai hoc (ho tro Markdown)..."
+                  rows={lessonType === 'text' ? 8 : 3}
+                  className="w-full px-3 py-2 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors resize-y"
+                />
+              </div>
+
               {/* VIDEO fields */}
               {lessonType === 'video' && (
                 <>
@@ -1473,26 +1522,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                 </>
               )}
 
-              {/* TEXT fields */}
-              {lessonType === 'text' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Nội dung bài học
-                    </span>
-                  </label>
-                  <textarea
-                    value={lessonContent}
-                    onChange={(e) => setLessonContent(e.target.value)}
-                    placeholder="Nhập nội dung bài học (hỗ trợ Markdown)..."
-                    rows={8}
-                    className="w-full px-3 py-2 bg-dark/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal transition-colors resize-y"
-                  />
-                </div>
-              )}
+              {/* Text content section always visible - moved to after title */}
 
               {/* PDF fields */}
               {lessonType === 'pdf' && (
