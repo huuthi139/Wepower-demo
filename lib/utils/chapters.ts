@@ -155,12 +155,17 @@ export function normalizeChapters(chapters: any[]): Chapter[] {
       // Legacy compat: requiredLevel for display
       requiredLevel: ls.requiredLevel || accessTierToLevel(ls.accessTier) || 'Free',
       lessonType: ls.lessonType || 'video',
-      directPlayUrl: normalizeBunnyEmbedUrl(
-        ls.directPlayUrl ||
-        (ls.videoId && ls.libraryId
-          ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
-          : '')
-      ),
+      directPlayUrl: (() => {
+        const raw = ls.directPlayUrl ||
+          (ls.videoId && ls.libraryId
+            ? `https://iframe.mediadelivery.net/embed/${ls.libraryId}/${ls.videoId}`
+            : '');
+        // Normalize URL based on video type at data-load time
+        const vType = detectVideoType(raw);
+        if (vType === 'bunny') return normalizeBunnyEmbedUrl(raw);
+        if (vType === 'youtube') return normalizeYouTubeUrl(raw);
+        return raw;
+      })(),
       thumbnail: ls.thumbnail || '',
       content: ls.content || '',
       documentUrl: ls.documentUrl || '',
