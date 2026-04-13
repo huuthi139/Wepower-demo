@@ -12,14 +12,14 @@ const ADMIN_PREFIXES = ['/admin'];
 // Public routes that should redirect to dashboard if already logged in
 const AUTH_PAGES = ['/login', '/register'];
 
-async function verifySessionToken(request: NextRequest): Promise<{ email: string; role: string; name: string; level: string } | null> {
+async function verifySessionToken(request: NextRequest): Promise<{ email: string; role: string; name: string; level: string; mustChangePassword?: boolean } | null> {
   try {
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     if (!token) return null;
     const secret = process.env.JWT_SECRET;
     if (!secret || secret.length < 32) return null;
     const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
-    return payload as { email: string; role: string; name: string; level: string };
+    return payload as { email: string; role: string; name: string; level: string; mustChangePassword?: boolean };
   } catch {
     return null;
   }
@@ -69,11 +69,15 @@ export async function middleware(request: NextRequest) {
   const isProtectedPage = PROTECTED_PREFIXES.some(p => pathname.startsWith(p));
   const isAdminPage = ADMIN_PREFIXES.some(p => pathname.startsWith(p));
   const isAuthPage = AUTH_PAGES.some(p => pathname === p);
+  const needsSessionCheck = isProtectedPage || isAdminPage || isAuthPage;
 
-  if (isProtectedPage || isAdminPage || isAuthPage) {
-    const session = await verifySessionToken(request);
-    const hasSession = !!session;
+  // Verify session once — needed for route protection and mustChangePassword guard
+  const session = needsSessionCheck || (!pathname.startsWith('/api/') && !pathname.startsWith('/_next'))
+    ? await verifySessionToken(request)
+    : null;
+  const hasSession = !!session;
 
+  if (needsSessionCheck) {
     // Protected page without session -> redirect to login
     if ((isProtectedPage || isAdminPage) && !hasSession) {
       const loginUrl = new URL('/login', request.url);
@@ -90,6 +94,14 @@ export async function middleware(request: NextRequest) {
     if (isAuthPage && hasSession) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
+  }
+
+  // Force change password for imported users (applies to all page routes)
+  if (hasSession && session!.mustChangePassword === true
+    && !pathname.startsWith('/change-password')
+    && !pathname.startsWith('/api/auth')
+    && !pathname.startsWith('/_next')) {
+    return NextResponse.redirect(new URL('/change-password', request.url));
   }
 
   // --- Block test endpoint in production ---

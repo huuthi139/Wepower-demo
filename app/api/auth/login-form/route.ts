@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       role,
       name: userProfile.name,
       level: memberLevel,
+      mustChangePassword: !!userProfile.must_change_password,
     });
 
     const response = NextResponse.redirect(new URL('/dashboard', request.url));

@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       role,
       name: userProfile.name,
       level: userProfile.member_level || 'Free',
+      mustChangePassword: !!userProfile.must_change_password,
     });
     logger.info('auth.login', 'Login successful', { email, role });
     return makeAuthResponse(token);

@@ -3,7 +3,7 @@ import { signToken, verifyToken, type WeduJWTPayload } from './jwt';
 
 export const SESSION_COOKIE = 'wedu-token';
 
-export async function createSession(user: { userId: string; email: string; role: string; name: string; level: string }): Promise<void> {
+export async function createSession(user: { userId: string; email: string; role: string; name: string; level: string; mustChangePassword?: boolean }): Promise<void> {
   const token = await signToken(user);
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {

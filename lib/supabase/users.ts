@@ -15,6 +15,7 @@ export interface SupabaseUser {
   member_level: 'Free' | 'Premium' | 'VIP';
   avatar_url?: string | null;
   status?: string;
+  must_change_password?: boolean;
   created_at: string;
   updated_at: string;
 }

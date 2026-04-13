@@ -6,6 +6,7 @@ export interface WeduJWTPayload extends JWTPayload {
   role: string;
   name: string;
   level: string;
+  mustChangePassword?: boolean;
 }
 
 export function getSecret(): Uint8Array {
@@ -14,7 +15,7 @@ export function getSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-export async function signToken(payload: Pick<WeduJWTPayload, 'userId' | 'email' | 'role' | 'name' | 'level'>): Promise<string> {
+export async function signToken(payload: Pick<WeduJWTPayload, 'userId' | 'email' | 'role' | 'name' | 'level'> & { mustChangePassword?: boolean }): Promise<string> {
   return new SignJWT(payload as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
