@@ -1,11 +1,13 @@
+import { NextRequest } from 'next/server';
 import { hashPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
 import { emailExists, createUserProfile } from '@/lib/supabase/users';
+import { getSupabaseAdmin } from '@/lib/supabase/client';
 import { sendWelcomeEmail } from '@/lib/email/send';
 import { apiSuccess, ERR } from '@/lib/api/response';
 import { logger } from '@/lib/telemetry/logger';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : '';
@@ -45,6 +47,39 @@ export async function POST(request: Request) {
         email,
         error: sessionErr instanceof Error ? sessionErr.message : String(sessionErr),
       });
+    }
+
+    // --- Affiliate: referral + wallet (non-blocking) ---
+    const refCode = request.cookies.get('wedu-ref')?.value;
+    if (refCode && newUser.id) {
+      const supabase = getSupabaseAdmin();
+      try {
+        // Verify referrer exists and is not self
+        const { data: referrer } = await supabase
+          .from('users').select('id').eq('id', refCode).single();
+        if (referrer && referrer.id !== newUser.id) {
+          // Insert referral (UNIQUE referee_id — first referrer wins, ignore duplicate)
+          await supabase.from('referrals').insert({
+            referrer_id: referrer.id,
+            referee_id: newUser.id,
+          }).select().maybeSingle();
+        }
+      } catch (refErr) {
+        logger.error('auth.register', 'Referral save failed', {
+          email, refCode,
+          error: refErr instanceof Error ? refErr.message : String(refErr),
+        });
+      }
+      // Create affiliate wallet for new user (always, even without referrer)
+      try {
+        const supabase2 = getSupabaseAdmin();
+        await supabase2.from('affiliate_wallets').upsert(
+          { user_id: newUser.id, balance: 0, total_earned: 0 },
+          { onConflict: 'user_id' },
+        );
+      } catch {
+        // wallet creation is best-effort
+      }
     }
 
     // Send welcome email (non-blocking)
