@@ -14,8 +14,9 @@ import { CoursesTab } from './_components/tabs/CoursesTab';
 import { StudentsTab } from './_components/tabs/StudentsTab';
 import { OrdersTab } from './_components/tabs/OrdersTab';
 import { StaffTab } from './_components/tabs/StaffTab';
+import { AffiliateTab } from './_components/tabs/AffiliateTab';
 
-type Tab = 'overview' | 'courses' | 'students' | 'orders' | 'staff' | 'videos';
+type Tab = 'overview' | 'courses' | 'students' | 'orders' | 'staff' | 'videos' | 'affiliate';
 
 /* ============================================================
    STUDENT INTERFACES & MOCK DATA
@@ -645,6 +646,10 @@ export default function AdminDashboard() {
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
     },
     {
+      key: 'affiliate', label: 'Affiliate',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    },
+    {
       key: 'videos', label: 'Kho Video',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
     },
@@ -818,6 +823,11 @@ export default function AdminDashboard() {
         {/* ============ STAFF TAB ============ */}
         {activeTab === 'staff' && (
           <StaffTab isMainAdmin={true} />
+        )}
+
+        {/* ============ AFFILIATE TAB ============ */}
+        {activeTab === 'affiliate' && (
+          <AffiliateTab />
         )}
       </div>
 
