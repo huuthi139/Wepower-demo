@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.quizzes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lesson_id UUID REFERENCES public.lessons(id) ON DELETE CASCADE,
-  course_id UUID REFERENCES public.courses(id) ON DELETE CASCADE,
+  course_id TEXT REFERENCES public.courses(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT DEFAULT '',
   time_limit_minutes INTEGER DEFAULT 0,
