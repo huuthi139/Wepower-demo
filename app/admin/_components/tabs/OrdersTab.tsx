@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { formatPrice } from '@/lib/utils';
 
 interface AdminOrder {
@@ -22,10 +23,41 @@ export function OrdersTab({
   recentOrders,
   updateOrderStatus,
 }: OrdersTabProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchedOrders = useMemo(() => {
+    if (!searchQuery.trim()) return recentOrders;
+    const q = searchQuery.toLowerCase();
+    return recentOrders.filter(o =>
+      o.id.toLowerCase().includes(q) ||
+      o.name.toLowerCase().includes(q) ||
+      o.email.toLowerCase().includes(q) ||
+      o.course.toLowerCase().includes(q)
+    );
+  }, [recentOrders, searchQuery]);
+
   return (
     <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
-      <div className="p-6 border-b border-white/[0.06]">
-        <h3 className="text-lg font-bold text-white">Đơn hàng ({recentOrders.length})</h3>
+      <div className="p-6 border-b border-white/[0.06] flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-lg font-bold text-white">Đơn hàng ({searchedOrders.length}{searchQuery ? ` / ${recentOrders.length}` : ''})</h3>
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tim kiem..."
+            className="h-8 w-48 px-3 pl-8 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-teal transition-colors"
+          />
+          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -41,7 +73,7 @@ export function OrdersTab({
             </tr>
           </thead>
           <tbody>
-            {recentOrders.map(order => (
+            {searchedOrders.map(order => (
               <tr key={order.id} className="border-b border-white/[0.06]/50 hover:bg-white/[0.02]">
                 <td className="p-4 text-sm text-white font-mono">{order.id}</td>
                 <td className="p-4">
@@ -71,7 +103,7 @@ export function OrdersTab({
             ))}
           </tbody>
         </table>
-        {recentOrders.length === 0 && (
+        {searchedOrders.length === 0 && (
           <div className="text-center py-12">
             <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
