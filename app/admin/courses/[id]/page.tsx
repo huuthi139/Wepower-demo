@@ -69,7 +69,7 @@ interface QuizQuestionOption {
 interface QuizQuestionForm {
   id: string;
   question: string;
-  type: 'single' | 'multiple' | 'text';
+  type: 'single' | 'multiple' | 'true_false';
   options: QuizQuestionOption[];
   explanation: string;
   points: number;
@@ -2002,7 +2002,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                               >
                                 <option value="single">1 đáp án đúng</option>
                                 <option value="multiple">Nhiều đáp án đúng</option>
-                                <option value="text">Tự luận</option>
+                                <option value="true_false">Đúng / Sai</option>
                               </select>
                               <input
                                 type="number"
@@ -2034,7 +2034,7 @@ export default function CourseContentPage({ params }: { params: { id: string } }
                         </div>
 
                         {/* Options (for single/multiple) */}
-                        {q.type !== 'text' && (
+                        {(q.type === 'single' || q.type === 'multiple' || q.type === 'true_false') && (
                           <div className="space-y-2 mb-3">
                             {q.options.map((opt, oIdx) => (
                               <div key={opt.id} className="flex items-center gap-2">

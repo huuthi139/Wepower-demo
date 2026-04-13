@@ -17,7 +17,7 @@ export type AccessTier = 'free' | 'premium' | 'vip';
 export type LessonType = 'video' | 'text' | 'pdf' | 'audio' | 'quiz' | 'live' | 'replay' | 'image';
 
 /** Course access source */
-export type AccessSource = 'manual' | 'order' | 'gift' | 'admin' | 'scholarship' | 'system';
+export type AccessSource = 'manual' | 'order' | 'gift' | 'admin' | 'scholarship' | 'system' | 'import';
 
 /** Course access status */
 export type AccessStatus = 'active' | 'expired' | 'cancelled';
@@ -626,7 +626,7 @@ export function lessonRowToFrontend(row: LessonRow): LessonFrontend {
 // QUIZ (maps to public.quizzes)
 // =============================================
 
-export type QuizQuestionType = 'single' | 'multiple' | 'text';
+export type QuizQuestionType = 'single' | 'multiple' | 'true_false';
 
 export interface Quiz {
   id: string;

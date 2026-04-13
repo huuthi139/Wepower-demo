@@ -69,24 +69,11 @@ export async function POST(request: NextRequest, { params }: { params: { quizId:
     const options: QuizQuestionOption[] = typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []);
     const userAnswer = userAnswers[q.id];
 
-    if (q.type === 'text') {
-      // Text questions are always marked for manual review (score 0 auto)
-      results.push({
-        questionId: q.id,
-        correct: false,
-        correctAnswers: [],
-        userAnswer: userAnswer || '',
-        explanation: q.explanation || '',
-        points: 0,
-      });
-      continue;
-    }
-
     const correctIds = options.filter(o => o.isCorrect).map(o => o.id);
     const answered = Array.isArray(userAnswer) ? userAnswer : (userAnswer ? [userAnswer] : []);
 
     let isCorrect = false;
-    if (q.type === 'single') {
+    if (q.type === 'single' || q.type === 'true_false') {
       isCorrect = answered.length === 1 && correctIds.includes(answered[0]);
     } else if (q.type === 'multiple') {
       isCorrect = answered.length === correctIds.length &&
