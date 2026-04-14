@@ -5,8 +5,8 @@ export function Footer() {
     product: [
       { label: 'Khóa học', href: '/courses' },
       { label: 'Cộng đồng', href: '/community' },
+      { label: 'Affiliate', href: '/affiliate' },
       { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Giỏ hàng', href: '/cart' },
     ],
     company: [
       { label: 'Về chúng tôi', href: '#' },
