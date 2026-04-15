@@ -82,7 +82,7 @@ export async function updateProgress(
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
 
-  // Get current enrollment
+  // Get current enrollment (or create if missing for paid courses)
   const { data: current } = await supabase
     .from('enrollments')
     .select('completed_lessons')
@@ -96,10 +96,31 @@ export async function updateProgress(
     completedLessons.push(lessonId);
   }
 
+  const progressValue = Math.min(100, Math.max(0, progress));
+
+  if (!current) {
+    // No enrollment row exists (paid course) — insert one
+    const { error } = await supabase
+      .from('enrollments')
+      .insert({
+        user_email: email.toLowerCase(),
+        course_id: courseId,
+        enrolled_at: now,
+        progress: progressValue,
+        completed_lessons: completedLessons,
+        last_accessed_at: now,
+      });
+    if (error) {
+      console.error('[Supabase Enrollments] Insert progress failed:', error.message);
+      return false;
+    }
+    return true;
+  }
+
   const { error } = await supabase
     .from('enrollments')
     .update({
-      progress: Math.min(100, Math.max(0, progress)),
+      progress: progressValue,
       completed_lessons: completedLessons,
       last_accessed_at: now,
     })
