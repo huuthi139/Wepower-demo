@@ -390,7 +390,7 @@ export default function LearnPage() {
   handleVideoEndedRef.current = handleVideoEnded;
   const handleTimeUpdateRef = useRef(handleTimeUpdate);
   handleTimeUpdateRef.current = handleTimeUpdate;
-  const playFallbackRef = useRef<ReturnType<typeof setTimeout>>();
+  const iframeFallbackRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Attach player.js listener for Bunny CDN iframe ended event
   // Only re-run when currentLessonId changes (new iframe), NOT when callbacks change
@@ -400,6 +400,13 @@ export default function LearnPage() {
       playerRef.current = null;
       return;
     }
+
+    // Fallback: show complete button 1.5s after iframe loads
+    // (playerjs timeupdate/play events may not fire reliably)
+    const onIframeLoad = () => {
+      iframeFallbackRef.current = setTimeout(() => setNearEnd(true), 1500);
+    };
+    iframe.addEventListener('load', onIframeLoad);
 
     // Load player.js script if not already loaded
     const scriptId = 'playerjs-script';
@@ -418,21 +425,9 @@ export default function LearnPage() {
         const player = new (window as any).playerjs.Player(iframe);
         playerRef.current = player;
         player.on('ready', () => {
-          player.on('ended', () => {
-            clearTimeout(playFallbackRef.current);
-            handleVideoEndedRef.current();
-          });
+          player.on('ended', () => handleVideoEndedRef.current());
           player.on('timeupdate', (data: { seconds: number; duration: number }) => {
             handleTimeUpdateRef.current(data.seconds, data.duration);
-          });
-          // Fallback: show complete button 3s after play starts
-          // (in case timeupdate doesn't fire reliably)
-          player.on('play', () => {
-            clearTimeout(playFallbackRef.current);
-            playFallbackRef.current = setTimeout(() => setNearEnd(true), 3000);
-          });
-          player.on('pause', () => {
-            clearTimeout(playFallbackRef.current);
           });
         });
       } catch (e) {
@@ -447,9 +442,10 @@ export default function LearnPage() {
     }
 
     return () => {
+      iframe.removeEventListener('load', onIframeLoad);
       script?.removeEventListener('load', initPlayer);
       playerRef.current = null;
-      clearTimeout(playFallbackRef.current);
+      clearTimeout(iframeFallbackRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLessonId]);
