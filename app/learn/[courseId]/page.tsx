@@ -105,13 +105,14 @@ export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { enrollCourse, isEnrolled, markLessonComplete, getAccessTier, getAccess } = useCourseAccess();
+  const { enrollments, enrollCourse, isEnrolled, markLessonComplete, getAccessTier, getAccess } = useCourseAccess();
   const { courses, isLoading } = useCourses();
   const courseId = params.courseId as string;
   const courseAccessTier = user ? getAccessTier(courseId) : 'free' as AccessTier;
   const courseAccess = user ? getAccess(courseId) : null;
 
   const course = courses.find(c => c.id === courseId);
+  const completedLessons = enrollments.find(e => e.courseId === courseId)?.completedLessons || [];
 
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
   const [currentLessonId, setCurrentLessonId] = useState<string>('');
@@ -766,6 +767,7 @@ export default function LearnPage() {
                           {chapter.lessons.map((lesson, i) => {
                             const isLocked = !isLessonAccessible(lesson);
                             const isActive = lesson.id === currentLessonId;
+                            const isCompleted = completedLessons.includes(lesson.id);
                             return (
                               <button
                                 key={lesson.id}
@@ -776,17 +778,24 @@ export default function LearnPage() {
                                 } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                  isActive ? 'bg-teal text-white' : 'bg-white/10 text-gray-400'
+                                  isCompleted ? 'bg-teal/20 text-teal' : isActive ? 'bg-teal text-white' : 'bg-white/10 text-gray-400'
                                 }`}>
                                   {isLocked ? (
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                  ) : isCompleted ? (
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                     </svg>
                                   ) : (i + 1)}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
+                                    {isCompleted && (
+                                      <span className="text-[10px] text-teal font-semibold">Đã xem</span>
+                                    )}
                                     {lesson.durationSeconds ? (
                                       <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
                                     ) : lesson.duration && lesson.duration !== '00:00' ? (
@@ -945,6 +954,7 @@ export default function LearnPage() {
                   {isExpanded && chapter.lessons.map((lesson, lessonIdx) => {
                     const isActive = lesson.id === currentLessonId;
                     const isLocked = !isLessonAccessible(lesson);
+                    const isCompleted = completedLessons.includes(lesson.id);
                     const lessonNum = lessonOffset + lessonIdx + 1;
 
                     return (
@@ -960,17 +970,23 @@ export default function LearnPage() {
                       >
                         {/* Lesson Number / Play indicator */}
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                          isActive
-                            ? 'bg-teal text-white'
-                            : isLocked
-                              ? 'bg-white/5 text-gray-600'
-                              : lesson.directPlayUrl
-                                ? 'bg-green-500/10 text-green-400'
-                                : 'bg-white/5 text-gray-500'
+                          isCompleted && !isActive
+                            ? 'bg-teal/20 text-teal'
+                            : isActive
+                              ? 'bg-teal text-white'
+                              : isLocked
+                                ? 'bg-white/5 text-gray-600'
+                                : lesson.directPlayUrl
+                                  ? 'bg-green-500/10 text-green-400'
+                                  : 'bg-white/5 text-gray-500'
                         }`}>
                           {isLocked ? (
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          ) : isCompleted && !isActive ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : isActive ? (
                             <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
@@ -987,6 +1003,9 @@ export default function LearnPage() {
                             {lesson.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
+                            {isCompleted && (
+                              <span className="text-[10px] text-teal font-semibold">Đã xem</span>
+                            )}
                             {lesson.durationSeconds ? (
                               <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
                             ) : lesson.duration && lesson.duration !== '00:00' ? (
@@ -1057,6 +1076,7 @@ export default function LearnPage() {
                       {isExpanded && chapter.lessons.map((lesson, lessonIdx) => {
                         const isActive = lesson.id === currentLessonId;
                         const isLocked = !isLessonAccessible(lesson);
+                        const isCompleted = completedLessons.includes(lesson.id);
                         const lessonNum = lessonOffset + lessonIdx + 1;
                         return (
                           <button
@@ -1068,11 +1088,15 @@ export default function LearnPage() {
                             } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                              isActive ? 'bg-teal text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.directPlayUrl ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
+                              isCompleted && !isActive ? 'bg-teal/20 text-teal' : isActive ? 'bg-teal text-white' : isLocked ? 'bg-white/5 text-gray-600' : lesson.directPlayUrl ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-gray-500'
                             }`}>
                               {isLocked ? (
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                              ) : isCompleted && !isActive ? (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : isActive ? (
                                 <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
@@ -1083,6 +1107,9 @@ export default function LearnPage() {
                             <div className="min-w-0 flex-1">
                               <p className={`text-sm truncate ${isActive ? 'text-teal font-semibold' : 'text-white'}`}>{lesson.title}</p>
                               <div className="flex items-center gap-2 mt-1">
+                                {isCompleted && (
+                                  <span className="text-[10px] text-teal font-semibold">Đã xem</span>
+                                )}
                                 {lesson.durationSeconds ? (
                                   <span className="text-xs text-gray-500">{formatSecondsToMMSS(lesson.durationSeconds)}</span>
                                 ) : lesson.duration && lesson.duration !== '00:00' ? (
