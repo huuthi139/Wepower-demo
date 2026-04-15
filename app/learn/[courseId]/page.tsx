@@ -121,6 +121,7 @@ export default function LearnPage() {
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [nearEnd, setNearEnd] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -270,6 +271,11 @@ export default function LearnPage() {
     currentTimeRef.current = seconds;
     if (duration > 0) durationRef.current = duration;
 
+    // Detect near-end (last 10 seconds)
+    if (duration > 0 && duration - seconds <= 10) {
+      setNearEnd(true);
+    }
+
     if (Date.now() - lastSaveRef.current >= SAVE_INTERVAL) {
       saveProgress(seconds);
     }
@@ -284,6 +290,7 @@ export default function LearnPage() {
     currentTimeRef.current = 0;
     durationRef.current = 0;
     lastSaveRef.current = 0;
+    setNearEnd(false);
 
     fetch(`/api/lessons/progress?courseId=${courseId}&lessonId=${currentLessonId}`)
       .then(res => res.json())
@@ -650,6 +657,54 @@ export default function LearnPage() {
             </div>
           </div>
 
+          {/* Non-video content (text/pdf/image) */}
+          {currentLesson && isLessonAccessible(currentLesson) && !currentLesson.directPlayUrl && (
+            <div className="px-4 md:px-6 py-6 border-b border-white/10">
+              {currentLesson.lessonType === 'pdf' && currentLesson.documentUrl && (
+                <iframe src={currentLesson.documentUrl} className="w-full rounded-lg border border-white/10" style={{ height: '70vh' }} />
+              )}
+              {currentLesson.lessonType === 'image' && currentLesson.imageUrl && (
+                <img src={currentLesson.imageUrl} alt={currentLesson.title} className="max-w-full rounded-lg mx-auto" />
+              )}
+              {currentLesson.lessonType === 'text' && currentLesson.content && (
+                <div className="prose prose-invert max-w-none text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                  {currentLesson.content}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Complete button bar */}
+          {currentLesson && isLessonAccessible(currentLesson) && (() => {
+            const isVideo = !!currentLesson.directPlayUrl;
+            const isYouTube = isVideo && detectVideoType(currentLesson.directPlayUrl) === 'youtube';
+            const isCurrentCompleted = completedLessons.includes(currentLessonId);
+            const showBar = isCurrentCompleted || !isVideo || isYouTube || nearEnd;
+            if (!showBar) return null;
+            return (
+              <div className="px-4 md:px-6 py-3 border-b border-white/10 bg-white/[0.02]">
+                {isCurrentCompleted ? (
+                  <div className="flex items-center gap-2 text-teal">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-semibold">Đã hoàn thành</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleMarkComplete}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-teal text-white text-sm font-bold rounded-lg hover:bg-teal/80 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Đánh dấu Hoàn thành
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Lesson Info + Controls */}
           <div className="px-4 md:px-6 py-4 border-b border-white/10">
             <div className="flex items-start justify-between gap-4">
@@ -838,12 +893,6 @@ export default function LearnPage() {
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal transition-colors resize-none"
                       />
                       <div className="flex justify-end gap-2 mt-2">
-                        <button
-                          onClick={handleMarkComplete}
-                          className="px-4 py-2 bg-gold/20 text-gold text-sm font-bold rounded-lg hover:bg-gold/30 transition-colors"
-                        >
-                          Đánh dấu hoàn thành
-                        </button>
                         <button
                           disabled={!commentText.trim()}
                           onClick={handleSubmitComment}

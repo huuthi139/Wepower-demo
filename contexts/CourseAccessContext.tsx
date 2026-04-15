@@ -204,14 +204,24 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
 
   const markLessonComplete = useCallback((courseId: string, lessonId: string, totalLessons: number) => {
     let newProgress = 0;
-    setEnrollments(prev => prev.map(e => {
-      if (e.courseId !== courseId) return e;
-      const completedLessons = e.completedLessons.includes(lessonId)
-        ? e.completedLessons
-        : [...e.completedLessons, lessonId];
-      newProgress = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
-      return { ...e, completedLessons, progress: newProgress, lastAccessedAt: new Date().toISOString() };
-    }));
+    setEnrollments(prev => {
+      const exists = prev.some(e => e.courseId === courseId);
+      const list = exists ? prev : [...prev, {
+        courseId,
+        enrolledAt: new Date().toISOString(),
+        progress: 0,
+        completedLessons: [],
+        lastAccessedAt: new Date().toISOString(),
+      }];
+      return list.map(e => {
+        if (e.courseId !== courseId) return e;
+        const completedLessons = e.completedLessons.includes(lessonId)
+          ? e.completedLessons
+          : [...e.completedLessons, lessonId];
+        newProgress = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
+        return { ...e, completedLessons, progress: newProgress, lastAccessedAt: new Date().toISOString() };
+      });
+    });
 
     // Update streak
     if (typeof window !== 'undefined') {
