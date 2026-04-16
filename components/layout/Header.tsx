@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,11 +10,24 @@ import { NotificationBell } from '@/components/ui/NotificationBell';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [adminDropdown, setAdminDropdown] = useState(false);
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [searchQuery, setSearchQuery] = useState('');
   const { totalItems } = useCart();
   const { user, logout } = useAuth();
   const router = useRouter();
+
+  const adminRef = useRef<HTMLDivElement>(null);
+
+  // Close admin dropdown on outside click
+  useEffect(() => {
+    if (!adminDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (adminRef.current && !adminRef.current.contains(e.target as Node)) setAdminDropdown(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [adminDropdown]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -61,9 +74,42 @@ export function Header() {
               Cộng Đồng
             </Link>
             {(user?.role === 'admin' || user?.role === 'sub_admin') && (
-              <Link href="/admin" className="text-teal hover:text-teal/80 transition-colors font-medium">
-                Admin
-              </Link>
+              <div className="relative" ref={adminRef}>
+                <button
+                  onClick={() => setAdminDropdown(p => !p)}
+                  className="flex items-center gap-1 text-teal hover:text-teal/80 transition-colors font-medium"
+                >
+                  Admin
+                  <svg className={`w-3.5 h-3.5 transition-transform ${adminDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {adminDropdown && (
+                  <div className="absolute top-full right-0 mt-2 w-52 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50">
+                    {[
+                      { label: 'Tổng quan', href: '/admin', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
+                      { label: 'Học viên', href: '/admin?tab=students', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+                      { label: 'Khóa học', href: '/admin?tab=courses', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+                      { label: 'Đơn hàng', href: '/admin?tab=orders', icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+                      { label: 'Nhân sự', href: '/admin?tab=staff', icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+                      { label: 'Kho Video', href: '/admin?tab=videos', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
+                      { label: 'Affiliate', href: '/admin?tab=affiliate', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+                    ].map(item => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setAdminDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                        </svg>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </nav>
 
@@ -262,13 +308,29 @@ export function Header() {
                 </>
               )}
               {(user?.role === 'admin' || user?.role === 'sub_admin') && (
-                <Link
-                  href="/admin"
-                  className="text-teal hover:text-teal/80 transition-colors py-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Admin
-                </Link>
+                <div className="py-2">
+                  <span className="text-teal font-medium text-sm">Admin</span>
+                  <div className="ml-3 mt-1 flex flex-col gap-1">
+                    {[
+                      { label: 'Tổng quan', href: '/admin' },
+                      { label: 'Học viên', href: '/admin?tab=students' },
+                      { label: 'Khóa học', href: '/admin?tab=courses' },
+                      { label: 'Đơn hàng', href: '/admin?tab=orders' },
+                      { label: 'Nhân sự', href: '/admin?tab=staff' },
+                      { label: 'Kho Video', href: '/admin?tab=videos' },
+                      { label: 'Affiliate', href: '/admin?tab=affiliate' },
+                    ].map(item => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="text-white/60 hover:text-white text-sm py-1 transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Language Switcher Mobile */}
