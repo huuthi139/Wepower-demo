@@ -465,6 +465,36 @@ export function StudentsTab({
           ) : (
             <>
               <button
+                onClick={() => {
+                  const BOM = '\uFEFF';
+                  const header = ['STT', 'Ho ten', 'Email', 'SDT', 'Hang', 'So khoa hoc', 'Trang thai', 'Ngay tham gia'];
+                  const rows = searchedStudents.map((s, i) => [
+                    i + 1,
+                    s.name,
+                    s.email,
+                    s.phone || '',
+                    s.memberLevel,
+                    s.enrolledCourses.length,
+                    s.status === 'Active' ? 'Hoat dong' : 'Ngung',
+                    s.joinDate,
+                  ]);
+                  const csv = BOM + [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `wedu-hocvien-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Xuat CSV
+              </button>
+              <button
                 onClick={() => setShowAddMember(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal text-white hover:bg-teal/80 transition-colors"
               >
